@@ -42,6 +42,26 @@ export default function Header({
   const location = useLocation();
   const activeTab = location.pathname.split('/')[1] || (currentWorkspace === 'ledger' ? 'dashboard' : 'portfolio');
   
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
   const handleTabChange = (tab: string) => {
     navigate(`/${tab}`);
   };
@@ -111,6 +131,16 @@ export default function Header({
 
           {/* Profile Menu Actions */}
           <div className="flex items-center gap-1 shrink-0">
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 px-2 rounded-lg font-bold text-[10px] transition-all cursor-pointer shadow-sm animate-pulse mr-1"
+                title="Install InvestMant App"
+              >
+                <Download size={12} /> <span className="hidden xs:inline">Install App</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenNotifications}
               className="relative p-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 cursor-pointer text-slate-600 transition-colors mr-1"
