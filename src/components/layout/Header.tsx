@@ -24,6 +24,13 @@ interface HeaderProps {
 
 import { useNavigate, useLocation } from 'react-router-dom';
 
+let globalDeferredPrompt: any = null;
+window.addEventListener('beforeinstallprompt', (e: any) => {
+  e.preventDefault();
+  globalDeferredPrompt = e;
+  window.dispatchEvent(new Event('pwa-install-ready'));
+});
+
 export default function Header({
   user,
   currentWorkspace,
@@ -42,15 +49,27 @@ export default function Header({
   const location = useLocation();
   const activeTab = location.pathname.split('/')[1] || (currentWorkspace === 'ledger' ? 'dashboard' : 'portfolio');
   
-  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(globalDeferredPrompt);
 
   React.useEffect(() => {
+    if (globalDeferredPrompt) {
+      setDeferredPrompt(globalDeferredPrompt);
+    }
+    const handlePwaReady = () => setDeferredPrompt(globalDeferredPrompt);
+    window.addEventListener('pwa-install-ready', handlePwaReady);
+    
+    // Fallback standard listener
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
+      globalDeferredPrompt = e;
       setDeferredPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('pwa-install-ready', handlePwaReady);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const handleInstallClick = async () => {
