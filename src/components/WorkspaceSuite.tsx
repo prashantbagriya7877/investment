@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   FolderOpen, Mail, Video, CheckSquare, MessageSquare, FileText, 
   GraduationCap, Search, Upload, Send, Plus, RefreshCw, Check, Trash2, 
-  ExternalLink, ChevronRight, AlertCircle, Sparkles
+  ExternalLink, ChevronRight, AlertCircle, Sparkles, Presentation, MousePointerClick
 } from 'lucide-react';
 import { getAccessToken } from '../firebase';
 import InfoTooltip from './InfoTooltip';
+import GooglePicker from './GooglePicker';
 
 interface WorkspaceSuiteProps {
   user: any;
@@ -13,7 +14,7 @@ interface WorkspaceSuiteProps {
 }
 
 // Service definition structure
-type WorkspaceService = 'drive' | 'gmail' | 'meet' | 'tasks' | 'chat' | 'forms' | 'classroom';
+type WorkspaceService = 'drive' | 'gmail' | 'meet' | 'tasks' | 'chat' | 'forms' | 'classroom' | 'docs' | 'picker' | 'slides';
 
 interface DriveFile {
   id: string;
@@ -696,6 +697,54 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                 <ChevronRight size={12} className="text-slate-300" />
               </button>
 
+              <button
+                type="button"
+                onClick={() => setActiveService('docs')}
+                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                  activeService === 'docs'
+                    ? 'bg-blue-50 text-blue-800 font-extrabold border-l-4 border-blue-600 pl-1.5'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <FileText size={16} className={activeService === 'docs' ? 'text-blue-600' : 'text-slate-400'} />
+                  <span className="text-xs">Google Docs</span>
+                </div>
+                <ChevronRight size={12} className="text-slate-300" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveService('slides')}
+                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                  activeService === 'slides'
+                    ? 'bg-yellow-50 text-yellow-800 font-extrabold border-l-4 border-yellow-600 pl-1.5'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <Presentation size={16} className={activeService === 'slides' ? 'text-yellow-600' : 'text-slate-400'} />
+                  <span className="text-xs">Google Slides</span>
+                </div>
+                <ChevronRight size={12} className="text-slate-300" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveService('picker')}
+                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                  activeService === 'picker'
+                    ? 'bg-slate-100 text-slate-800 font-extrabold border-l-4 border-slate-600 pl-1.5'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <MousePointerClick size={16} className={activeService === 'picker' ? 'text-slate-600' : 'text-slate-400'} />
+                  <span className="text-xs">Google Picker</span>
+                </div>
+                <ChevronRight size={12} className="text-slate-300" />
+              </button>
+
             </div>
           </div>
 
@@ -1180,6 +1229,83 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* 8. GOOGLE DOCS SUBPANEL */}
+                {activeService === 'docs' && (
+                  <div className="space-y-2 animate-fadeIn">
+                    <div className="border-b border-slate-100 pb-1">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 pb-0.5">
+                        <FileText className="text-blue-600" size={16} /> Google Docs Integration
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Create, edit, and read dynamic Google Documents instantly.</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-2">
+                      <FileText size={32} className="text-blue-500" />
+                      <p className="text-xs text-slate-600 max-w-sm">
+                        Use the automated report generator to quickly create a test Google Document with your credentials.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const { generateSampleReportDoc } = await import('./GoogleDocsManager');
+                            const docId = await generateSampleReportDoc({ message: "Hello from Central Workspace Suite!" });
+                            alert(`✅ Google Doc Created! ID: ${docId}`);
+                            window.open(`https://docs.google.com/document/d/${docId}/edit`, '_blank');
+                          } catch (err: any) {
+                            alert(`Error creating Google Doc: ${err.message}`);
+                          }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] uppercase py-2 px-4 rounded-xl transition-colors"
+                      >
+                        Create Auto-Generated Doc
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 9. GOOGLE SLIDES SUBPANEL */}
+                {activeService === 'slides' && (
+                  <div className="space-y-2 animate-fadeIn">
+                    <div className="border-b border-slate-100 pb-1">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 pb-0.5">
+                        <Presentation className="text-yellow-600" size={16} /> Google Slides (Upcoming)
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Create dynamic presentation decks for clients and pitches.</p>
+                    </div>
+                    <div className="p-6 text-center border border-dashed border-slate-200 rounded-2xl space-y-1 bg-yellow-50/40">
+                      <Presentation size={30} className="text-yellow-300 mx-auto mb-2" />
+                      <h4 className="text-xs font-extrabold text-yellow-800 uppercase tracking-widest">Slides API Integration in Progress</h4>
+                      <p className="text-[10.5px] text-yellow-700 max-w-sm mx-auto leading-relaxed">
+                        Google Slides creation will be enabled in the next update. You will be able to export charts and text directly into Google Presentations.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 10. GOOGLE PICKER SUBPANEL */}
+                {activeService === 'picker' && (
+                  <div className="space-y-2 animate-fadeIn">
+                    <div className="border-b border-slate-100 pb-1">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 pb-0.5">
+                        <MousePointerClick className="text-slate-600" size={16} /> Google File Picker
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Launch the official Google Picker UI to select any file from your Drive.</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-2">
+                      <FolderOpen size={32} className="text-slate-500" />
+                      <p className="text-xs text-slate-600 max-w-sm mb-2">
+                        Select a spreadsheet, document, image, or folder from your personal Google Drive account.
+                      </p>
+                      <GooglePicker 
+                        label="Open Official Google Picker" 
+                        onSelect={(file) => {
+                          alert(`You selected: ${file.name}\nMIME: ${file.mimeType}\nURL: ${file.url}`);
+                        }} 
+                      />
+                    </div>
                   </div>
                 )}
 
