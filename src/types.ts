@@ -1,0 +1,176 @@
+export interface Transaction {
+  id: string;
+  userId: string;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  notes?: string;
+  createdAt?: any;
+}
+
+export interface PendingPayment {
+  id: string;
+  userId: string;
+  type: 'owe' | 'owed'; // owe = user owes money to person, owed = person owes money to user
+  person: string;
+  amount: number;
+  dueDate: string; // YYYY-MM-DD
+  completed: boolean;
+  notes?: string;
+  createdAt?: any;
+}
+
+export interface SavingsGoal {
+  id: string;
+  userId: string;
+  title: string;
+  targetAmount: number;
+  currentSavings: number;
+  deadline: string; // YYYY-MM-DD
+  createdAt?: any;
+}
+
+export interface BudgetLimit {
+  id: string;
+  userId: string;
+  category: string;
+  limitAmount: number;
+  month: string; // YYYY-MM
+  createdAt?: any;
+}
+
+export interface RecurringBill {
+  id: string;
+  userId: string;
+  type?: 'income' | 'expense'; // Optional for backwards compatibility
+  title: string;
+  amount: number;
+  category: string;
+  nextDueDate: string; // YYYY-MM-DD
+  frequency: 'monthly' | 'yearly';
+  createdAt?: any;
+}
+
+export interface ScheduledTask {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  dueDate: any; // Firestore Timestamp
+  status: 'pending' | 'completed';
+  notified: boolean;
+  emailSent?: boolean;
+  createdAt?: any;
+}
+
+export interface UserSettings {
+  id: string; // userId
+  pin?: string; // 4-digit PIN lock
+  darkMode?: boolean;
+  smartApiAppName?: string;
+  smartApiRedirectUrl?: string;
+  smartApiPostbackUrl?: string;
+  smartApiPrimaryIp?: string;
+  smartApiSecondaryIp?: string;
+  smartApiKey?: string;
+  smartApiClientId?: string;
+  smartApiTotpSecret?: string;
+  smartApiIsActive?: boolean;
+  googleSpreadsheetId?: string;
+  googleSpreadsheetName?: string;
+  investmentCashBalance?: number;
+  realizedPnL?: number;
+}
+
+export interface Holding {
+  id: string;
+  userId: string;
+  type: 'stock' | 'mf';
+  symbol?: string; // stocks (e.g., RELIANCE)
+  name?: string; // name
+  buyPrice: number; // buy price (NAV or stock price)
+  quantity: number; // quantity (shares or units)
+  buyDate: string; // YYYY-MM-DD
+  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash';
+  broker?: string; // Zerodha, Groww, Upstox, etc.
+  schemeCode?: string; // MF Scheme Code (e.g., 102885)
+  createdAt?: any;
+}
+
+export interface Sip {
+  id: string;
+  userId: string;
+  name: string;
+  amount: number;
+  startDate: string; // YYYY-MM-DD
+  sipDate: number; // 1-28
+  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash';
+  broker?: string;
+  createdAt?: any;
+}
+
+export interface Fd {
+  id: string;
+  userId: string;
+  bankName: string;
+  principal: number;
+  interestRate: number; // % per annum, e.g. 7.15
+  tenure: number; // month duration
+  startDate: string; // YYYY-MM-DD
+  maturityDate: string; // YYYY-MM-DD
+  isRd?: boolean;
+  notes?: string;
+  createdAt?: any;
+}
+
+export interface WatchlistItem {
+  id: string;
+  userId: string;
+  type: 'stock' | 'mf';
+  symbol?: string; // stock symbol e.g. TCS
+  name?: string; // stock or MF name
+  schemeCode?: string; // MF scheme ID
+}
+
+export const EXPENSE_CATEGORIES = [
+  'Housing',
+  'Utilities',
+  'Groceries',
+  'Dining Out',
+  'Transportation',
+  'Entertainment',
+  'Health & Fitness',
+  'Shopping',
+  'Education',
+  'Insurance',
+  'Others'
+] as const;
+
+export const INCOME_CATEGORIES = [
+  'Salary',
+  'Freelance',
+  'Investments',
+  'Gifts',
+  'Refunds',
+  'Other Income'
+] as const;
+
+export const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
+export type IncomeCategory = typeof INCOME_CATEGORIES[number];
+
+export interface RealizedTrade {
+  id: string;
+  userId: string;
+  type: 'stock' | 'mf';
+  symbol?: string;
+  name?: string;
+  buyPrice: number;
+  exitPrice: number;
+  quantity: number;
+  pnl: number;
+  exitDate: string; // YYYY-MM-DD
+  createdAt?: any;
+}
+

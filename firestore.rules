@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      // 1. Authentication Requirement
+      return request.auth != null && request.auth.uid != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && userId == request.auth.uid;
+    }
+
+    function isPositiveNumber(val) {
+      return val is number && val > 0;
+    }
+
+    function isNonNegativeNumber(val) {
+      return val is number && val >= 0;
+    }
+    
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isSafeId(id) {
+      return id is string && id.size() > 0 && id.size() < 100 && !('/' in id);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /usersettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /transactions/{id} {
+      function isValidTransaction(data) {
+        return data.userId == request.auth.uid
+          && data.keys().hasOnly(['id', 'userId', 'type', 'category', 'amount', 'date', 'notes', 'createdAt'])
+          && data.type in ['income', 'expense']
+          && isPositiveNumber(data.amount)
+          && isValidString(data.category, 1, 50)
+          && (!('notes' in data) || isValidString(data.notes, 0, 500))
+          && data.date is string && data.date.size() == 10;
+      }
+      
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidTransaction(request.resource.data) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) 
+        && isValidTransaction(request.resource.data) 
+        && request.resource.data.createdAt == resource.data.createdAt 
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /pendingPayments/{id} {
+      function isValidPendingPayment(data) {
+        return data.userId == request.auth.uid
+          && data.keys().hasOnly(['id', 'userId', 'type', 'person', 'amount', 'dueDate', 'completed', 'notes', 'createdAt'])
+          && data.type in ['owe', 'owed']
+          && isPositiveNumber(data.amount)
+          && isValidString(data.person, 1, 100)
+          && data.completed is bool
+          && (!('notes' in data) || isValidString(data.notes, 0, 500))
+          && data.dueDate is string && data.dueDate.size() == 10;
+      }
+
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidPendingPayment(request.resource.data) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) 
+        && isValidPendingPayment(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt 
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /savingsGoals/{id} {
+      function isValidSavingsGoal(data) {
+        return data.userId == request.auth.uid
+          && data.keys().hasOnly(['id', 'userId', 'title', 'targetAmount', 'currentSavings', 'deadline', 'createdAt'])
+          && isValidString(data.title, 1, 100)
+          && isPositiveNumber(data.targetAmount)
+          && isNonNegativeNumber(data.currentSavings)
+          && data.deadline is string && data.deadline.size() == 10;
+      }
+
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidSavingsGoal(request.resource.data) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) 
+        && isValidSavingsGoal(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt 
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /budgetLimits/{id} {
+      function isValidBudgetLimit(data) {
+        return data.userId == request.auth.uid
+          && data.keys().hasOnly(['id', 'userId', 'category', 'limitAmount', 'month', 'createdAt'])
+          && isValidString(data.category, 1, 50)
+          && isPositiveNumber(data.limitAmount)
+          && data.month is string && data.month.matches('^[0-9]{4}-[0-9]{2}$');
+      }
+
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidBudgetLimit(request.resource.data) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) 
+        && isValidBudgetLimit(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt 
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /tasks/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /holdings/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /sips/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /fds/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /watchlist/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /realizedTrades/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isSafeId(id);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+  }
+}
