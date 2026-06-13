@@ -967,7 +967,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                       </div>
                       <button
                         type="submit"
-                        className="w-full bg-emerald-650 hover:bg-emerald-750 text-white font-extrabold text-xs py-1.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-1.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
                       >
                         ⚡ Generate Google Meet join Room
                       </button>
