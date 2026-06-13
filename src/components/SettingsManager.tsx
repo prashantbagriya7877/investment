@@ -24,7 +24,7 @@ interface ServiceConfig {
   category: string;
   description: string;
   icon: React.ComponentType<any>;
-  themeColor: 'emerald' | 'indigo' | 'rose' | 'blue' | 'red' | 'teal' | 'sky' | 'cyan' | 'violet' | 'amber';
+  themeColor: 'emerald' | 'indigo' | 'rose' | 'blue' | 'red' | 'teal' | 'sky' | 'cyan' | 'violet' | 'amber' | 'yellow';
   tabName: string;
 }
 
