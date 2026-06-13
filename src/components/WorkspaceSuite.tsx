@@ -530,7 +530,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
   };
 
   return (
-    <div className="space-y-3 max-w-6xl mx-auto py-2 px-1">
+    <div className="space-y-3 w-[100vw] relative left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] py-2 px-3 sm:px-4 md:px-6">
       
       {/* Title block */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-2">
