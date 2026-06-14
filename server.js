@@ -4,6 +4,433 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { JWT } from "google-auth-library";
 import dotenv from "dotenv";
+
+// upstoxProxy.ts
+function setupUpstoxRoutes(app) {
+  app.post("/api/upstox/token", async (req, res) => {
+    try {
+      const { code, client_id, client_secret, redirect_uri } = req.body;
+      if (!code || !client_id || !client_secret || !redirect_uri) {
+        return res.status(400).json({ error: "Missing required fields for Upstox OAuth" });
+      }
+      const params = new URLSearchParams();
+      params.append("code", code);
+      params.append("client_id", client_id);
+      params.append("client_secret", client_secret);
+      params.append("redirect_uri", redirect_uri);
+      params.append("grant_type", "authorization_code");
+      const response = await fetch("https://api.upstox.com/v2/login/authorization/token", {
+        method: "POST",
+        headers: {
+          "Api-Version": "2.0",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json"
+        },
+        body: params
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.errors?.[0]?.message || "Failed to exchange token");
+      }
+      res.json(data);
+    } catch (err) {
+      console.error("[Upstox API] Token Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/upstox/profile", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/user/profile", {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/upstox/funds", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/user/get-funds-and-margin", {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/upstox/holdings", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/portfolio/long-term-holdings", {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/upstox/market-quote", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const symbol = req.query.symbol;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      if (!symbol) return res.status(400).json({ error: "Missing symbol" });
+      const response = await fetch(`https://api.upstox.com/v2/market-quote/quotes?instrument_key=${encodeURIComponent(symbol)}`, {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/upstox/option-chain", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const instrument_key = req.query.instrument_key;
+      const expiry_date = req.query.expiry_date;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      if (!instrument_key || !expiry_date) return res.status(400).json({ error: "Missing instrument_key or expiry_date" });
+      const response = await fetch(`https://api.upstox.com/v2/option/chain?instrument_key=${encodeURIComponent(instrument_key)}&expiry_date=${encodeURIComponent(expiry_date)}`, {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/upstox/order", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/order/place", {
+        method: "POST",
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(req.body)
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
+// dhanProxy.ts
+function setupDhanRoutes(app) {
+  app.get("/api/dhan/funds", async (req, res) => {
+    try {
+      const token = req.headers["access-token"];
+      const clientId = req.headers["client-id"];
+      if (!token || !clientId) {
+        return res.status(401).json({ error: "Missing Dhan credentials" });
+      }
+      const response = await fetch("https://api.dhan.co/fundlimit", {
+        headers: {
+          "access-token": token,
+          "client-id": clientId,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/dhan/holdings", async (req, res) => {
+    try {
+      const token = req.headers["access-token"];
+      const clientId = req.headers["client-id"];
+      if (!token || !clientId) {
+        return res.status(401).json({ error: "Missing Dhan credentials" });
+      }
+      const response = await fetch("https://api.dhan.co/holdings", {
+        headers: {
+          "access-token": token,
+          "client-id": clientId,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/dhan/order", async (req, res) => {
+    try {
+      const token = req.headers["access-token"];
+      const clientId = req.headers["client-id"];
+      if (!token || !clientId) {
+        return res.status(401).json({ error: "Missing Dhan credentials" });
+      }
+      const response = await fetch("https://api.dhan.co/orders", {
+        method: "POST",
+        headers: {
+          "access-token": token,
+          "client-id": clientId,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(req.body)
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
+// angelProxy.ts
+function setupAngelRoutes(app) {
+  app.post("/api/angel/login", async (req, res) => {
+    try {
+      const { clientcode, password, totp, api_key } = req.body;
+      if (!clientcode || !password || !totp || !api_key) {
+        return res.status(400).json({ error: "Missing required Angel One credentials" });
+      }
+      const response = await fetch("https://apiconnect.angelbroking.com/rest/auth/angelbroking/user/v1/loginByPassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-PrivateKey": api_key,
+          "X-MACAddress": "00-00-00-00-00-00",
+          // Mock MAC
+          "X-ClientLocalIP": "127.0.0.1",
+          "X-ClientPublicIP": "127.0.0.1"
+        },
+        body: JSON.stringify({
+          clientcode,
+          password,
+          totp
+        })
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/angel/funds", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const apiKey = req.headers["x-privatekey"];
+      if (!token || !apiKey) {
+        return res.status(401).json({ error: "Missing Angel One credentials" });
+      }
+      const response = await fetch("https://apiconnect.angelbroking.com/rest/secure/angelbroking/user/v1/getRMS", {
+        headers: {
+          "Authorization": token,
+          "X-PrivateKey": apiKey,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/angel/holdings", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const apiKey = req.headers["x-privatekey"];
+      if (!token || !apiKey) {
+        return res.status(401).json({ error: "Missing Angel One credentials" });
+      }
+      const response = await fetch("https://apiconnect.angelbroking.com/rest/secure/angelbroking/portfolio/v1/getHolding", {
+        headers: {
+          "Authorization": token,
+          "X-PrivateKey": apiKey,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/angel/order", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const apiKey = req.headers["x-privatekey"];
+      if (!token || !apiKey) return res.status(401).json({ error: "Missing Angel One credentials" });
+      const response = await fetch("https://apiconnect.angelbroking.com/rest/secure/angelbroking/order/v1/placeOrder", {
+        method: "POST",
+        headers: {
+          "Authorization": token,
+          "X-PrivateKey": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(req.body)
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
+// kiteProxy.ts
+import crypto from "crypto";
+function setupKiteRoutes(app) {
+  app.post("/api/kite/token", async (req, res) => {
+    try {
+      const { request_token, api_key, api_secret } = req.body;
+      if (!request_token || !api_key || !api_secret) {
+        return res.status(400).json({ error: "Missing required fields for Zerodha Auth" });
+      }
+      const hashString = api_key + request_token + api_secret;
+      const checksum = crypto.createHash("sha256").update(hashString).digest("hex");
+      const params = new URLSearchParams();
+      params.append("api_key", api_key);
+      params.append("request_token", request_token);
+      params.append("checksum", checksum);
+      const response = await fetch("https://api.kite.trade/session/token", {
+        method: "POST",
+        headers: {
+          "X-Kite-Version": "3",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        throw new Error(data.message || "Failed to generate Kite session");
+      }
+      res.json(data);
+    } catch (err) {
+      console.error("[Kite API] Token Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/kite/funds", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.kite.trade/user/margins", {
+        headers: {
+          "X-Kite-Version": "3",
+          "Authorization": authHeader
+          // Expected format: "token api_key:access_token"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/kite/holdings", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.kite.trade/portfolio/holdings", {
+        headers: {
+          "X-Kite-Version": "3",
+          "Authorization": authHeader
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/kite/order", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
+      const { tradingsymbol, exchange, transaction_type, order_type, quantity, product, price, trigger_price } = req.body;
+      const params = new URLSearchParams();
+      params.append("tradingsymbol", tradingsymbol);
+      params.append("exchange", exchange);
+      params.append("transaction_type", transaction_type);
+      params.append("order_type", order_type);
+      params.append("quantity", quantity.toString());
+      params.append("product", product);
+      params.append("validity", "DAY");
+      if (price) params.append("price", price.toString());
+      if (trigger_price) params.append("trigger_price", trigger_price.toString());
+      const response = await fetch("https://api.kite.trade/orders/regular", {
+        method: "POST",
+        headers: {
+          "X-Kite-Version": "3",
+          "Authorization": authHeader,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        throw new Error(data.message || "Failed to place Kite order");
+      }
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/kite/quote", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const symbol = req.query.symbol;
+      if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
+      if (!symbol) return res.status(400).json({ error: "Missing symbol" });
+      const response = await fetch(`https://api.kite.trade/quote?i=${encodeURIComponent(symbol)}`, {
+        headers: {
+          "X-Kite-Version": "3",
+          "Authorization": authHeader
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
+// server.ts
 dotenv.config();
 function cleanPrivateKey(keyInput) {
   let key = keyInput.trim();
@@ -129,6 +556,10 @@ async function startServer() {
       res.status(500).json({ error: err.message || String(err) });
     }
   });
+  setupUpstoxRoutes(app);
+  setupDhanRoutes(app);
+  setupAngelRoutes(app);
+  setupKiteRoutes(app);
   const stockCache = /* @__PURE__ */ new Map();
   const mfCache = /* @__PURE__ */ new Map();
   const searchCache = /* @__PURE__ */ new Map();

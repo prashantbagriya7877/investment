@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, LayoutDashboard, ArrowLeftRight, Clock, Target, Sliders, 
   Bell, Users, Briefcase, Settings, TrendingUp, CalendarRange, 
-  Landmark, Percent, Repeat 
+  Landmark, Percent, Repeat, BarChart3 
 } from 'lucide-react';
 
 interface NavigationDrawerProps {
@@ -108,7 +108,7 @@ export default function NavigationDrawer({
                     <>
                       <NavButton active={activeTab === 'dashboard'} onClick={() => handleTabClick('dashboard')} icon={<LayoutDashboard size={16} />} label="Dashboard" />
                       <NavButton active={activeTab === 'transactions'} onClick={() => handleTabClick('transactions')} icon={<ArrowLeftRight size={16} />} label="Journal ledger" />
-                      <NavButton active={activeTab === 'pending'} onClick={() => handleTabClick('pending')} icon={<Clock size={16} />} label="Dues" />
+                      <NavButton active={activeTab === 'pending'} onClick={() => handleTabClick('pending')} icon={<Clock size={16} />} label="Len Den (Dues)" />
                       <NavButton active={activeTab === 'recurring-bills'} onClick={() => handleTabClick('recurring-bills')} icon={<Repeat size={16} />} label="Auto Billing" />
                       <NavButton active={activeTab === 'savings'} onClick={() => handleTabClick('savings')} icon={<Target size={16} />} label="Goals" />
                       <NavButton active={activeTab === 'budgets'} onClick={() => handleTabClick('budgets')} icon={<Sliders size={16} />} label="Budgets" />
@@ -120,9 +120,11 @@ export default function NavigationDrawer({
                   ) : (
                     <>
                       <NavButton active={activeTab === 'portfolio'} onClick={() => handleTabClick('portfolio')} icon={<TrendingUp size={16} />} label="Stock & MFs" />
+                      <NavButton active={activeTab === 'market-data'} onClick={() => handleTabClick('market-data')} icon={<BarChart3 size={16} />} label="Live Market Data" />
                       <NavButton active={activeTab === 'sips'} onClick={() => handleTabClick('sips')} icon={<CalendarRange size={16} />} label="Active SIPs" />
                       <NavButton active={activeTab === 'fds'} onClick={() => handleTabClick('fds')} icon={<Landmark size={16} />} label="FD/RD Lockers" />
                       <NavButton active={activeTab === 'tax'} onClick={() => handleTabClick('tax')} icon={<Percent size={16} />} label="Tax Capital Gains" />
+                      <NavButton active={activeTab === 'brokers'} onClick={() => handleTabClick('brokers')} icon={<ArrowLeftRight size={16} className="text-indigo-500" />} label="Broker Connect" />
                       <NavButton active={activeTab === 'workspace'} onClick={() => handleTabClick('workspace')} icon={<Briefcase size={16} className="text-teal-500" />} label="Workspace Suite" isSuite />
                       <NavButton active={activeTab === 'settings'} onClick={() => handleTabClick('settings')} icon={<Settings size={16} />} label="Settings & Links" />
                     </>

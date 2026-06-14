@@ -19,10 +19,7 @@ interface Tax80CDeclaration {
 
 export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
   const [selectedFY, setSelectedFY] = useState('2024-25');
-  const [declarations, setDeclarations] = useState<Tax80CDeclaration[]>([
-    { id: '1', category: 'ELSS', amount: 45000, note: 'Mirae Asset Savings' },
-    { id: '2', category: 'PPF', amount: 60000, note: 'SBI PPF Account' }
-  ]);
+  const [declarations, setDeclarations] = useState<Tax80CDeclaration[]>([]);
 
   const [newCat, setNewCat] = useState<'ELSS' | 'PPF' | 'NPS' | 'LIC' | 'Tax-FD' | 'Others'>('ELSS');
   const [newAmt, setNewAmt] = useState('');

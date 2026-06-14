@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FolderOpen, Mail, Video, CheckSquare, MessageSquare, FileText, 
   GraduationCap, Search, Upload, Send, Plus, RefreshCw, Check, Trash2, 
-  ExternalLink, ChevronRight, AlertCircle, Sparkles, Presentation, MousePointerClick, Image
+  ExternalLink, ChevronRight, AlertCircle, Sparkles, Presentation, MousePointerClick, Image, Calendar
 } from 'lucide-react';
 import { getAccessToken } from '../firebase';
 import InfoTooltip from './InfoTooltip';
@@ -14,7 +14,7 @@ interface WorkspaceSuiteProps {
 }
 
 // Service definition structure
-type WorkspaceService = 'drive' | 'gmail' | 'meet' | 'tasks' | 'chat' | 'forms' | 'classroom' | 'docs' | 'picker' | 'slides' | 'photos';
+type WorkspaceService = 'drive' | 'gmail' | 'meet' | 'tasks' | 'chat' | 'forms' | 'classroom' | 'docs' | 'picker' | 'slides' | 'photos' | 'calendar';
 
 interface DriveFile {
   id: string;
@@ -66,6 +66,9 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
   const [token, setToken] = useState<string | null>(getAccessToken());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // General state
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
 
   // States for individual sub-services
   // 1. Google Drive states
@@ -761,6 +764,22 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                 <ChevronRight size={12} className="text-slate-300" />
               </button>
 
+              <button
+                type="button"
+                onClick={() => setActiveService('calendar')}
+                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                  activeService === 'calendar'
+                    ? 'bg-orange-50 text-orange-800 font-extrabold border-l-4 border-orange-500 pl-1.5'
+                    : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <Calendar size={16} className={activeService === 'calendar' ? 'text-orange-500' : 'text-slate-400'} />
+                  <span className="text-xs">Google Calendar</span>
+                </div>
+                <ChevronRight size={12} className="text-slate-300" />
+              </button>
+
             </div>
           </div>
 
@@ -852,15 +871,14 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                                 <h5 className="text-xs font-bold text-slate-800 truncate">{file.name}</h5>
                                 <p className="text-[8.5px] font-mono text-slate-400 mt-0.5 max-w-[200px] truncate">{file.mimeType.split('/').pop()}</p>
                               </div>
-                              {file.webViewLink && (
-                                <a 
-                                  href={file.webViewLink} 
-                                  target="_blank" 
-                                  rel="noreferrer"
-                                  className="text-[9.5px] font-black text-blue-600 hover:underline shrink-0 flex items-center gap-0.5"
+                              {file.id && (
+                                <button 
+                                  type="button"
+                                  onClick={() => setPreviewFile(`https://drive.google.com/file/d/${file.id}/preview`)}
+                                  className="text-[9.5px] font-black text-blue-600 hover:text-blue-800 hover:underline shrink-0 flex items-center gap-0.5 cursor-pointer"
                                 >
-                                  Open <ExternalLink size={10} />
-                                </a>
+                                  Preview In-App <ExternalLink size={10} />
+                                </button>
                               )}
                             </div>
                           ))
@@ -932,7 +950,21 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                                 <span className="text-[7.5px] font-mono text-slate-400">{email.date ? new Date(email.date).toLocaleDateString() : ''}</span>
                               </div>
                               <h5 className="text-[11px] font-extrabold text-slate-800 line-clamp-1 leading-tight">{email.subject}</h5>
-                              <p className="text-[10px] text-slate-500 line-clamp-1 italic text-ellipsis leading-tight pb-0.5">{email.snippet}</p>
+                              <p className="text-[10px] text-slate-500 line-clamp-2 italic text-ellipsis leading-tight pb-0.5">{email.snippet}</p>
+                              <div className="flex gap-1 mt-1 border-t border-slate-100 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const match = email.from?.match(/<([^>]+)>/);
+                                    setGmailRecipient(match ? match[1] : (email.from || ''));
+                                    setGmailSubject(email.subject?.startsWith('Re:') ? email.subject : `Re: ${email.subject}`);
+                                    setGmailBody(`\n\n--- On ${email.date}, ${email.from} wrote:\n> ${email.snippet}`);
+                                  }}
+                                  className="text-[9px] font-bold text-red-600 hover:text-red-800 flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-red-50 cursor-pointer"
+                                >
+                                  <Send size={8} /> Reply
+                                </button>
+                              </div>
                             </div>
                           ))
                         )}
@@ -1359,10 +1391,75 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   </div>
                 )}
 
+                {/* 12. GOOGLE CALENDAR SUBPANEL */}
+                {activeService === 'calendar' && (
+                  <div className="space-y-2 animate-fadeIn h-[500px] flex flex-col">
+                    <div className="border-b border-slate-100 pb-1 shrink-0">
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 pb-0.5">
+                        <Calendar className="text-orange-500" size={16} /> Google Calendar Integration
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Manage your schedule and view upcoming events natively.</p>
+                    </div>
+                    <div className="flex-1 border border-slate-200 rounded-xl overflow-hidden bg-slate-50 relative">
+                      {user?.email ? (
+                        <iframe 
+                          src={`https://calendar.google.com/calendar/embed?src=${encodeURIComponent(user.email)}&ctz=Asia%2FKolkata`} 
+                          className="absolute inset-0 w-full h-full border-0"
+                          title="Google Calendar Embedded"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-6 text-center">
+                          <Calendar size={32} className="text-slate-300 mb-2" />
+                          <p className="text-sm font-bold">Email Required</p>
+                          <p className="text-xs">Your Google account email is required to fetch the default embedded calendar.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
               </div>
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-slideUp">
+             <div className="flex justify-between items-center px-4 py-3 border-b border-slate-200 bg-slate-50 shrink-0">
+               <h3 className="font-extrabold text-slate-800 uppercase tracking-wider text-sm flex items-center gap-2">
+                 <FolderOpen size={16} className="text-blue-600" />
+                 Secure Document Preview
+               </h3>
+               <div className="flex gap-2">
+                 <a 
+                   href={previewFile.replace('/preview', '/view')} 
+                   target="_blank" 
+                   rel="noreferrer"
+                   className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                 >
+                   Open in New Tab <ExternalLink size={12} />
+                 </a>
+                 <button 
+                   onClick={() => setPreviewFile(null)} 
+                   className="text-xs font-bold text-slate-500 hover:text-red-600 flex items-center gap-1 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                 >
+                   Close Viewer
+                 </button>
+               </div>
+             </div>
+             <div className="flex-1 bg-slate-100 relative">
+               <iframe 
+                 src={previewFile} 
+                 className="absolute inset-0 w-full h-full border-0" 
+                 allow="autoplay"
+                 title="Drive File Preview"
+               ></iframe>
+             </div>
+          </div>
         </div>
       )}
 

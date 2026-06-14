@@ -3,6 +3,10 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { JWT } from "google-auth-library";
 import dotenv from "dotenv";
+import { setupUpstoxRoutes } from "./upstoxProxy";
+import { setupDhanRoutes } from "./dhanProxy";
+import { setupAngelRoutes } from "./angelProxy";
+import { setupKiteRoutes } from "./kiteProxy";
 
 dotenv.config();
 
@@ -176,6 +180,12 @@ async function startServer() {
       res.status(500).json({ error: err.message || String(err) });
     }
   });
+
+  // Setup Broker Routes
+  setupUpstoxRoutes(app);
+  setupDhanRoutes(app);
+  setupAngelRoutes(app);
+  setupKiteRoutes(app);
 
   // In-memory cache store
   interface CacheEntry<T> {

@@ -8,6 +8,7 @@ import { Holding, WatchlistItem, UserSettings, RealizedTrade } from '../types';
 import { fetchStockPrice, fetchMutualFundNav, calculateXIRR, fetchStockSearch } from '../utils/financeHelpers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import InfoTooltip from './InfoTooltip';
+import TradeExecutionModal from './TradeExecutionModal';
 
 interface PortfolioTrackerProps {
   holdings: Holding[];
@@ -24,6 +25,14 @@ interface PortfolioTrackerProps {
   livePrices?: Record<string, { currentPrice: number; dayChange: number; name: string }>;
   refreshPrices?: () => void;
   loadingPrices?: boolean;
+  brokerFunds?: {
+    upstox: { available: number; utilized: number };
+    dhan: { available: number; utilized: number };
+    angel: { available: number; utilized: number };
+    totalAvailable: number;
+  };
+  isSyncingBrokerData?: boolean;
+  onRefreshBrokerData?: () => void;
 }
 
 const POPULAR_STOCKS = [
@@ -58,78 +67,13 @@ export default function PortfolioTracker({
   onUpdateSmartApiSettings,
   livePrices = {},
   refreshPrices,
-  loadingPrices = false
+  loadingPrices = false,
+  brokerFunds,
+  isSyncingBrokerData = false,
+  onRefreshBrokerData
 }: PortfolioTrackerProps) {
 
 
-  // SmartAPI Integration States
-  const [smartAppName, setSmartAppName] = useState('prasant bagriya');
-  const [smartRedirectUrl, setSmartRedirectUrl] = useState('https://prasantbagriya.online/');
-  const [smartPostbackUrl, setSmartPostbackUrl] = useState('-');
-  const [smartPrimaryIp, setSmartPrimaryIp] = useState('47.15.92.237');
-  const [smartSecondaryIp, setSmartSecondaryIp] = useState('-');
-  const [smartApiKey, setSmartApiKey] = useState('fy2JiRJ2');
-  const [smartClientId, setSmartClientId] = useState('');
-  const [smartTotpSecret, setSmartTotpSecret] = useState('');
-  const [smartIsActive, setSmartIsActive] = useState(false);
-
-  const [feedLogs, setFeedLogs] = useState<string[]>([]);
-  const [isSavingApi, setIsSavingApi] = useState(false);
-  const [isFormExpanded, setIsFormExpanded] = useState(false);
-
-  // Synchronize with Firestore cloud settings
-  useEffect(() => {
-    if (userSettings) {
-      if (userSettings.smartApiAppName) setSmartAppName(userSettings.smartApiAppName);
-      if (userSettings.smartApiRedirectUrl) setSmartRedirectUrl(userSettings.smartApiRedirectUrl);
-      if (userSettings.smartApiPostbackUrl) setSmartPostbackUrl(userSettings.smartApiPostbackUrl);
-      if (userSettings.smartApiPrimaryIp) setSmartPrimaryIp(userSettings.smartApiPrimaryIp);
-      if (userSettings.smartApiSecondaryIp) setSmartSecondaryIp(userSettings.smartApiSecondaryIp);
-      if (userSettings.smartApiKey) setSmartApiKey(userSettings.smartApiKey);
-      if (userSettings.smartApiClientId) setSmartClientId(userSettings.smartApiClientId);
-      if (userSettings.smartApiTotpSecret) setSmartTotpSecret(userSettings.smartApiTotpSecret);
-      if (typeof userSettings.smartApiIsActive === 'boolean') setSmartIsActive(userSettings.smartApiIsActive);
-    }
-  }, [userSettings]);
-
-  // Save to secure ledger profile
-  const handleSaveSmartApi = async () => {
-    setIsSavingApi(true);
-    try {
-      await onUpdateSmartApiSettings({
-        smartApiAppName: smartAppName,
-        smartApiRedirectUrl: smartRedirectUrl,
-        smartApiPostbackUrl: smartPostbackUrl,
-        smartApiPrimaryIp: smartPrimaryIp,
-        smartApiSecondaryIp: smartSecondaryIp,
-        smartApiKey: smartApiKey,
-        smartApiClientId: smartClientId,
-        smartApiTotpSecret: smartTotpSecret,
-        smartApiIsActive: smartIsActive,
-      });
-      alert('🔒 Angel One SmartAPI configuration successfully saved!');
-    } catch (err) {
-      console.error(err);
-      alert('Error saving configuration to database settings.');
-    } finally {
-      setIsSavingApi(false);
-    }
-  };
-
-  // Live Simulated WebSocket streaming listener based on SmartAPI configurations
-  useEffect(() => {
-    if (!smartIsActive) {
-      setFeedLogs([]);
-      return;
-    }
-
-    setFeedLogs([
-      `[${new Date().toLocaleTimeString()}] 🚀 Initiating Angel One SmartAPI connection...`,
-      `[${new Date().toLocaleTimeString()}] 🔒 Validating Client ID: ${smartClientId || 'Not Configured'}`,
-      `[${new Date().toLocaleTimeString()}] 🔑 Verifying API Key signature [${smartApiKey || 'fy2JiRJ2'}] on authorized IP: ${smartPrimaryIp}`,
-      `[${new Date().toLocaleTimeString()}] ✅ Connected. Live prices are now syncing.`
-    ]);
-  }, [smartIsActive, smartClientId, smartPrimaryIp, smartApiKey]);
 
   // Forms states
   const [subTab, setSubTab] = useState<'analytics' | 'holdings' | 'watchlist'>('analytics');
@@ -168,6 +112,11 @@ export default function PortfolioTracker({
 
   const [deductCashFromWallet, setDeductCashFromWallet] = useState(false);
   const [portfolioViewMode, setPortfolioViewMode] = useState<'holdings' | 'ledger'>('holdings');
+
+  // Trade Execution Modal State
+  const [tradeModalOpen, setTradeModalOpen] = useState(false);
+  const [tradeSymbol, setTradeSymbol] = useState('');
+  const [tradeLtp, setTradeLtp] = useState<number | undefined>(undefined);
 
   // Live lookup & search states for high-fidelity stock and MF searching
   const [mfSearchQuery, setMfSearchQuery] = useState('');
@@ -424,18 +373,6 @@ export default function PortfolioTracker({
       ? (tickerLookupResult?.name || `Mutual Fund (Code: ${mfSchemeCode})`)
       : (tickerLookupResult?.name || symbol.toUpperCase());
 
-    const key = type === 'stock' ? `stock_${symbol.toUpperCase()}` : `mf_${mfSchemeCode}`;
-    if (tickerLookupResult) {
-      setLivePrices(prev => ({
-        ...prev,
-        [key]: {
-          currentPrice: tickerLookupResult.price,
-          dayChange: tickerLookupResult.change,
-          name: tickerLookupResult.name
-        }
-      }));
-    }
-
     await onAddHolding({
       type,
       symbol: type === 'stock' ? symbol.toUpperCase() : undefined,
@@ -685,11 +622,12 @@ export default function PortfolioTracker({
             <span className="text-[9px] bg-indigo-50 text-indigo-650 font-bold px-1 py-0.5 rounded-full">Liquid cash</span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-800 font-mono">
-              ₹{(userSettings?.investmentCashBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            <div className="text-2xl font-black text-slate-800 font-mono flex items-center gap-2">
+              ₹{((userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              {isSyncingBrokerData && <RefreshCw size={12} className="animate-spin text-slate-400" />}
             </div>
             <p className="text-[10px] text-slate-450 mt-1">
-              Keep custom cash in your investment ledger for upcoming buys or dividends.
+              Manual: ₹{(userSettings?.investmentCashBalance || 0).toLocaleString('en-IN')} | Broker: ₹{(brokerFunds?.totalAvailable || 0).toLocaleString('en-IN')}
             </p>
           </div>
           <div className="flex gap-1 pt-1">
@@ -735,248 +673,15 @@ export default function PortfolioTracker({
           </div>
           <div className="mt-1">
             <div className="text-2xl font-black font-mono text-indigo-200">
-              ₹{(aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              ₹{(aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
             <div className="text-[9px] text-indigo-200/80 font-medium mt-1.5">
-              Holdings: {((aggregate.totalCurrent / (aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0) || 1)) * 100).toFixed(1)}% | Cash: {(((userSettings?.investmentCashBalance || 0) / (aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0) || 1)) * 100).toFixed(1)}%
+              Holdings: {((aggregate.totalCurrent / (aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0) || 1)) * 100).toFixed(1)}% | Cash: {((((userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0)) / (aggregate.totalCurrent + (userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0) || 1)) * 100).toFixed(1)}%
             </div>
           </div>
         </div>
       </div>
 
-      {/* Angel One SmartAPI Real-time Connection Panel */}
-      <div className="bg-white rounded-2xl border border-slate-150 p-2 shadow-sm space-y-2">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 pb-1 gap-1">
-          <div>
-            <div className="flex items-center gap-1">
-              <span className={`w-2.5 h-2.5 rounded-full ${smartIsActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-350'}`} />
-              <h3 className="font-bold text-sm text-slate-800 font-display">My Smart API & Apps (Angel One)</h3>
-            </div>
-            <p className="text-[10px] text-slate-450 mt-0.5">Algo trading feeds & real-time tick integration. Static IP can be updated once a week.</p>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setIsFormExpanded(!isFormExpanded)}
-              className="px-1 py-1.5 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
-            >
-              {isFormExpanded ? 'Close Form' : 'Configure Credentials'}
-            </button>
-            <button
-              onClick={() => setSmartIsActive(!smartIsActive)}
-              className={`px-1.5 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                smartIsActive 
-                  ? 'bg-rose-500 hover:bg-rose-600 text-white' 
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-              }`}
-            >
-              {smartIsActive ? 'Stop Stream' : 'Live WebSocket Stream'}
-            </button>
-          </div>
-        </div>
-
-        {/* Credentials Form Expanded */}
-        <AnimatePresence>
-          {isFormExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-slate-50 p-2 rounded-xl space-y-1 text-xs mb-2">
-                <p className="font-bold text-slate-700">Update Credentials</p>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-1">
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">App Name</label>
-                    <input
-                      type="text"
-                      value={smartAppName}
-                      onChange={(e) => setSmartAppName(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Redirect URL</label>
-                    <input
-                      type="text"
-                      value={smartRedirectUrl}
-                      onChange={(e) => setSmartRedirectUrl(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Authorization IP</label>
-                    <input
-                      type="text"
-                      value={smartPrimaryIp}
-                      onChange={(e) => setSmartPrimaryIp(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Client ID</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. S12903"
-                      value={smartClientId}
-                      onChange={(e) => setSmartClientId(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">SmartAPI Key</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••••"
-                      value={smartApiKey}
-                      onChange={(e) => setSmartApiKey(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">TOTP Secret Key</label>
-                    <input
-                      type="password"
-                      placeholder="Authenticator Code Secret"
-                      value={smartTotpSecret}
-                      onChange={(e) => setSmartTotpSecret(e.target.value)}
-                      className="w-full p-1 bg-white border border-slate-200 rounded-lg text-xs"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <button
-                      onClick={handleSaveSmartApi}
-                      disabled={isSavingApi}
-                      className="w-full py-1 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-lg cursor-pointer"
-                    >
-                      {isSavingApi ? 'Saving Connection...' : 'Save Config & Apply'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Twin View: Interactive Console & Real App Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-          {/* Official Layout Mirror */}
-          <div className="lg:col-span-2 border border-slate-200 rounded-xl overflow-hidden bg-white text-xs shadow-xs">
-            <div className="bg-slate-50 border-b border-slate-200 p-2 flex flex-col justify-between gap-1.5">
-              <div className="flex justify-between items-start">
-                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight flex items-center">
-                  My Smart API & Apps
-                  <InfoTooltip text="Algo trading orders placed from these apps will be executed (max 5 apps)." />
-                </h4>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] bg-slate-200/80 text-slate-700 font-bold px-1.5 py-0.5 rounded uppercase">API Type: Trading</span>
-                </div>
-              </div>
-              <p className="text-[10px] font-semibold text-rose-600 bg-rose-50/50 p-1.5 rounded border border-rose-100 mt-1">
-                ⚠️ Primary IP and Secondary IP can be updated once in a week only.
-              </p>
-            </div>
-            
-            <div className="p-1 border-b border-slate-100 bg-slate-50/20 flex flex-wrap gap-2 items-center justify-between text-[11px]">
-              <div className="flex items-center gap-1">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">API Key:</span>
-                <span className="font-mono bg-slate-100 px-1 py-1 rounded select-all font-semibold text-slate-705">
-                  {smartApiKey || 'fy2JiRJ2'}
-                </span>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(smartApiKey || 'fy2JiRJ2');
-                    alert('🔑 Key copied to clipboard!');
-                  }}
-                  className="text-indigo-600 hover:underline hover:text-indigo-700 font-bold text-[10px] cursor-pointer"
-                >
-                  Copy Key
-                </button>
-              </div>
-              
-              <button
-                onClick={() => setIsFormExpanded(true)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] px-1 py-1 rounded shrink-0 transition-colors cursor-pointer"
-              >
-                + ADD APP
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-[11px]">
-                <thead>
-                  <tr className="bg-slate-50/60 border-b border-slate-250 text-slate-500 text-[9px] uppercase font-bold tracking-wider">
-                    <th className="p-1">App Name</th>
-                    <th className="p-1">Redirect URL</th>
-                    <th className="p-1">Postback URL</th>
-                    <th className="p-1">Primary Static IP</th>
-                    <th className="p-1">Secondary Static IP</th>
-                    <th className="p-1 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-sans">
-                  <tr className="hover:bg-slate-50/30 text-slate-750">
-                    <td className="p-1 font-bold text-slate-800">{smartAppName || 'prasant bagriya'}</td>
-                    <td className="p-1 max-w-[120px] truncate" title={smartRedirectUrl || 'https://prasantbagriya.online/'}>
-                      <a href={smartRedirectUrl || 'https://prasantbagriya.online/'} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono truncate block">
-                        {smartRedirectUrl || 'https://prasantbagriya.online/'}
-                      </a>
-                    </td>
-                    <td className="p-1 font-mono text-slate-400">{smartPostbackUrl || '-'}</td>
-                    <td className="p-1 font-mono text-slate-650">{smartPrimaryIp || '47.15.92.237'}</td>
-                    <td className="p-1 font-mono text-slate-400">{smartSecondaryIp || '-'}</td>
-                    <td className="p-1 text-right font-bold">
-                      <div className="flex justify-end gap-1 text-indigo-650">
-                        <button 
-                          onClick={() => setIsFormExpanded(true)}
-                          className="hover:underline text-[10px] font-bold cursor-pointer"
-                        >
-                          EDIT
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setSmartAppName('');
-                            setSmartRedirectUrl('');
-                            setSmartPrimaryIp('');
-                            alert('Row cleared. Fill form & save to reset App registry.');
-                          }}
-                          className="text-slate-400 hover:text-red-500 text-[10px] font-bold cursor-pointer"
-                        >
-                          DELETE
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Real-time Ticker Wire Logs (The scrolling feed console) */}
-          <div className="bg-slate-950 text-zinc-300 font-mono rounded-xl p-1 text-[10px] flex flex-col justify-between max-h-[140px] overflow-hidden h-[180px] lg:h-auto min-h-[140px]">
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-1.5 text-zinc-500 font-sans">
-              <span className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${smartIsActive ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-700'}`} />
-                SMARTAPI TICK CONSOLE
-              </span>
-              <span className="text-[9px] font-mono">{smartIsActive ? 'CONNECTED' : 'STANDBY'}</span>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-1 py-1 scrollbar-thin select-none">
-              {feedLogs.length === 0 ? (
-                <p className="text-zinc-500 italic text-center pt-1 font-sans">No stream active. Turn on raw feed connection above to view live quote packets.</p>
-              ) : (
-                feedLogs.map((log, idx) => (
-                  <p key={idx} className="truncate select-all leading-tight">{log}</p>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Grid: Entries on Left, Chart/Watchlist on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -1461,36 +1166,54 @@ export default function PortfolioTracker({
                               </span>
                             </td>
                             <td className="p-2 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => setViewingAssetDetails(h)}
-                                  className="text-slate-400 hover:text-indigo-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
-                                  title="View Interactive Stock Chart"
-                                >
-                                  <BarChart3 size={13} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setExitingHolding(h);
-                                    setExitQuantity(h.quantity.toString());
-                                    setExitPrice((h.currentPrice || h.buyPrice).toString());
-                                  }}
-                                  className="text-slate-450 hover:text-emerald-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
-                                  title="Exit/Sell Position"
-                                >
-                                  <ArrowUpRight size={13} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onDeleteHolding(h.id)}
-                                  className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
-                                  title="Delete Holding record"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
+                              {h.isAutoSynced ? (
+                                <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                  Auto-Synced
+                                </span>
+                              ) : (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingAssetDetails(h)}
+                                    className="text-slate-400 hover:text-indigo-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
+                                    title="View Interactive Stock Chart"
+                                  >
+                                    <BarChart3 size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setExitingHolding(h);
+                                      setExitQuantity(h.quantity.toString());
+                                      setExitPrice((h.currentPrice || h.buyPrice).toString());
+                                    }}
+                                    className="text-slate-450 hover:text-emerald-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
+                                    title="Exit/Sell Position"
+                                  >
+                                    <ArrowUpRight size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTradeSymbol(h.symbol);
+                                      setTradeLtp(h.currentPrice);
+                                      setTradeModalOpen(true);
+                                    }}
+                                    className="text-slate-400 hover:text-indigo-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
+                                    title="Trade / Route Order"
+                                  >
+                                    <TrendingUp size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteHolding(h.id)}
+                                    className="text-slate-400 hover:text-red-500 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
+                                    title="Delete Holding record"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
@@ -2066,6 +1789,13 @@ export default function PortfolioTracker({
           </div>
         )}
       </AnimatePresence>
+
+      <TradeExecutionModal 
+        isOpen={tradeModalOpen} 
+        onClose={() => setTradeModalOpen(false)} 
+        symbol={tradeSymbol}
+        ltp={tradeLtp}
+      />
     </div>
   );
 }

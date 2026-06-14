@@ -41,6 +41,7 @@ export default function ContactsManager({
   const [logs, setLogs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('All');
+  const [expandedContact, setExpandedContact] = useState<string | null>(null);
   
   // Create/Edit modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -768,6 +769,35 @@ export default function ContactsManager({
                         </div>
                       )}
                     </div>
+                    
+                    <button
+                      onClick={() => setExpandedContact(expandedContact === contact.resourceName ? null : contact.resourceName)}
+                      className="mt-2 w-full text-center text-[10px] font-bold text-slate-500 hover:text-slate-900 border border-slate-100 bg-slate-50 hover:bg-slate-100 py-1 rounded-md transition-colors"
+                    >
+                      {expandedContact === contact.resourceName ? 'Hide Track Record' : 'View Track Record'}
+                    </button>
+
+                    {expandedContact === contact.resourceName && (
+                      <div className="mt-2 pt-2 border-t border-slate-100 space-y-1.5">
+                        <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">History</h5>
+                        {(() => {
+                          const history = pendingPayments.filter(p => p.person.toLowerCase() === contact.name.toLowerCase());
+                          if (history.length === 0) return <p className="text-[10px] text-slate-400">No transactions recorded.</p>;
+                          
+                          return history.map(h => (
+                            <div key={h.id} className="flex items-center justify-between text-[10px] bg-white border border-slate-100 p-1 rounded">
+                              <div className="flex items-center gap-1">
+                                {h.completed ? <CheckCircle2 size={10} className="text-emerald-500" /> : <Clock size={10} className="text-amber-500" />}
+                                <span className={h.completed ? 'text-slate-500 line-through' : 'text-slate-800'}>{h.dueDate}</span>
+                              </div>
+                              <span className={`font-mono font-bold ${h.type === 'owe' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                {h.type === 'owe' ? '-' : '+'}₹{h.amount}
+                              </span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

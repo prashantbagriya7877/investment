@@ -15,8 +15,10 @@ import {
   DollarSign 
 } from 'lucide-react';
 import { PendingPayment } from '../types';
+import { useGoogleContacts } from '../hooks/useGoogleContacts';
 
 interface PendingPaymentsProps {
+  user?: any;
   pendingPayments: PendingPayment[];
   onAddPayment: (p: Omit<PendingPayment, 'id' | 'userId'>) => Promise<void>;
   onEditPayment: (id: string, p: Partial<PendingPayment>) => Promise<void>;
@@ -24,21 +26,25 @@ interface PendingPaymentsProps {
 }
 
 export default function PendingPayments({
+  user,
   pendingPayments,
   onAddPayment,
   onEditPayment,
   onDeletePayment
 }: PendingPaymentsProps) {
+  const { contacts } = useGoogleContacts(user);
 
   // Form states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [type, setType] = useState<'owe' | 'owed'>('owe');
   const [person, setPerson] = useState('');
+  const [contactResourceName, setContactResourceName] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Tab View selectors (active/settled)
   const [activeTab, setActiveTab] = useState<'active' | 'settled'>('active');
@@ -67,6 +73,7 @@ export default function PendingPayments({
         await onEditPayment(editingId, {
           type,
           person: person.trim(),
+          contactResourceName: contactResourceName || undefined,
           amount: parsedAmount,
           dueDate,
           notes: notes.trim() || undefined
@@ -76,6 +83,7 @@ export default function PendingPayments({
         await onAddPayment({
           type,
           person: person.trim(),
+          contactResourceName: contactResourceName || undefined,
           amount: parsedAmount,
           dueDate,
           completed: false,
@@ -84,6 +92,7 @@ export default function PendingPayments({
       }
       setIsFormOpen(false);
       setPerson('');
+      setContactResourceName('');
       setAmount('');
       setNotes('');
       setDueDate(new Date().toISOString().split('T')[0]);
@@ -100,6 +109,7 @@ export default function PendingPayments({
     setEditingId(p.id);
     setType(p.type);
     setPerson(p.person);
+    setContactResourceName(p.contactResourceName || '');
     setAmount(p.amount.toString());
     setDueDate(p.dueDate);
     setNotes(p.notes || '');
@@ -150,6 +160,17 @@ export default function PendingPayments({
       .filter(p => activeTab === 'active' ? !p.completed : p.completed)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   }, [pendingPayments, activeTab]);
+
+  // Group by Person
+  const groupedPayments = useMemo(() => {
+    const groups: Record<string, PendingPayment[]> = {};
+    filteredPayments.forEach(p => {
+      const key = p.person || 'Unknown';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+    return groups;
+  }, [filteredPayments]);
 
   return (
     <div className="space-y-3" id="payments-tab">
@@ -268,17 +289,83 @@ export default function PendingPayments({
                 </div>
 
                 {/* Target Person */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 relative">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-sans">Name / Entity</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Rachel, Amazon..."
-                    value={person}
-                    onChange={(e) => setPerson(e.target.value)}
-                    className="w-full px-1 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans"
-                    id="form-person-input"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rachel, Amazon..."
+                      value={person}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                      onChange={(e) => {
+                        setPerson(e.target.value);
+                        setIsDropdownOpen(true);
+                        const matched = contacts.find(c => c.name.toLowerCase() === e.target.value.toLowerCase());
+                        if (matched) setContactResourceName(matched.resourceName);
+                        else setContactResourceName('');
+                      }}
+                      className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans"
+                      id="form-person-input"
+                      autoComplete="off"
+                    />
+                    
+                    <AnimatePresence>
+                      {isDropdownOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
+                        >
+                          {contacts
+                            .filter(c => c.name.toLowerCase().includes(person.toLowerCase()))
+                            .map(c => (
+                              <div 
+                                key={c.resourceName} 
+                                className="px-3 py-2 text-xs cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors"
+                                onClick={() => {
+                                  setPerson(c.name);
+                                  setContactResourceName(c.resourceName);
+                                  setIsDropdownOpen(false);
+                                }}
+                              >
+                                <div className="font-bold text-slate-800">{c.name}</div>
+                                {(c.phone || c.email) && (
+                                  <div className="text-[9px] text-slate-400 font-mono mt-0.5">{c.phone || c.email}</div>
+                                )}
+                              </div>
+                            ))}
+                          
+                          {/* "Add New Name" Button if no exact match */}
+                          {(!contacts.some(c => c.name.toLowerCase() === person.toLowerCase()) && person.trim().length > 0) && (
+                            <div 
+                              className="px-3 py-2.5 text-xs cursor-pointer bg-blue-50 text-blue-700 hover:bg-blue-100 font-extrabold flex items-center gap-1.5 transition-colors sticky bottom-0"
+                              onClick={() => {
+                                setContactResourceName('');
+                                setIsDropdownOpen(false);
+                              }}
+                            >
+                              <Plus size={12} className="shrink-0" /> Add "{person}" as new name
+                            </div>
+                          )}
+                          
+                          {(contacts.length === 0 && person.length === 0) && (
+                            <div className="px-3 py-3 text-xs text-slate-500 italic text-center border-b border-slate-100">
+                              Start typing to add a new name manually.
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  
+                  {contacts.length === 0 && (
+                    <p className="text-[9px] text-amber-600 font-semibold flex items-center gap-1 mt-1">
+                      <AlertTriangle size={10} /> Google Contacts disconnected. Refresh token in Settings.
+                    </p>
+                  )}
                 </div>
 
                 {/* Due Amount */}
@@ -386,85 +473,92 @@ export default function PendingPayments({
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredPayments.map((p) => {
-              const isOverdue = !p.completed && p.dueDate < todayStr;
+            {(Object.entries(groupedPayments) as [string, PendingPayment[]][]).map(([personName, payments]) => {
+              // Calculate group net balance
+              let netGroup = 0;
+              payments.forEach(p => {
+                 if (p.type === 'owe') netGroup -= p.amount;
+                 else netGroup += p.amount;
+              });
+
               return (
-                <div 
-                  key={p.id} 
-                  className={`p-2 flex md:flex-row flex-col justify-between items-start md:items-center gap-2 transition-all ${isOverdue ? 'bg-red-50/10' : ''}`}
-                >
-                  <div className="flex items-start gap-2">
-                    
-                    {/* Tick box to settle outstanding right now */}
-                    <button
-                      onClick={() => handleToggleCompleted(p)}
-                      className={`mt-1 h-4 w-4 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${p.completed ? 'bg-slate-950 border-slate-950 text-white' : 'border-slate-300 hover:border-slate-400 bg-white'}`}
-                      title={p.completed ? 'Mark pending' : 'Mark settled'}
-                    >
-                      {p.completed && <CheckCircle size={11} />}
-                    </button>
-
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold text-slate-800 font-sans text-sm">
-                          {p.type === 'owe' ? 'Pay to: ' : 'Collect from: '} <span className="text-slate-950 font-bold">{p.person}</span>
-                        </span>
-                        {p.type === 'owe' ? (
-                          <span className="bg-slate-150 text-slate-700 text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wider">
-                            I Owe
-                          </span>
-                        ) : (
-                          <span className="bg-slate-950 text-white text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wider">
-                            Claim
-                          </span>
-                        )}
-                      </div>
-
-                      {p.notes && <p className="text-xs text-slate-500 mt-1">{p.notes}</p>}
-
-                      <div className="flex items-center gap-1 mt-1 text-xs text-slate-450 font-mono">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={11} /> Due Date: {p.dueDate}
-                        </span>
-                        {isOverdue && (
-                          <span className="text-red-500 font-bold flex items-center gap-1 text-[11px]">
-                            <AlertTriangle size={11} /> Overdue!
-                          </span>
-                        )}
-                      </div>
-
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-end md:self-auto">
-                    <span className="text-sm font-bold font-mono text-slate-900">
-                      ₹{p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div key={personName} className="p-2">
+                  <div className="flex justify-between items-center mb-2 px-1 border-b border-slate-100 pb-1">
+                    <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5"><User size={14} className="text-slate-400"/> {personName}</span>
+                    <span className={`text-xs font-bold ${netGroup > 0 ? 'text-emerald-600' : netGroup < 0 ? 'text-rose-600' : 'text-slate-500'}`}>
+                      Net: {netGroup < 0 ? '-' : ''}₹{Math.abs(netGroup).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
-
-                    <div className="flex items-center gap-1 border-l border-slate-200 pl-2 h-6">
-                      {!p.completed && (
-                        <button
-                          onClick={() => startEdit(p)}
-                          className="p-1 text-slate-400 hover:text-slate-950 rounded transition-colors cursor-pointer"
-                          title="Edit log details"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          if (confirm('Delete outstanding balance ledger entry?')) {
-                            onDeletePayment(p.id).catch(console.error);
-                          }
-                        }}
-                        className="p-1 text-slate-400 hover:text-red-650 rounded transition-colors cursor-pointer"
-                        title="Delete entry"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
                   </div>
+                  <div className="space-y-1">
+                    {payments.map((p) => {
+                      const isOverdue = !p.completed && p.dueDate < todayStr;
+                      return (
+                        <div 
+                          key={p.id} 
+                          className={`p-2 flex md:flex-row flex-col justify-between items-start md:items-center gap-2 rounded-lg transition-all ${isOverdue ? 'bg-red-50/50' : 'bg-slate-50/50'}`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <button
+                              onClick={() => handleToggleCompleted(p)}
+                              className={`mt-1 h-4 w-4 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${p.completed ? 'bg-slate-950 border-slate-950 text-white' : 'border-slate-300 hover:border-slate-400 bg-white'}`}
+                              title={p.completed ? 'Mark pending' : 'Mark settled'}
+                            >
+                              {p.completed && <CheckCircle size={11} />}
+                            </button>
 
+                            <div>
+                              <div className="flex items-center gap-1">
+                                {p.type === 'owe' ? (
+                                  <span className="bg-rose-100 text-rose-700 text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-0.5"><TrendingDown size={9}/> I Owe</span>
+                                ) : (
+                                  <span className="bg-emerald-100 text-emerald-700 text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-0.5"><TrendingUp size={9}/> Claim</span>
+                                )}
+                              </div>
+                              {p.notes && <p className="text-xs text-slate-600 mt-1">{p.notes}</p>}
+                              <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 font-mono">
+                                <span className="flex items-center gap-1">
+                                  <Calendar size={10} /> Due: {p.dueDate}
+                                </span>
+                                {isOverdue && (
+                                  <span className="text-red-600 font-bold flex items-center gap-1">
+                                    <AlertTriangle size={10} /> Overdue
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end md:self-auto">
+                            <span className="text-sm font-bold font-mono text-slate-900">
+                              ₹{p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <div className="flex items-center gap-1 border-l border-slate-200 pl-2 h-6">
+                              {!p.completed && (
+                                <button
+                                  onClick={() => startEdit(p)}
+                                  className="p-1 text-slate-400 hover:text-slate-950 rounded transition-colors cursor-pointer"
+                                  title="Edit log details"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  if (confirm('Delete outstanding balance ledger entry?')) {
+                                    onDeletePayment(p.id).catch(console.error);
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                title="Delete entry"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}

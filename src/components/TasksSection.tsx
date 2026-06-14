@@ -24,9 +24,10 @@ import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 interface TasksSectionProps {
   tasks: ScheduledTask[];
-  onAddTask: (taskData: { title: string; description: string; dueDate: Date }) => Promise<void>;
+  onAddTask: (taskData: { title: string; description: string; dueDate: Date }) => Promise<string>;
   onCompleteTask: (id: string) => Promise<void>;
   onDeleteTask: (id: string) => Promise<void>;
+  onUpdateTask?: (id: string, updates: Partial<ScheduledTask>) => Promise<void>;
   userEmail?: string | null;
 }
 
@@ -39,6 +40,7 @@ export default function TasksSection({
   onAddTask,
   onCompleteTask,
   onDeleteTask,
+  onUpdateTask,
   userEmail
 }: TasksSectionProps) {
   // Navigation filters
@@ -63,7 +65,11 @@ export default function TasksSection({
   const [isCalendarLinked, setIsCalendarLinked] = useState(() => {
     return localStorage.getItem('google_calendar_linked') === 'true' && !!getAccessToken();
   });
+  const [isTasksLinked, setIsTasksLinked] = useState(() => {
+    return localStorage.getItem('google_tasks_linked') === 'true' && !!getAccessToken();
+  });
   const [autoSyncToCalendar, setAutoSyncToCalendar] = useState(false);
+  const [autoSyncToTasks, setAutoSyncToTasks] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventsError, setEventsError] = useState('');
@@ -156,12 +162,82 @@ export default function TasksSection({
 
   React.useEffect(() => {
     const handleTokenChange = () => {
-      const linked = localStorage.getItem('google_calendar_linked') === 'true' && !!getAccessToken();
-      setIsCalendarLinked(linked);
+      const linkedCal = localStorage.getItem('google_calendar_linked') === 'true' && !!getAccessToken();
+      setIsCalendarLinked(linkedCal);
+      const linkedTasks = localStorage.getItem('google_tasks_linked') === 'true' && !!getAccessToken();
+      setIsTasksLinked(linkedTasks);
     };
     window.addEventListener('google-token-changed', handleTokenChange);
     return () => window.removeEventListener('google-token-changed', handleTokenChange);
   }, []);
+
+  const createGoogleTask = async (taskTitle: string, taskNotes: string, taskDueDate: Date, syncId: string): Promise<string | null> => {
+    const token = getAccessToken();
+    if (!token) return null;
+
+    try {
+      // Get default task list
+      const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!listsRes.ok) return null;
+      const listsData = await listsRes.json();
+      const defaultList = listsData.items?.[0]?.id;
+      if (!defaultList) return null;
+
+      const rfc3339DueDate = taskDueDate.toISOString();
+
+      const res = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${defaultList}/tasks`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: taskTitle,
+          notes: taskNotes,
+          due: rfc3339DueDate
+        })
+      });
+      
+      if (!res.ok) return null;
+      const data = await res.json();
+      localStorage.setItem(`task_synced_tasks_${syncId}`, 'true');
+      return data.id;
+    } catch (err) {
+      console.error("Google Tasks sync failed", err);
+      return null;
+    }
+  };
+
+  const completeGoogleTask = async (googleTaskId: string) => {
+    const token = getAccessToken();
+    if (!token) return;
+
+    try {
+      const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!listsRes.ok) return;
+      const listsData = await listsRes.json();
+      const defaultList = listsData.items?.[0]?.id;
+      if (!defaultList) return;
+
+      // Tasks API requires the task to be updated with status = 'completed'
+      await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${defaultList}/tasks/${googleTaskId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'completed'
+        })
+      });
+    } catch (err) {
+      console.error("Google Tasks completion sync failed", err);
+    }
+  };
 
   // Retrieve browser status on load
   React.useEffect(() => {
@@ -248,7 +324,7 @@ export default function TasksSection({
         throw new Error('Invalid date or time formatted.');
       }
 
-      await onAddTask({
+      const newTaskId = await onAddTask({
         title: title.trim(),
         description: description.trim(),
         dueDate: datetime
@@ -288,6 +364,14 @@ export default function TasksSection({
           }
         } catch (calendarErr) {
           console.error("Auto Calendar sync failed:", calendarErr);
+        }
+      }
+
+      // Automatically dispatch event to Google Tasks if selected
+      if (autoSyncToTasks && isTasksLinked) {
+        const googleTaskId = await createGoogleTask(title.trim(), description.trim() || 'Synced from App Task Scheduler', datetime, 'temp_'+Date.now());
+        if (googleTaskId && onUpdateTask && newTaskId) {
+          await onUpdateTask(newTaskId, { googleTaskId });
         }
       }
 
@@ -463,13 +547,23 @@ export default function TasksSection({
                   />
                   <span className="text-[11px] font-extrabold text-slate-700">Auto-Sync to Google Calendar</span>
                 </label>
-                {!isCalendarLinked ? (
+                <label className="flex items-center gap-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={autoSyncToTasks && isTasksLinked}
+                    onChange={(e) => setAutoSyncToTasks(e.target.checked)}
+                    disabled={!isTasksLinked}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer border-slate-300 accent-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  <span className="text-[11px] font-extrabold text-slate-700">Auto-Sync to Google Tasks</span>
+                </label>
+                {(!isCalendarLinked && !isTasksLinked) ? (
                   <p className="text-[9px] text-slate-400 leading-normal font-sans">
-                    * Link Google Calendar on the Settings page to unlock automatic, instant, real-time event publishing as tasks are added.
+                    * Link Google Calendar or Google Tasks on the Settings page to unlock automatic, instant, real-time publishing as tasks are added.
                   </p>
                 ) : (
                   <p className="text-[9px] text-rose-600 font-bold leading-normal font-sans">
-                    * Automatically creates a concurrent 1-hour primary calendar event on your timeline.
+                    * Automatically creates linked representations across your selected Google ecosystem targets.
                   </p>
                 )}
               </div>
@@ -544,7 +638,12 @@ export default function TasksSection({
                   <TaskCard
                     key={t.id}
                     task={t}
-                    onComplete={onCompleteTask}
+                    onComplete={async (id) => {
+                      if (t.googleTaskId) {
+                        completeGoogleTask(t.googleTaskId);
+                      }
+                      await onCompleteTask(id);
+                    }}
                     onDelete={onDeleteTask}
                     isCalendarLinked={isCalendarLinked}
                     onSyncToCalendar={syncTaskToGoogleCalendar}
@@ -626,9 +725,26 @@ export default function TasksSection({
                         {event.description && (
                           <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{event.description}</p>
                         )}
-                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-100/50">
-                          <Clock size={11} className="text-rose-400" />
-                          <span>{startDate ? startDate.toLocaleString() : 'No Scheduled Time'}</span>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-100/50">
+                          <div className="flex items-center gap-1">
+                            <Clock size={11} className="text-rose-400" />
+                            <span>{startDate ? startDate.toLocaleString() : 'No Scheduled Time'}</span>
+                          </div>
+                          {startDate && (
+                            <button
+                              onClick={() => {
+                                onAddTask({
+                                  title: event.summary || 'Imported Event',
+                                  description: event.description || '',
+                                  dueDate: startDate
+                                });
+                                alert('Task imported to Scheduler successfully.');
+                              }}
+                              className="text-indigo-600 font-bold hover:underline"
+                            >
+                              + Import to Scheduler
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

@@ -14,6 +14,7 @@ export interface PendingPayment {
   userId: string;
   type: 'owe' | 'owed'; // owe = user owes money to person, owed = person owes money to user
   person: string;
+  contactResourceName?: string;
   amount: number;
   dueDate: string; // YYYY-MM-DD
   completed: boolean;
@@ -61,6 +62,8 @@ export interface ScheduledTask {
   status: 'pending' | 'completed';
   notified: boolean;
   emailSent?: boolean;
+  googleTaskId?: string;
+  googleCalendarEventId?: string;
   createdAt?: any;
 }
 
@@ -95,6 +98,7 @@ export interface Holding {
   assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash';
   broker?: string; // Zerodha, Groww, Upstox, etc.
   schemeCode?: string; // MF Scheme Code (e.g., 102885)
+  isAutoSynced?: boolean; // Flag to indicate if this holding is auto-synced from a broker
   createdAt?: any;
 }
 

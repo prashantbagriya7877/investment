@@ -13,6 +13,9 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         injectRegister: 'auto',
         includeAssets: ['pwa-192x192.png', 'pwa-512x512.png'],
+        workbox: {
+          maximumFileSizeToCacheInBytes: 5000000, // 5MB limit
+        },
         manifest: {
           name: "InvestMant App",
           short_name: "InvestMant",

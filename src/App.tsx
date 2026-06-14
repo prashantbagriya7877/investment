@@ -48,11 +48,13 @@ import RecurringBills from './components/RecurringBills';
 import PortfolioTracker from './components/PortfolioTracker';
 import SipTracker from './components/SipTracker';
 import FdRdTracker from './components/FdRdTracker';
+import MarketView from './components/MarketView';
 import TaxCapitalGains from './components/TaxCapitalGains';
 import GoogleSheetsSync from './components/GoogleSheetsSync';
 import ContactsManager from './components/ContactsManager';
 import SettingsManager from './components/SettingsManager';
 import WorkspaceSuite from './components/WorkspaceSuite';
+import BrokerManager from './components/BrokerManager';
 
 import { exportTransactionsToCSV } from './utils/csvExport';
 import { useTaskReminder } from './utils/useTaskReminder';
@@ -68,6 +70,7 @@ import NavigationDrawer from './components/layout/NavigationDrawer';
 import { useRecurringBills } from './hooks/useRecurringBills';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { useLivePrices } from './hooks/useLivePrices';
+import { useBrokerSync } from './hooks/useBrokerSync';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -96,7 +99,13 @@ export default function App() {
 
   const { recurringBills, handleAddRecurringBill, handleEditRecurringBill, handleDeleteRecurringBill } = useRecurringBills(user);
 
-  const { livePrices, refreshPrices, loadingPrices } = useLivePrices(holdings, watchlist);
+  const { brokerHoldings, brokerFunds, isSyncing, refreshBrokerData } = useBrokerSync(user?.uid);
+
+  const unifiedHoldings = useMemo(() => {
+    return [...holdings, ...brokerHoldings];
+  }, [holdings, brokerHoldings]);
+
+  const { livePrices, refreshPrices, loadingPrices } = useLivePrices(unifiedHoldings, watchlist);
 
   // Workspace controller: 'ledger' (Daily Finance) vs 'investmant' (Investment Suite)
   const [currentWorkspace, setCurrentWorkspace] = useState<'ledger' | 'investmant'>('ledger');
@@ -740,12 +749,13 @@ export default function App() {
   }, [recurringBills, pendingPayments, user, permission, sendNotification]);
 
 
-  const handleAddTask = async (taskData: { title: string; description: string; dueDate: Date }) => {
-    if (!user) return;
+  const handleAddTask = async (taskData: { title: string; description: string; dueDate: Date }): Promise<string> => {
+    if (!user) return '';
     if (user.uid.startsWith('guest_offline_')) {
       const rawTasks = JSON.parse(localStorage.getItem(`tasks_${user.uid}`) || '[]');
+      const newId = 'task_' + Math.random().toString(36).substring(2, 11);
       const newTask = {
-        id: 'task_' + Math.random().toString(36).substring(2, 11),
+        id: newId,
         userId: user.uid,
         title: taskData.title,
         description: taskData.description,
@@ -756,7 +766,7 @@ export default function App() {
       const updated = [...rawTasks, newTask];
       localStorage.setItem(`tasks_${user.uid}`, JSON.stringify(updated));
       window.dispatchEvent(new Event('storage'));
-      return;
+      return newId;
     }
     const docRef = doc(collection(db, 'tasks'));
     await setDoc(docRef, {
@@ -769,6 +779,7 @@ export default function App() {
       notified: false,
       createdAt: serverTimestamp()
     });
+    return docRef.id;
   };
 
   const handleCompleteTask = async (id: string) => {
@@ -781,6 +792,18 @@ export default function App() {
       return;
     }
     await updateDoc(doc(db, 'tasks', id), { status: 'completed' });
+  };
+
+  const handleUpdateTask = async (id: string, updates: Partial<ScheduledTask>) => {
+    if (!user) return;
+    if (user.uid.startsWith('guest_offline_')) {
+      const rawTasks = JSON.parse(localStorage.getItem(`tasks_${user.uid}`) || '[]');
+      const updated = rawTasks.map((t: any) => t.id === id ? { ...t, ...updates } : t);
+      localStorage.setItem(`tasks_${user.uid}`, JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+      return;
+    }
+    await updateDoc(doc(db, 'tasks', id), updates);
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -1408,7 +1431,7 @@ export default function App() {
               pendingPayments={pendingPayments}
               savingsGoals={savingsGoals}
               budgetLimits={budgetLimits}
-              holdings={holdings}
+              holdings={unifiedHoldings}
               sips={sips}
               fds={fds}
               selectedMonth={selectedMonth}
@@ -1418,21 +1441,26 @@ export default function App() {
             />} />
 
           <Route path="/portfolio" element={<PortfolioTracker
-              holdings={holdings}
-              realizedTrades={realizedTrades}
-              watchlist={watchlist}
-              onAddHolding={handleAddHolding}
-              onDeleteHolding={handleDeleteHolding}
-              onUpdateHolding={handleUpdateHolding}
-              onAddRealizedTrade={handleAddRealizedTrade}
-              onAddToWatchlist={handleAddToWatchlist}
-              onRemoveFromWatchlist={handleRemoveFromWatchlist}
-              userSettings={userSettings}
-              onUpdateSmartApiSettings={handleUpdateSmartApiSettings}
-              livePrices={livePrices}
-              refreshPrices={refreshPrices}
-              loadingPrices={loadingPrices}
-            />} />
+                    holdings={unifiedHoldings}
+                    realizedTrades={realizedTrades}
+                    watchlist={watchlist}
+                    onAddHolding={handleAddHolding}
+                    onDeleteHolding={handleDeleteHolding}
+                    onUpdateHolding={handleUpdateHolding}
+                    onAddRealizedTrade={handleAddRealizedTrade}
+                    onAddToWatchlist={handleAddToWatchlist}
+                    onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                    userSettings={userSettings}
+                    onUpdateSmartApiSettings={handleUpdateSmartApiSettings}
+                    livePrices={livePrices}
+                    refreshPrices={refreshPrices}
+                    loadingPrices={loadingPrices}
+                    brokerFunds={brokerFunds}
+                    isSyncingBrokerData={isSyncing}
+                    onRefreshBrokerData={refreshBrokerData}
+                  />} />
+
+          <Route path="/market-data" element={<MarketView />} />
 
           <Route path="/sips" element={<SipTracker
               sips={sips}
@@ -1447,7 +1475,7 @@ export default function App() {
             />} />
 
           <Route path="/tax" element={<TaxCapitalGains
-              holdings={holdings}
+              holdings={unifiedHoldings}
             />} />
 
           <Route path="/transactions" element={<TransactionTracker
@@ -1458,6 +1486,7 @@ export default function App() {
             />} />
 
           <Route path="/pending" element={<PendingPayments
+              user={user}
               pendingPayments={pendingPayments}
               onAddPayment={handleAddPayment}
               onEditPayment={handleEditPayment}
@@ -1517,6 +1546,7 @@ export default function App() {
               onAddTask={handleAddTask}
               onCompleteTask={handleCompleteTask}
               onDeleteTask={handleDeleteTask}
+              onUpdateTask={handleUpdateTask}
               userEmail={user?.email || ''}
             />} />
 
@@ -1530,6 +1560,10 @@ export default function App() {
           <Route path="/workspace" element={<WorkspaceSuite
               user={user}
               onNavigateToTab={setActiveTab}
+            />} />
+            
+          <Route path="/brokers" element={<BrokerManager 
+              user={user} 
             />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -279,9 +279,6 @@ export default function Dashboard({
                 ₹{netWorthSummary.netWorth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </p>
             </div>
-            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1">
-              <TrendingUp size={11} /> +4.2% MoM
-            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
@@ -295,10 +292,10 @@ export default function Dashboard({
             </div>
           </div>
 
-          <div className="pt-1">
+          <div className="pt-1 -ml-2 -mb-2">
             <button
               onClick={() => setShowPreferences(!showPreferences)}
-              className="text-[10px] text-slate-400 hover:text-white font-bold underline cursor-pointer"
+              className="text-[10px] text-slate-400 hover:text-white active:text-white font-bold underline cursor-pointer px-2 py-2"
             >
               {showPreferences ? 'Close Asset Declarations' : 'Configure Manual Balances'}
             </button>
