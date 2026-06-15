@@ -1,21 +1,21 @@
-import admin from 'firebase-admin';
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 
 // Check if GOOGLE_APPLICATION_CREDENTIALS is set
 if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   console.error("❌ ERROR: GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.");
   console.error("Please set it to the path of your Firebase service account key JSON file.");
-  console.error("Example: set GOOGLE_APPLICATION_CREDENTIALS=C:\\path\\to\\serviceAccountKey.json");
-  console.error("You can generate one in Firebase Console -> Project Settings -> Service Accounts.");
   process.exit(1);
 }
 
 // Initialize Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.applicationDefault()
+const app = initializeApp({
+  credential: applicationDefault()
 });
 
-const db = admin.firestore();
-const messaging = admin.messaging();
+const db = getFirestore(app);
+const messaging = getMessaging(app);
 
 async function sendNotifications(title, body) {
   console.log('Fetching active device tokens from Firestore...');
