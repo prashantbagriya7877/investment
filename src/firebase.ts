@@ -1,5 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously, signInWithCredential } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { getFirestore, doc, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -81,20 +83,35 @@ if (typeof window !== 'undefined') {
 // Google login utility
 export async function signInWithGoogle() {
   try {
-    // Attempt popup first, fallback to redirect if blocked
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        setAccessToken(credential.accessToken);
+    if (Capacitor.isNativePlatform()) {
+      // Native App Login Flow
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      if (result.credential?.idToken) {
+        const credential = GoogleAuthProvider.credential(result.credential.idToken);
+        const userCred = await signInWithCredential(auth, credential);
+        // Save the access token for Google Sheets sync
+        if (result.credential.accessToken) {
+            setAccessToken(result.credential.accessToken);
+        }
+        return userCred.user;
       }
-      return result.user;
-    } catch (popupError: any) {
-      if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-        console.warn('Popup blocked, falling back to redirect...', popupError);
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        throw popupError;
+      throw new Error("No idToken returned from Native Google Sign In");
+    } else {
+      // Web Flow: Attempt popup first, fallback to redirect if blocked
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+          setAccessToken(credential.accessToken);
+        }
+        return result.user;
+      } catch (popupError: any) {
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+          console.warn('Popup blocked, falling back to redirect...', popupError);
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          throw popupError;
+        }
       }
     }
   } catch (error) {
