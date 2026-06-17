@@ -4,7 +4,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { JWT } from "google-auth-library";
 import dotenv from "dotenv";
-import Database from "better-sqlite3";
+import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 
 // upstoxProxy.ts
@@ -611,34 +611,43 @@ async function startServer() {
   const app = express();
   const PORT = 3e3;
   app.use(express.json());
-  const sqliteDb = new Database("investmant.sqlite");
-  sqliteDb.exec(`
-    CREATE TABLE IF NOT EXISTS firestore_sync (
-      collection TEXT,
-      doc_id TEXT,
-      data JSON,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (collection, doc_id)
-    )
-  `);
+  const syncFilePath = path.join(process.cwd(), "firestore_sync.json");
+  const readSyncData = () => {
+    try {
+      if (fs.existsSync(syncFilePath)) {
+        return JSON.parse(fs.readFileSync(syncFilePath, "utf8"));
+      }
+    } catch (e) {
+      console.error("[SQLiteSync] Error reading sync file:", e);
+    }
+    return {};
+  };
+  const writeSyncData = (data) => {
+    try {
+      fs.writeFileSync(syncFilePath, JSON.stringify(data, null, 2), "utf8");
+    } catch (e) {
+      console.error("[SQLiteSync] Error writing sync file:", e);
+    }
+  };
   app.post("/api/sync-sqlite", (req, res) => {
     try {
       const { collection, id, operation, data } = req.body;
       if (!collection || !id || !operation) {
         return res.status(400).json({ error: "Missing required fields" });
       }
+      const syncDb = readSyncData();
+      const key = `${collection}:${id}`;
       if (operation === "delete") {
-        const stmt = sqliteDb.prepare("DELETE FROM firestore_sync WHERE collection = ? AND doc_id = ?");
-        stmt.run(collection, id);
+        delete syncDb[key];
       } else if (operation === "set" || operation === "update") {
-        const stmt = sqliteDb.prepare(`
-          INSERT INTO firestore_sync (collection, doc_id, data, updated_at) 
-          VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-          ON CONFLICT(collection, doc_id) DO UPDATE SET 
-          data=excluded.data, updated_at=CURRENT_TIMESTAMP
-        `);
-        stmt.run(collection, id, JSON.stringify(data || {}));
+        syncDb[key] = {
+          collection,
+          doc_id: id,
+          data: data || {},
+          updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        };
       }
+      writeSyncData(syncDb);
       res.json({ success: true });
     } catch (err) {
       console.error("[SQLiteSync] Error:", err);
