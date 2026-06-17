@@ -192,3 +192,29 @@ export interface RealizedTrade {
   createdAt?: any;
 }
 
+export interface CreditCardBill {
+  id: string;
+  userId: string;
+  cardName: string;
+  bank: string;
+  amount: number;
+  dueDate: string; // YYYY-MM-DD
+  isPaid: boolean;
+  paidDate?: string;
+  notes?: string;
+  createdAt?: any;
+}
+
+export interface EmiItem {
+  id: string;
+  userId: string;
+  itemName: string;
+  totalAmount: number;
+  emiAmount: number;
+  totalMonths: number;
+  paidMonths: number;
+  startDate: string; // YYYY-MM-DD
+  bank?: string;
+  notes?: string;
+  createdAt?: any;
+}

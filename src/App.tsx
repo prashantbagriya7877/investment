@@ -34,7 +34,7 @@ import {
 
 import { 
   Transaction, PendingPayment, SavingsGoal, BudgetLimit, ScheduledTask,
-  Holding, Sip, Fd, WatchlistItem, UserSettings, RealizedTrade, RecurringBill
+  Holding, Sip, Fd, WatchlistItem, UserSettings, RealizedTrade, RecurringBill, BankAccount, CreditCardBill, EmiItem
 } from './types';
 
 import Dashboard from './components/Dashboard';
@@ -49,6 +49,7 @@ import SipTracker from './components/SipTracker';
 import FdRdTracker from './components/FdRdTracker';
 import MarketView from './components/MarketView';
 import TaxCapitalGains from './components/TaxCapitalGains';
+import { WealthForecaster } from './components/WealthForecaster';
 import GoogleSheetsSync from './components/GoogleSheetsSync';
 import ContactsManager from './components/ContactsManager';
 import SettingsManager from './components/SettingsManager';
@@ -56,6 +57,7 @@ import WorkspaceSuite from './components/WorkspaceSuite';
 import BrokerManager from './components/BrokerManager';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { CreditCardsEMI } from './components/CreditCardsEMI';
+import BankProfiles from './components/BankProfiles';
 import { exportTransactionsToCSV } from './utils/csvExport';
 import { useTaskReminder } from './utils/useTaskReminder';
 
@@ -71,6 +73,7 @@ import { useRecurringBills } from './hooks/useRecurringBills';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { useSmsListener } from './hooks/useSmsListener';
 import { useLivePrices } from './hooks/useLivePrices';
+import { useSmsTracker } from './hooks/useSmsTracker';
 import { useBrokerSync } from './hooks/useBrokerSync';
 import { useBankAccounts } from './hooks/useBankAccounts';
 
@@ -91,6 +94,9 @@ export default function App() {
   const [fds, setFds] = useState<Fd[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [ccBills, setCcBills] = useState<CreditCardBill[]>([]);
+  const [ccEmis, setCcEmis] = useState<EmiItem[]>([]);
 
   // Security Locking States
   const [isLocked, setIsLocked] = useState(false);
@@ -100,7 +106,7 @@ export default function App() {
   const [confirmPin, setConfirmPin] = useState('');
 
   const { recurringBills, handleAddRecurringBill, handleEditRecurringBill, handleDeleteRecurringBill } = useRecurringBills(user);
-  const { bankAccounts, handleAddBankAccount, handleEditBankAccount, handleDeleteBankAccount } = useBankAccounts(user);
+  const { handleAddBankAccount, handleEditBankAccount, handleDeleteBankAccount } = useBankAccounts(user);
 
   const { brokerFunds, brokerHoldings, brokerRealizedTrades, isSyncing, refreshBrokerData } = useBrokerSync(user?.uid);
 
@@ -436,6 +442,9 @@ export default function App() {
       setWatchlist([]);
       setUserSettings(null);
       setIsLocked(false);
+      setBankAccounts([]);
+      setCcBills([]);
+      setCcEmis([]);
       return;
     }
 
@@ -450,6 +459,9 @@ export default function App() {
         setSips(JSON.parse(localStorage.getItem(`sips_${user.uid}`) || '[]'));
         setFds(JSON.parse(localStorage.getItem(`fds_${user.uid}`) || '[]'));
         setWatchlist(JSON.parse(localStorage.getItem(`watchlist_${user.uid}`) || '[]'));
+        setBankAccounts(JSON.parse(localStorage.getItem(`bankAccounts_${user.uid}`) || '[]'));
+        setCcBills(JSON.parse(localStorage.getItem(`ccbills_${user.uid}`) || '[]'));
+        setCcEmis(JSON.parse(localStorage.getItem(`ccemis_${user.uid}`) || '[]'));
 
         const savedSettings: UserSettings = JSON.parse(localStorage.getItem(`settings_${user.uid}`) || 'null') || {
           id: user.uid,
@@ -519,6 +531,42 @@ export default function App() {
         setTransactions(txs);
       },
       (error) => handleFirestoreError(error, OperationType.LIST, 'transactions')
+    );
+
+    // Bank Accounts
+    const bankAccountsQuery = query(collection(db, 'bankAccounts'), where('userId', '==', user.uid));
+    const unsubscribeBankAccounts = onSnapshot(
+      bankAccountsQuery,
+      (snapshot) => {
+        const accounts: BankAccount[] = [];
+        snapshot.forEach((d) => accounts.push({ id: d.id, ...d.data() } as BankAccount));
+        setBankAccounts(accounts);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'bankAccounts')
+    );
+
+    // CC Bills
+    const billsQuery = query(collection(db, 'ccbills'), where('userId', '==', user.uid));
+    const unsubscribeBills = onSnapshot(
+      billsQuery,
+      (snapshot) => {
+        const b: CreditCardBill[] = [];
+        snapshot.forEach((d) => b.push({ id: d.id, ...d.data() } as CreditCardBill));
+        setCcBills(b);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'ccbills')
+    );
+
+    // CC EMIs
+    const emisQuery = query(collection(db, 'ccemis'), where('userId', '==', user.uid));
+    const unsubscribeEmis = onSnapshot(
+      emisQuery,
+      (snapshot) => {
+        const e: EmiItem[] = [];
+        snapshot.forEach((d) => e.push({ id: d.id, ...d.data() } as EmiItem));
+        setCcEmis(e);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'ccemis')
     );
 
     // Pending payments
@@ -628,6 +676,9 @@ export default function App() {
       unsubscribeFds();
       unsubscribeWatchlist();
       unsubscribeRealized();
+      unsubscribeBankAccounts();
+      unsubscribeBills();
+      unsubscribeEmis();
     };
   }, [user]);
 
@@ -1026,6 +1077,17 @@ export default function App() {
     await deleteDoc(doc(db, 'sips', id));
   };
 
+  const handleEditSip = async (id: string, updates: Partial<Sip>) => {
+    if (!user) return;
+    if (user.uid.startsWith('guest_offline_')) {
+      const updated = sips.map(s => s.id === id ? { ...s, ...updates } : s);
+      setSips(updated);
+      localStorage.setItem(`sips_${user.uid}`, JSON.stringify(updated));
+      return;
+    }
+    await updateDoc(doc(db, 'sips', id), updates);
+  };
+
   // FD mutations
   const handleAddFd = async (fData: Omit<Fd, 'id' | 'userId'>) => {
     if (!user) return;
@@ -1053,6 +1115,17 @@ export default function App() {
       return;
     }
     await deleteDoc(doc(db, 'fds', id));
+  };
+
+  const handleEditFd = async (id: string, updates: Partial<Fd>) => {
+    if (!user) return;
+    if (user.uid.startsWith('guest_offline_')) {
+      const updated = fds.map(f => f.id === id ? { ...f, ...updates } : f);
+      setFds(updated);
+      localStorage.setItem(`fds_${user.uid}`, JSON.stringify(updated));
+      return;
+    }
+    await updateDoc(doc(db, 'fds', id), updates);
   };
 
   // SmartAPI settings update
@@ -1480,7 +1553,7 @@ export default function App() {
                   maxLength={4}
                   placeholder="••••"
                   value={confirmPin} 
-                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
                   className="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-bold tracking-widest text-center"
                 />
               </div>
@@ -1527,6 +1600,8 @@ export default function App() {
               holdings={unifiedHoldings}
               sips={sips}
               fds={fds}
+              ccBills={ccBills}
+              ccEmis={ccEmis}
               selectedMonth={selectedMonth}
               onMonthChange={setSelectedMonth}
               onNavigateToTab={setActiveTab}
@@ -1541,6 +1616,8 @@ export default function App() {
               sips={sips}
               pendingPayments={pendingPayments}
               brokerFunds={brokerFunds}
+              ccBills={ccBills}
+              ccEmis={ccEmis}
             />} />
 
           <Route path="/portfolio" element={<PortfolioTracker
@@ -1569,16 +1646,26 @@ export default function App() {
               sips={sips}
               onAddSip={handleAddSip}
               onDeleteSip={handleDeleteSip}
+              onEditSip={handleEditSip}
             />} />
 
           <Route path="/fds" element={<FdRdTracker
               fds={fds}
               onAddFd={handleAddFd}
               onDeleteFd={handleDeleteFd}
+              onEditFd={handleEditFd}
             />} />
 
           <Route path="/tax" element={<TaxCapitalGains
               holdings={unifiedHoldings}
+              livePrices={livePrices}
+            />} />
+
+          <Route path="/forecaster" element={<WealthForecaster 
+              fds={fds} 
+              sips={sips} 
+              holdings={unifiedHoldings} 
+              livePrices={livePrices}
             />} />
 
           <Route path="/transactions" element={<TransactionTracker
@@ -1622,7 +1709,15 @@ export default function App() {
               onDeleteGoal={handleDeleteGoal}
             />} />
 
-          <Route path="/credit-cards-emi" element={<CreditCardsEMI />} />
+          <Route path="/credit-cards" element={<CreditCardsEMI user={user} ccBills={ccBills} ccEmis={ccEmis} />} />
+
+          <Route path="/bank-profiles" element={<BankProfiles
+              bankAccounts={bankAccounts}
+              transactions={transactions}
+              onAddBankAccount={handleAddBankAccount}
+              onEditBankAccount={handleEditBankAccount}
+              onDeleteBankAccount={handleDeleteBankAccount}
+            />} />
 
           <Route path="/budgets" element={<BudgetLimits
               budgetLimits={budgetLimits}
@@ -1635,7 +1730,7 @@ export default function App() {
 
           <Route path="/sheets" element={<GoogleSheetsSync
               transactions={transactions}
-               holdings={holdings}
+               holdings={unifiedHoldings}
                sips={sips}
                fds={fds}
                userSettings={userSettings}
@@ -1764,7 +1859,7 @@ export default function App() {
                          dueDate: Timestamp.fromDate(d), 
                          notified: false 
                        });
-                       setActiveToasts((prev) => prev.filter(t => t.taskId !== snoozingTask.id));
+                       setActiveToasts((prev) => prev.filter(t => t.id !== snoozingTask.id));
                        setSnoozingTask(null);
                      } catch(e) { alert("Failed to snooze: " + e); }
                   }} 

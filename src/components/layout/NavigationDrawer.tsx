@@ -109,10 +109,12 @@ export default function NavigationDrawer({
                       <NavButton active={activeTab === 'dashboard'} onClick={() => handleTabClick('dashboard')} icon={<LayoutDashboard size={16} />} label="Dashboard" />
                       <NavButton active={activeTab === 'analytics'} onClick={() => handleTabClick('analytics')} icon={<Activity size={16} className="text-indigo-500" />} label="AI Analytics" />
                       <NavButton active={activeTab === 'transactions'} onClick={() => handleTabClick('transactions')} icon={<ArrowLeftRight size={16} />} label="Journal ledger" />
+                      <NavButton active={activeTab === 'bank-profiles'} onClick={() => handleTabClick('bank-profiles')} icon={<Landmark size={16} className="text-indigo-500" />} label="Bank Profiles" />
                       <NavButton active={activeTab === 'pending'} onClick={() => handleTabClick('pending')} icon={<Clock size={16} />} label="Len Den (Dues)" />
                       <NavButton active={activeTab === 'recurring-bills'} onClick={() => handleTabClick('recurring-bills')} icon={<Repeat size={16} />} label="Auto Billing" />
-                      <NavButton active={activeTab === 'credit-cards-emi'} onClick={() => handleTabClick('credit-cards-emi')} icon={<Briefcase size={16} />} label="Credit Cards & EMIs" />
+                      <NavButton active={activeTab === 'credit-cards'} onClick={() => handleTabClick('credit-cards')} icon={<Briefcase size={16} />} label="Credit Cards & EMIs" />
                       <NavButton active={activeTab === 'savings'} onClick={() => handleTabClick('savings')} icon={<Target size={16} />} label="Goals" />
+                      <NavButton active={activeTab === 'forecaster'} onClick={() => handleTabClick('forecaster')} icon={<TrendingUp size={16} className="text-emerald-500" />} label="Wealth Forecaster" />
                       <NavButton active={activeTab === 'budgets'} onClick={() => handleTabClick('budgets')} icon={<Sliders size={16} />} label="Budgets" />
                       <NavButton active={activeTab === 'tasks'} onClick={() => handleTabClick('tasks')} icon={<Bell size={16} />} label="Reminders" />
                       <NavButton active={activeTab === 'contacts'} onClick={() => handleTabClick('contacts')} icon={<Users size={16} />} label="Contacts Sync" />

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Transaction, BankAccount, Holding, Fd, Sip, PendingPayment } from '../types';
+import { Transaction, BankAccount, Holding, Fd, Sip, PendingPayment, CreditCardBill, EmiItem } from '../types';
 import { BrokerFunds } from '../hooks/useBrokerSync';
 import { Activity, TrendingUp, PieChart as PieChartIcon, IndianRupee, ShieldAlert } from 'lucide-react';
 
@@ -13,6 +13,8 @@ interface AnalyticsDashboardProps {
   sips: Sip[];
   pendingPayments: PendingPayment[];
   brokerFunds: BrokerFunds | undefined;
+  ccBills?: CreditCardBill[];
+  ccEmis?: EmiItem[];
 }
 
 const COLORS = ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316', '#64748b'];
@@ -24,7 +26,9 @@ export default function AnalyticsDashboard({
   fds,
   sips,
   pendingPayments,
-  brokerFunds
+  brokerFunds,
+  ccBills = [],
+  ccEmis = []
 }: AnalyticsDashboardProps) {
 
   // Net Worth Calculation
@@ -33,7 +37,16 @@ export default function AnalyticsDashboard({
     const bankBalance = bankAccounts.reduce((acc, curr) => acc + curr.currentBalance, 0);
     const holdingsValue = holdings.reduce((acc, curr) => acc + (curr.quantity * curr.buyPrice), 0);
     const fdValue = fds.reduce((acc, curr) => acc + curr.principal, 0);
-    const sipValue = sips.reduce((acc, curr) => acc + curr.amount, 0);
+    // Fix: Calculate actual total SIP invested capital based on months elapsed
+    const sipValue = sips.reduce((acc, sip) => {
+      const start = new Date(sip.startDate);
+      const today = new Date();
+      let months = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+      if (today.getDate() >= sip.sipDate) months += 1;
+      months = Math.max(1, months);
+      return acc + (sip.amount * months);
+    }, 0);
+
     
     // Total Broker Funds (Available)
     const brokerCash = brokerFunds ? brokerFunds.totalAvailable : 0;
@@ -44,15 +57,17 @@ export default function AnalyticsDashboard({
     // Liabilities
     // Money owed BY you
     const payables = pendingPayments.filter(p => p.type === 'owe' && !p.completed).reduce((acc, curr) => acc + curr.amount, 0);
+    const ccDebt = ccBills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+    const emiDebt = ccEmis.reduce((sum, e) => sum + ((e.totalMonths - e.paidMonths) * e.emiAmount), 0);
 
     const assets = bankBalance + holdingsValue + fdValue + sipValue + brokerCash + receivables;
-    const liabilities = payables;
+    const liabilities = payables + ccDebt + emiDebt;
     return {
       totalAssets: assets,
       totalLiabilities: liabilities,
       netWorth: assets - liabilities
     };
-  }, [bankAccounts, holdings, fds, sips, pendingPayments, brokerFunds]);
+  }, [bankAccounts, holdings, fds, sips, pendingPayments, brokerFunds, ccBills, ccEmis]);
 
   // Expenses by Category (Last 30 Days or All Time? Let's do All Time for now, or group by month)
   const expensesByCategory = useMemo(() => {

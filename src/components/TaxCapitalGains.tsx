@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf';
 
 interface TaxCapitalGainsProps {
   holdings: Holding[];
+  livePrices?: Record<string, { currentPrice: number; dayChange: number; name: string }>;
 }
 
 interface Tax80CDeclaration {
@@ -17,13 +18,25 @@ interface Tax80CDeclaration {
   note?: string;
 }
 
-export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
+export default function TaxCapitalGains({ holdings, livePrices = {} }: TaxCapitalGainsProps) {
   const [selectedFY, setSelectedFY] = useState('2024-25');
-  const [declarations, setDeclarations] = useState<Tax80CDeclaration[]>([]);
+  const [declarations, setDeclarations] = useState<Tax80CDeclaration[]>(() => {
+    try {
+      const saved = localStorage.getItem('tax_80c_declarations');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
   const [newCat, setNewCat] = useState<'ELSS' | 'PPF' | 'NPS' | 'LIC' | 'Tax-FD' | 'Others'>('ELSS');
   const [newAmt, setNewAmt] = useState('');
   const [newNote, setNewNote] = useState('');
+
+  // Income & Regime Calculator State
+  const [grossSalary, setGrossSalary] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem('tax_gross_salary') || '1200000');
+    } catch { return 1200000; }
+  });
 
   // 80C Limit - standard Indian Tax rule is 1.5 Lakhs (1,50,000 INR)
   const LIMIT_80C = 150000;
@@ -32,21 +45,25 @@ export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
   const remaining80C = Math.max(0, LIMIT_80C - total80C);
   const percent80C = Math.min(100, (total80C / LIMIT_80C) * 100);
 
-  // Capital Gains math based on holdings
-  // Buy date parse to understand holding periods (1 Year threshold for STCG vs LTCG on equities/MFs)
+  // Capital Gains math — uses live prices when available, else simulates growth
   const gainsMapping = holdings.map(h => {
-    // Current simulated NAV/Price. For safety, let's use +15% simulated appreciation if livePrices is not connected,
-    // or let's estimate some mock gains so the page is populated beautifully for user testing
     const buyValue = h.buyPrice * h.quantity;
-    
-    // Simulate typical growth based on date (longer date = larger simulated gain)
+
+    // Time elapsed (defined outside IIFE so accessible later)
     const start = new Date(h.buyDate);
     const today = new Date();
-    const monthsElapsed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
-    const estAppreciationRate = 0.015 * monthsElapsed; // ~18% annualized simulated appreciation
-    
-    const simulatedCurrentPrice = h.buyPrice * (1 + estAppreciationRate);
-    const currentVal = simulatedCurrentPrice * h.quantity;
+
+    // Try to get live/real price first
+    const key = h.type === 'stock' ? `stock_${h.symbol}` : `mf_${h.schemeCode}`;
+    const live = livePrices[key];
+    const currentPrice = live ? live.currentPrice : (() => {
+      // Fallback: simulate typical growth based on holding duration
+      const monthsElapsed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+      const estAppreciationRate = 0.015 * monthsElapsed;
+      return h.buyPrice * (1 + estAppreciationRate);
+    })();
+
+    const currentVal = currentPrice * h.quantity;
     const gain = currentVal - buyValue;
 
     // Time elapsed in days
@@ -86,6 +103,46 @@ export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
   const ltcgTax = taxableLtcgGains * 0.125;
   const totalTaxLiability = stcgTax + ltcgTax;
 
+  // --- REGIME CALCULATOR ---
+  const saveGrossSalary = (val: number) => {
+    setGrossSalary(val);
+    localStorage.setItem('tax_gross_salary', val.toString());
+  };
+
+  const stdDeductionOld = 50000;
+  const stdDeductionNew = 75000; // Updated for FY 24-25
+
+  // Old Regime Tax Math
+  const netIncomeOld = Math.max(0, grossSalary - stdDeductionOld - total80C);
+  let oldTax = 0;
+  if (netIncomeOld > 500000) {
+    if (netIncomeOld > 1000000) {
+      oldTax = (250000 * 0.05) + (500000 * 0.20) + ((netIncomeOld - 1000000) * 0.30);
+    } else {
+      oldTax = (250000 * 0.05) + ((netIncomeOld - 500000) * 0.20);
+    }
+  }
+
+  // New Regime Tax Math (FY 2024-25)
+  const netIncomeNew = Math.max(0, grossSalary - stdDeductionNew);
+  let newTax = 0;
+  if (netIncomeNew > 700000) {
+    if (netIncomeNew <= 1000000) {
+      newTax = (400000 * 0.05) + ((netIncomeNew - 700000) * 0.10);
+    } else if (netIncomeNew <= 1200000) {
+      newTax = (400000 * 0.05) + (300000 * 0.10) + ((netIncomeNew - 1000000) * 0.15);
+    } else if (netIncomeNew <= 1500000) {
+      newTax = (400000 * 0.05) + (300000 * 0.10) + (200000 * 0.15) + ((netIncomeNew - 1200000) * 0.20);
+    } else {
+      newTax = (400000 * 0.05) + (300000 * 0.10) + (200000 * 0.15) + (300000 * 0.20) + ((netIncomeNew - 1500000) * 0.30);
+    }
+  }
+
+  const oldTotalWithCess = oldTax * 1.04;
+  const newTotalWithCess = newTax * 1.04;
+  const recommendedRegime = newTotalWithCess < oldTotalWithCess ? 'NEW REGIME' : oldTotalWithCess < newTotalWithCess ? 'OLD REGIME' : 'EITHER (SAME)';
+  const taxSaved = Math.abs(oldTotalWithCess - newTotalWithCess);
+
   const handleAddDeclaration = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAmt) return;
@@ -100,13 +157,17 @@ export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
       note: newNote || undefined
     };
 
-    setDeclarations([...declarations, dec]);
+    const updated = [...declarations, dec];
+    setDeclarations(updated);
+    localStorage.setItem('tax_80c_declarations', JSON.stringify(updated));
     setNewAmt('');
     setNewNote('');
   };
 
   const handleDeleteDeclaration = (id: string) => {
-    setDeclarations(declarations.filter(d => d.id !== id));
+    const updated = declarations.filter(d => d.id !== id);
+    setDeclarations(updated);
+    localStorage.setItem('tax_80c_declarations', JSON.stringify(updated));
   };
 
   // PDF statement generator using jsPDF
@@ -430,6 +491,59 @@ export default function TaxCapitalGains({ holdings }: TaxCapitalGainsProps) {
           </div>
         </div>
 
+      </div>
+
+      {/* Full Width Tax Planner */}
+      <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm mt-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Landmark className="text-indigo-600" size={20} />
+          <h3 className="font-bold text-slate-800">Salary Tax Planner: Old vs New Regime (FY 2024-25)</h3>
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-6 items-center">
+          <div className="w-full md:w-1/3">
+            <label className="block text-slate-500 font-bold text-xs mb-1">GROSS ANNUAL SALARY (₹)</label>
+            <input 
+              type="number" 
+              value={grossSalary} 
+              onChange={(e) => saveGrossSalary(parseInt(e.target.value) || 0)}
+              className="w-full text-lg font-bold p-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800"
+            />
+            <p className="text-[10px] text-slate-400 mt-2">
+              Note: This calculator assumes standard deduction (₹50k Old / ₹75k New) and maps your logged 80C deductions (₹{total80C.toLocaleString()}).
+            </p>
+          </div>
+
+          <div className="w-full md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Old Regime Box */}
+            <div className={`p-3 rounded-2xl border-2 transition-all ${recommendedRegime === 'OLD REGIME' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 bg-slate-50'}`}>
+              <h4 className="text-xs font-bold text-slate-500 uppercase">Old Tax Regime</h4>
+              <p className="text-2xl font-black text-slate-800 my-1">₹{oldTotalWithCess.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+              <div className="text-[10px] text-slate-500 space-y-0.5 mt-2">
+                <p>Taxable Base: ₹{netIncomeOld.toLocaleString('en-IN')}</p>
+                <p>80C Deductions Used: ₹{total80C.toLocaleString('en-IN')}</p>
+                <p>Std. Deduction: ₹50,000</p>
+              </div>
+              {recommendedRegime === 'OLD REGIME' && (
+                <div className="mt-3 inline-block bg-emerald-500 text-white text-[9px] font-bold px-2 py-1 rounded-full">RECOMMENDED — SAVES ₹{taxSaved.toLocaleString('en-IN')}</div>
+              )}
+            </div>
+
+            {/* New Regime Box */}
+            <div className={`p-3 rounded-2xl border-2 transition-all ${recommendedRegime === 'NEW REGIME' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-100 bg-slate-50'}`}>
+              <h4 className="text-xs font-bold text-slate-500 uppercase">New Tax Regime</h4>
+              <p className="text-2xl font-black text-slate-800 my-1">₹{newTotalWithCess.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+              <div className="text-[10px] text-slate-500 space-y-0.5 mt-2">
+                <p>Taxable Base: ₹{netIncomeNew.toLocaleString('en-IN')}</p>
+                <p>80C Disabled (0 mapped)</p>
+                <p>Std. Deduction: ₹75,000</p>
+              </div>
+              {recommendedRegime === 'NEW REGIME' && (
+                <div className="mt-3 inline-block bg-emerald-500 text-white text-[9px] font-bold px-2 py-1 rounded-full">RECOMMENDED — SAVES ₹{taxSaved.toLocaleString('en-IN')}</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

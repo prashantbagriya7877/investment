@@ -6,7 +6,8 @@ import {
 import { 
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
-import { Transaction, PendingPayment, SavingsGoal, BudgetLimit, Holding, Sip, Fd } from '../types';
+import { Transaction, PendingPayment, SavingsGoal, BudgetLimit, Holding, Sip, Fd, CreditCardBill, EmiItem } from '../types';
+import { exportFullLedgerToCSV } from '../utils/csvExport';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -16,6 +17,8 @@ interface DashboardProps {
   holdings: Holding[];
   sips: Sip[];
   fds: Fd[];
+  ccBills?: CreditCardBill[];
+  ccEmis?: EmiItem[];
   selectedMonth: string; // YYYY-MM
   onMonthChange: (month: string) => void;
   onNavigateToTab: (tab: string) => void;
@@ -30,6 +33,8 @@ export default function Dashboard({
   holdings,
   sips,
   fds,
+  ccBills = [],
+  ccEmis = [],
   selectedMonth,
   onMonthChange,
   onNavigateToTab,
@@ -169,7 +174,10 @@ export default function Dashboard({
       .filter(p => !p.completed && p.type === 'owe')
       .reduce((sum, p) => sum + p.amount, 0);
 
-    const totalLiabilities = outstandingOwes + manualCarLoan + manualHomeLoan + (lifetimeLedgerCash < 0 ? Math.abs(lifetimeLedgerCash) : 0);
+    const ccDebt = ccBills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+    const emiDebt = ccEmis.reduce((sum, e) => sum + ((e.totalMonths - e.paidMonths) * e.emiAmount), 0);
+
+    const totalLiabilities = outstandingOwes + manualCarLoan + manualHomeLoan + ccDebt + emiDebt + (lifetimeLedgerCash < 0 ? Math.abs(lifetimeLedgerCash) : 0);
     const netWorth = totalAssets - totalLiabilities;
 
     return {
@@ -177,7 +185,7 @@ export default function Dashboard({
       liabilities: totalLiabilities,
       netWorth
     };
-  }, [holdingsValuation, fdsValuation, pendingPayments, manualSavings, manualGold, manualProperty, manualCarLoan, manualHomeLoan, lifetimeLedgerCash]);
+  }, [holdingsValuation, fdsValuation, pendingPayments, manualSavings, manualGold, manualProperty, manualCarLoan, manualHomeLoan, lifetimeLedgerCash, ccBills, ccEmis]);
 
   // Quick stats
   const activeSipsCount = sips.length;
@@ -192,6 +200,13 @@ export default function Dashboard({
 
   // Overdue check
   const overdueCount = pendingPayments.filter(p => !p.completed && p.dueDate < todayStr).length;
+
+  const unpaidCcBillsCount = ccBills.filter(b => !b.isPaid && b.dueDate >= todayStr).length;
+  const overdueCcBillsCount = ccBills.filter(b => !b.isPaid && b.dueDate < todayStr).length;
+
+  // Active EMIs
+  const activeEmis = ccEmis.filter(e => e.paidMonths < e.totalMonths);
+  const totalMonthlyEmi = activeEmis.reduce((sum, e) => sum + e.emiAmount, 0);
 
   // Recent 5 transactions
   const recentTransactions = useMemo(() => {
@@ -250,16 +265,16 @@ export default function Dashboard({
       </div>
 
       {/* Overdue alert banner */}
-      {overdueCount > 0 && (
+      {(overdueCount > 0 || overdueCcBillsCount > 0) && (
         <div className="bg-red-50 border border-red-200/50 text-red-950 p-2 rounded-xl flex items-center justify-between gap-1 text-xs">
           <div className="flex items-center gap-1">
             <AlertTriangle className="text-red-600 shrink-0 select-none" size={16} />
             <div>
-              <span className="font-bold text-slate-900">Attention:</span> You have <span className="underline font-bold text-red-900">{overdueCount} overdue payments</span> pending settlement.
+              <span className="font-bold text-slate-900">Attention:</span> You have <span className="underline font-bold text-red-900">{overdueCount + overdueCcBillsCount} overdue items</span> pending settlement (payments or CC bills).
             </div>
           </div>
           <button 
-            onClick={() => onNavigateToTab('pending')}
+            onClick={() => onNavigateToTab(overdueCcBillsCount > 0 ? 'credit-cards' : 'pending')}
             className="text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 px-1 py-1.5 rounded-lg transition-colors cursor-pointer"
           >
             Settle Now
@@ -300,6 +315,20 @@ export default function Dashboard({
               {showPreferences ? 'Close Asset Declarations' : 'Configure Manual Balances'}
             </button>
           </div>
+        </div>
+
+        {/* Audit Control Section */}
+        <div className="bg-slate-900 rounded-2xl p-3 shadow-sm text-white flex flex-col justify-between gap-2">
+          <div>
+            <h3 className="font-bold text-[10px] tracking-widest text-slate-400 uppercase">System Audit</h3>
+            <p className="text-[10px] text-slate-500 mt-1 leading-tight">Export your complete financial ledger including transactions, SIPs, holdings, and FDs to a secure CSV file for external analysis.</p>
+          </div>
+          <button 
+            onClick={() => exportFullLedgerToCSV(transactions, holdings, sips, fds)}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-2 py-2 rounded-lg transition-colors cursor-pointer"
+          >
+            Export Full Ledger
+          </button>
         </div>
 
         {/* Portfolio Summary Card */}
@@ -476,22 +505,22 @@ export default function Dashboard({
         </div>
 
         <div className="flex items-center gap-1.5 p-1">
-          <div className="p-1 bg-white rounded-xl shadow-xs text-slate-900 border border-slate-100">
-            <Landmark size={16} />
+          <div className="p-1 bg-white rounded-xl shadow-xs text-slate-900 border border-slate-100 cursor-pointer hover:bg-indigo-50" onClick={() => onNavigateToTab('credit-cards')}>
+            <Wallet size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold">FD MATURITY 60D</span>
-            <p className="font-extrabold text-[13px]">{upcomingFDsCount} term releases</p>
+            <span className="text-[10px] text-slate-400 font-bold">CREDIT CARDS</span>
+            <p className="font-extrabold text-[13px]">{unpaidCcBillsCount} pending bills</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 p-1">
-          <div className="p-1 bg-white rounded-xl shadow-xs text-slate-900 border border-slate-100">
-            <ShieldCheck size={16} />
+          <div className="p-1 bg-white rounded-xl shadow-xs text-slate-900 border border-slate-100 cursor-pointer hover:bg-indigo-50" onClick={() => onNavigateToTab('credit-cards')}>
+            <TrendingDown size={16} className="text-red-600" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold">INVESTMANT COMPACT</span>
-            <p className="font-extrabold text-[13px] text-emerald-600">Locked & Insured</p>
+            <span className="text-[10px] text-slate-400 font-bold">ACTIVE EMIs</span>
+            <p className="font-extrabold text-[13px]">{activeEmis.length} running <span className="text-[10px] font-mono text-slate-400">(-₹{totalMonthlyEmi}/mo)</span></p>
           </div>
         </div>
       </div>
