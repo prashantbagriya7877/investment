@@ -7,7 +7,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
 import { Transaction, PendingPayment, SavingsGoal, BudgetLimit, Holding, Sip, Fd, CreditCardBill, EmiItem } from '../types';
-import { exportFullLedgerToCSV } from '../utils/csvExport';
+
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -317,19 +317,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Audit Control Section */}
-        <div className="bg-slate-900 rounded-2xl p-3 shadow-sm text-white flex flex-col justify-between gap-2">
-          <div>
-            <h3 className="font-bold text-[10px] tracking-widest text-slate-400 uppercase">System Audit</h3>
-            <p className="text-[10px] text-slate-500 mt-1 leading-tight">Export your complete financial ledger including transactions, SIPs, holdings, and FDs to a secure CSV file for external analysis.</p>
-          </div>
-          <button 
-            onClick={() => exportFullLedgerToCSV(transactions, holdings, sips, fds)}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-2 py-2 rounded-lg transition-colors cursor-pointer"
-          >
-            Export Full Ledger
-          </button>
-        </div>
+
 
         {/* Portfolio Summary Card */}
         <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm flex flex-col justify-between space-y-2">

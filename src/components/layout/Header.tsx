@@ -11,8 +11,7 @@ interface HeaderProps {
   setCurrentWorkspace: (workspace: 'ledger' | 'investmant') => void;
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
-  transactions: any[];
-  exportTransactionsToCSV: (transactions: any[]) => void;
+  exportFullLedgerToCSV: () => void;
   pinSetupActive: boolean;
   setPinSetupActive: (val: boolean) => void;
   userSettings: any;
@@ -35,8 +34,7 @@ export default function Header({
   user,
   currentWorkspace,
   setCurrentWorkspace,
-  transactions,
-  exportTransactionsToCSV,
+  exportFullLedgerToCSV,
   pinSetupActive,
   setPinSetupActive,
   userSettings,
@@ -172,11 +170,11 @@ export default function Header({
             </button>
 
             <button
-              onClick={() => exportTransactionsToCSV(transactions)}
+              onClick={() => exportFullLedgerToCSV()}
               className="hidden md:flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-700 p-1.5 px-1 rounded-lg border border-slate-200 font-bold text-[10px] transition-all cursor-pointer shadow-xs"
               id="export-csv-button"
             >
-              <Download size={11} /> Export CSV
+              <Download size={11} /> System Audit (CSV)
             </button>
 
             {/* Pin Setup Button */}

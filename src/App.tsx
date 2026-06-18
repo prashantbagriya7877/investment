@@ -58,7 +58,7 @@ import BrokerManager from './components/BrokerManager';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { CreditCardsEMI } from './components/CreditCardsEMI';
 import BankProfiles from './components/BankProfiles';
-import { exportTransactionsToCSV } from './utils/csvExport';
+import { exportFullLedgerToCSV } from './utils/csvExport';
 import { useTaskReminder } from './utils/useTaskReminder';
 
 
@@ -1502,8 +1502,7 @@ export default function App() {
         setCurrentWorkspace={setCurrentWorkspace}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        transactions={transactions}
-        exportTransactionsToCSV={exportTransactionsToCSV}
+        exportFullLedgerToCSV={() => exportFullLedgerToCSV(transactions, unifiedHoldings, sips, fds)}
         pinSetupActive={pinSetupActive}
         setPinSetupActive={setPinSetupActive}
         userSettings={userSettings}

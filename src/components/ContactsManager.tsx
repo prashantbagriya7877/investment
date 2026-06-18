@@ -806,22 +806,7 @@ export default function ContactsManager({
         )}
       </div>
 
-      {/* Visual Terminal Session logs */}
-      <div className="bg-slate-950 text-emerald-400 rounded-2xl p-2 md:p-3 font-mono text-xs shadow-inner" id="contacts-terminal-box">
-        <div className="flex items-center justify-between border-b border-emerald-950 pb-1 mb-2">
-          <span className="font-bold tracking-wider uppercase text-emerald-300">Live Transmission Logs</span>
-          <span className="text-[10px] text-emerald-500">active socket pings</span>
-        </div>
-        <div className="h-32 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-emerald-900">
-          {logs.length === 0 ? (
-            <p className="text-emerald-600 font-medium">Listening for active sync procedures...</p>
-          ) : (
-            logs.map((log, idx) => (
-              <p key={idx} className="leading-relaxed whitespace-pre-wrap">{log}</p>
-            ))
-          )}
-        </div>
-      </div>
+
 
       {/* Dialogue Form Modal: Create / Edit Contact Object */}
       {isFormOpen && (

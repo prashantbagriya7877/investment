@@ -31,12 +31,16 @@ export default function BankProfiles({
     const balanceNum = parseFloat(initialBalance);
     if (isNaN(balanceNum)) return;
 
-    await onAddBankAccount({
+    const accPayload: Omit<BankAccount, 'id' | 'userId' | 'currentBalance'> = {
       bankName: bankName.trim(),
       accountName: accountName.trim(),
-      accountNumber: accountNumber.trim() || undefined,
       initialBalance: balanceNum
-    });
+    };
+    if (accountNumber.trim()) {
+      accPayload.accountNumber = accountNumber.trim();
+    }
+
+    await onAddBankAccount(accPayload);
 
     setBankName('');
     setAccountName('');
