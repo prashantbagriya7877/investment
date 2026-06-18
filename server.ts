@@ -121,6 +121,16 @@ async function startServer() {
     }
   };
 
+  // Auto-serve Service Account credentials from .env to frontend (avoids manual paste)
+  app.get("/api/get-sa-credentials", (req, res) => {
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
+    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '';
+    if (!email || !privateKey) {
+      return res.status(404).json({ error: 'SA credentials not configured on server' });
+    }
+    res.json({ email, privateKey });
+  });
+
   // Add SQLite sync endpoint for Firebase dual-write (using JSON file-based store)
   app.post("/api/sync-sqlite", (req, res) => {
     try {

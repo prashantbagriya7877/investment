@@ -83,8 +83,7 @@ if (typeof window !== 'undefined') {
 // Google login utility
 export async function signInWithGoogle() {
   try {
-    const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/spreadsheets');
+    const provider = googleProvider;
     
     if (Capacitor.isNativePlatform()) {
       // Native App Login Flow

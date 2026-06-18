@@ -1588,7 +1588,7 @@ export default function App() {
       />
 
       {/* Primary Display Content Container */}
-      <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow">
+      <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
         <div className="transition-all duration-300">
           <Routes>
             <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : '/portfolio'} replace />} />

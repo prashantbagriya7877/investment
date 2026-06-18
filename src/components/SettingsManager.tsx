@@ -127,6 +127,26 @@ export default function SettingsManager({
   const [saEmailInput, setSaEmailInput] = useState(() => localStorage.getItem('sa_email') || 'investment@gen-lang-client-0137730538.iam.gserviceaccount.com');
   const [saKeyInput, setSaKeyInput] = useState(() => localStorage.getItem('sa_key') || '');
 
+  // Auto-load SA credentials from server .env on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem('sa_key');
+    if (!savedKey) {
+      fetch('/api/get-sa-credentials')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.email) {
+            setSaEmailInput(data.email);
+            localStorage.setItem('sa_email', data.email);
+          }
+          if (data?.privateKey) {
+            setSaKeyInput(data.privateKey);
+            localStorage.setItem('sa_key', data.privateKey);
+          }
+        })
+        .catch(() => {/* silently ignore */});
+    }
+  }, []);
+
   // Spreadsheet settings configuration
   const [spreadsheetId, setSpreadsheetId] = useState(userSettings?.googleSpreadsheetId || '');
   const [savingSpreadsheetId, setSavingSpreadsheetId] = useState(false);
@@ -619,7 +639,7 @@ export default function SettingsManager({
 
       {/* GUEST CONVERSION CARD */}
       {user && (user.uid.startsWith('guest_offline_') || user.isAnonymous) && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-2 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm animate-fadeIn">
+        <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-2 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm animate-fadeIn">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-amber-800">
               <ShieldAlert size={18} className="text-amber-600 animate-pulse shrink-0" />
@@ -1010,7 +1030,7 @@ export default function SettingsManager({
             <p className="text-slate-500 text-center italic py-1">Waiting for interaction. Configure a Service Account above to watch handshakes...</p>
           ) : (
             logs.map((log, index) => (
-              <div key={index} className="transition-all animate-fadeIn leading-relaxed border-b border-slate-850/30 pb-1 break-words">
+              <div key={index} className="transition-all animate-fadeIn leading-relaxed border-b border-slate-850/30 pb-1 wrap-break-word">
                 {log}
               </div>
             ))
