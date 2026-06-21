@@ -90,9 +90,11 @@ function cleanPrivateKey(keyInput: string): string {
   return `-----BEGIN PRIVATE KEY-----\n${formattedBase64.join('\n')}\n-----END PRIVATE KEY-----\n`;
 }
 
+export let app: express.Application;
+
 async function startServer() {
-  const app = express();
-  const PORT = 3000;
+  app = express();
+  const PORT = process.env.PORT || 3000;
 
   // Body parser to accept Service Account configurations
   app.use(express.json());
@@ -637,9 +639,11 @@ ${csvText}
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server boot successful on http://0.0.0.0:${PORT}`);
-  });
+  if (!process.env.IS_WRAPPER) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server boot successful on http://0.0.0.0:${PORT}`);
+    });
+  }
 }
 
 startServer();

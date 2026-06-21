@@ -8,8 +8,8 @@ import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 
 // upstoxProxy.ts
-function setupUpstoxRoutes(app) {
-  app.post("/api/upstox/token", async (req, res) => {
+function setupUpstoxRoutes(app2) {
+  app2.post("/api/upstox/token", async (req, res) => {
     try {
       const { code, client_id, client_secret, redirect_uri } = req.body;
       if (!code || !client_id || !client_secret || !redirect_uri) {
@@ -40,7 +40,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/profile", async (req, res) => {
+  app2.get("/api/upstox/profile", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -57,7 +57,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/funds", async (req, res) => {
+  app2.get("/api/upstox/funds", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -74,7 +74,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/holdings", async (req, res) => {
+  app2.get("/api/upstox/holdings", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -91,7 +91,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/market-quote", async (req, res) => {
+  app2.get("/api/upstox/market-quote", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const symbol = req.query.symbol;
@@ -110,7 +110,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/option-chain", async (req, res) => {
+  app2.get("/api/upstox/option-chain", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const instrument_key = req.query.instrument_key;
@@ -130,7 +130,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/upstox/order", async (req, res) => {
+  app2.post("/api/upstox/order", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -150,7 +150,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/historical-data", async (req, res) => {
+  app2.get("/api/upstox/historical-data", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const { instrument_key, interval, to_date, from_date } = req.query;
@@ -173,7 +173,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/mutual-funds", async (req, res) => {
+  app2.get("/api/upstox/mutual-funds", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -190,7 +190,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/trade-pnl", async (req, res) => {
+  app2.get("/api/upstox/trade-pnl", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const { segment, financial_year, page_number, page_size } = req.query;
@@ -213,7 +213,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/upstox/gtt-order", async (req, res) => {
+  app2.post("/api/upstox/gtt-order", async (req, res) => {
     try {
       const token = req.headers.authorization;
       if (!token) return res.status(401).json({ error: "Missing authorization token" });
@@ -233,7 +233,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/news", async (req, res) => {
+  app2.get("/api/upstox/news", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const symbol = req.query.symbol;
@@ -252,7 +252,7 @@ function setupUpstoxRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/upstox/fundamentals", async (req, res) => {
+  app2.get("/api/upstox/fundamentals", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const symbol = req.query.symbol;
@@ -274,8 +274,8 @@ function setupUpstoxRoutes(app) {
 }
 
 // dhanProxy.ts
-function setupDhanRoutes(app) {
-  app.get("/api/dhan/funds", async (req, res) => {
+function setupDhanRoutes(app2) {
+  app2.get("/api/dhan/funds", async (req, res) => {
     try {
       const token = req.headers["access-token"];
       const clientId = req.headers["client-id"];
@@ -295,7 +295,7 @@ function setupDhanRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/dhan/holdings", async (req, res) => {
+  app2.get("/api/dhan/holdings", async (req, res) => {
     try {
       const token = req.headers["access-token"];
       const clientId = req.headers["client-id"];
@@ -315,7 +315,7 @@ function setupDhanRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/dhan/order", async (req, res) => {
+  app2.post("/api/dhan/order", async (req, res) => {
     try {
       const token = req.headers["access-token"];
       const clientId = req.headers["client-id"];
@@ -341,8 +341,8 @@ function setupDhanRoutes(app) {
 }
 
 // angelProxy.ts
-function setupAngelRoutes(app) {
-  app.post("/api/angel/login", async (req, res) => {
+function setupAngelRoutes(app2) {
+  app2.post("/api/angel/login", async (req, res) => {
     try {
       const { clientcode, password, totp, api_key } = req.body;
       if (!clientcode || !password || !totp || !api_key) {
@@ -371,7 +371,7 @@ function setupAngelRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/angel/funds", async (req, res) => {
+  app2.get("/api/angel/funds", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const apiKey = req.headers["x-privatekey"];
@@ -391,7 +391,7 @@ function setupAngelRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/angel/holdings", async (req, res) => {
+  app2.get("/api/angel/holdings", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const apiKey = req.headers["x-privatekey"];
@@ -411,7 +411,7 @@ function setupAngelRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/angel/order", async (req, res) => {
+  app2.post("/api/angel/order", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const apiKey = req.headers["x-privatekey"];
@@ -436,8 +436,8 @@ function setupAngelRoutes(app) {
 
 // kiteProxy.ts
 import crypto from "crypto";
-function setupKiteRoutes(app) {
-  app.post("/api/kite/token", async (req, res) => {
+function setupKiteRoutes(app2) {
+  app2.post("/api/kite/token", async (req, res) => {
     try {
       const { request_token, api_key, api_secret } = req.body;
       if (!request_token || !api_key || !api_secret) {
@@ -467,7 +467,7 @@ function setupKiteRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/kite/funds", async (req, res) => {
+  app2.get("/api/kite/funds", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
@@ -484,7 +484,7 @@ function setupKiteRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/kite/holdings", async (req, res) => {
+  app2.get("/api/kite/holdings", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
@@ -500,7 +500,7 @@ function setupKiteRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/kite/order", async (req, res) => {
+  app2.post("/api/kite/order", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader) return res.status(401).json({ error: "Missing authorization token" });
@@ -533,7 +533,7 @@ function setupKiteRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/kite/quote", async (req, res) => {
+  app2.get("/api/kite/quote", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       const symbol = req.query.symbol;
@@ -607,9 +607,10 @@ ${formattedBase64.join("\n")}
 -----END PRIVATE KEY-----
 `;
 }
+var app;
 async function startServer() {
-  const app = express();
-  const PORT = 3e3;
+  app = express();
+  const PORT = process.env.PORT || 3e3;
   app.use(express.json());
   const syncFilePath = path.join(process.cwd(), "firestore_sync.json");
   const readSyncData = () => {
@@ -1036,9 +1037,14 @@ ${csvText}
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server boot successful on http://0.0.0.0:${PORT}`);
-  });
+  if (!process.env.IS_WRAPPER) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server boot successful on http://0.0.0.0:${PORT}`);
+    });
+  }
 }
 startServer();
+export {
+  app
+};
 //# sourceMappingURL=server.js.map
