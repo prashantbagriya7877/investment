@@ -166,6 +166,20 @@ export default function SettingsManager({
         localStorage.setItem('google_docs_linked', 'false');
         localStorage.setItem('google_slides_linked', 'false');
         localStorage.setItem('google_photos_linked', 'false');
+      } else {
+        setIsSheetsLinked(localStorage.getItem('google_sheets_linked') === 'true');
+        setIsContactsLinked(localStorage.getItem('google_contacts_linked') === 'true');
+        setIsCalendarLinked(localStorage.getItem('google_calendar_linked') === 'true');
+        setIsDriveLinked(localStorage.getItem('google_drive_linked') === 'true');
+        setIsGmailLinked(localStorage.getItem('google_gmail_linked') === 'true');
+        setIsMeetLinked(localStorage.getItem('google_meet_linked') === 'true');
+        setIsTasksLinked(localStorage.getItem('google_tasks_linked') === 'true');
+        setIsChatLinked(localStorage.getItem('google_chat_linked') === 'true');
+        setIsFormsLinked(localStorage.getItem('google_forms_linked') === 'true');
+        setIsClassroomLinked(localStorage.getItem('google_classroom_linked') === 'true');
+        setIsDocsLinked(localStorage.getItem('google_docs_linked') === 'true');
+        setIsSlidesLinked(localStorage.getItem('google_slides_linked') === 'true');
+        setIsPhotosLinked(localStorage.getItem('google_photos_linked') === 'true');
       }
     };
     window.addEventListener('google-token-changed', handleTokenChange);
@@ -237,7 +251,6 @@ export default function SettingsManager({
     localStorage.setItem('custom_google_client_id', customClientId.trim());
     localStorage.setItem('custom_google_client_secret', customClientSecret.trim());
     const serviceName = getServiceLabel(targetService);
-    addLog(`🔗 Initiating Google OAuth Login Popup for ${serviceName}...`);
     
     const redirectUri = window.location.origin;
     const scopes = encodeURIComponent(
@@ -258,6 +271,18 @@ export default function SettingsManager({
     );
     const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${customClientId.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scopes}`;
     
+    // Check if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    
+    if (isMobile) {
+      addLog(`📱 Mobile environment detected. Redirecting to Google Auth for ${serviceName}...`);
+      localStorage.setItem('oauth_target_service', targetService);
+      localStorage.setItem('oauth_return_tab', 'settings');
+      window.location.href = oauthUrl;
+      return;
+    }
+
+    addLog(`🔗 Initiating Google OAuth Login Popup for ${serviceName}...`);
     const size = "width=600,height=700,left=150,top=100";
     const authWindow = window.open(oauthUrl, 'GoogleCustomOAuthLogin', size);
     
@@ -278,7 +303,12 @@ export default function SettingsManager({
       };
       window.addEventListener('message', listener);
     } else {
-      alert("Popup blocked! Please allow popups to complete the authentication stream.");
+      addLog(`⚠️ Popup blocked. Falling back to direct redirect flow...`);
+      if (confirm("Popup was blocked by your browser. Would you like to redirect directly to authorize Google Services?")) {
+        localStorage.setItem('oauth_target_service', targetService);
+        localStorage.setItem('oauth_return_tab', 'settings');
+        window.location.href = oauthUrl;
+      }
     }
   };
 

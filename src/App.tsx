@@ -221,12 +221,25 @@ export default function App() {
     
     const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${customLoginClientId.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scopes}&prompt=consent`;
     
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    
+    if (isMobile) {
+      localStorage.setItem('oauth_trigger_guest_sign_in', 'true');
+      localStorage.setItem('oauth_return_tab', 'settings');
+      window.location.href = oauthUrl;
+      return;
+    }
+
     const size = "width=600,height=700,left=150,top=100";
     const authWindow = window.open(oauthUrl, 'GoogleCustomOAuthLogin', size);
     if (authWindow) {
       handleGuestSignIn();
     } else {
-      alert("Popup blocked! Please allow popups to connect Google services.");
+      if (confirm("Popup blocked! Would you like to use redirect instead to connect Google services?")) {
+        localStorage.setItem('oauth_trigger_guest_sign_in', 'true');
+        localStorage.setItem('oauth_return_tab', 'settings');
+        window.location.href = oauthUrl;
+      }
     }
   };
 
@@ -293,8 +306,28 @@ export default function App() {
           window.history.replaceState(null, '', window.location.pathname);
           console.log("🎯 Google Implicit access token grabbed and stored.");
           
+          // Check for redirect state:
+          const targetService = localStorage.getItem('oauth_target_service');
+          if (targetService) {
+            localStorage.setItem(`google_${targetService}_linked`, 'true');
+            localStorage.removeItem('oauth_target_service');
+            console.log(`✅ Automatically linked ${targetService} from redirect state.`);
+          }
+          
           // Dispatch custom event to notify all listening components
           window.dispatchEvent(new Event('google-token-changed'));
+
+          const shouldTriggerGuest = localStorage.getItem('oauth_trigger_guest_sign_in');
+          if (shouldTriggerGuest) {
+            localStorage.removeItem('oauth_trigger_guest_sign_in');
+            handleGuestSignIn();
+          }
+
+          const returnTab = localStorage.getItem('oauth_return_tab');
+          if (returnTab) {
+            localStorage.removeItem('oauth_return_tab');
+            setActiveTab(returnTab);
+          }
 
           // If this window is a popup authentication child, notify the opener layout and close
           if (window.opener) {
@@ -425,6 +458,13 @@ export default function App() {
       }
       setUser(usr);
       setAuthLoading(false);
+
+      // Check and restore return tab after OAuth redirect
+      const returnTab = localStorage.getItem('oauth_return_tab');
+      if (returnTab) {
+        localStorage.removeItem('oauth_return_tab');
+        setActiveTab(returnTab);
+      }
     });
     return () => unsubscribe();
   }, []);
