@@ -115,12 +115,15 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code,
-          client_id: upstoxApiKey,
-          client_secret: upstoxApiSecret,
+          client_id: upstoxApiKey.trim(),
+          client_secret: upstoxApiSecret.trim(),
           redirect_uri: redirectUri
         })
       });
-      if (!res.ok) throw new Error('Failed to exchange Upstox token');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to exchange Upstox token');
+      }
       const data = await res.json();
       
       if (data.access_token) {
@@ -141,10 +144,10 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
       alert("Please enter API Key and Secret first.");
       return;
     }
-    localStorage.setItem('upstox_api_key', upstoxApiKey);
-    localStorage.setItem('upstox_api_secret', upstoxApiSecret);
+    localStorage.setItem('upstox_api_key', upstoxApiKey.trim());
+    localStorage.setItem('upstox_api_secret', upstoxApiSecret.trim());
     
-    const upstoxAuthUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${upstoxApiKey}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const upstoxAuthUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${upstoxApiKey.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     window.location.href = upstoxAuthUrl;
   };
 

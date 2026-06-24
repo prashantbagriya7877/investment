@@ -5,6 +5,7 @@ import { createServer as createViteServer } from "vite";
 import { JWT } from "google-auth-library";
 import dotenv from "dotenv";
 import fs from "fs";
+import cors from "cors";
 import { GoogleGenAI } from "@google/genai";
 
 // upstoxProxy.ts
@@ -610,7 +611,8 @@ ${formattedBase64.join("\n")}
 var app;
 async function startServer() {
   app = express();
-  const PORT = process.env.PORT || 3e3;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
+  app.use(cors({ origin: true }));
   app.use(express.json());
   const syncFilePath = path.join(process.cwd(), "firestore_sync.json");
   const readSyncData = () => {
