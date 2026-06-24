@@ -173,10 +173,10 @@ export default function TradeExecutionModal({ isOpen, onClose, symbol, ltp }: Tr
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden"
+            className="relative w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] overflow-y-auto"
           >
             {/* Header */}
-            <div className={`p-4 text-white flex justify-between items-center ${orderSide === 'BUY' ? 'bg-indigo-600' : 'bg-rose-600'}`}>
+            <div className={`p-4 text-white flex justify-between items-center sticky top-0 z-10 ${orderSide === 'BUY' ? 'bg-indigo-600' : 'bg-rose-600'}`}>
               <div>
                 <h2 className="text-xl font-black">{symbol}</h2>
                 {ltp && <p className="text-sm opacity-90 text-white/80">LTP: ₹{ltp.toFixed(2)}</p>}
@@ -188,6 +188,15 @@ export default function TradeExecutionModal({ isOpen, onClose, symbol, ltp }: Tr
 
             <div className="p-5 space-y-5">
               
+              {/* TradingView Chart */}
+              <div className="w-full h-[350px] bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                <iframe 
+                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_1&symbol=${encodeURIComponent('NSE:' + symbol.replace('.NS', '').replace('.BO', ''))}&interval=D&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=f1f3f6&studies=%5B%5D&theme=light&style=1&timezone=Asia%2FKolkata&withdateranges=1`}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="TradingView Advanced Chart"
+                />
+              </div>
+
               {/* Buy / Sell Toggle */}
               <div className="flex bg-slate-100 p-1 rounded-xl">
                 <button

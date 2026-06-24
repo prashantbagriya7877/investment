@@ -33,7 +33,11 @@ function setupUpstoxRoutes(app2) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.errors?.[0]?.message || "Failed to exchange token");
+        const errorMsg = data.errors?.[0]?.message || "Failed to exchange token";
+        if (data.errors?.[0]?.errorCode === "UDAPI100068") {
+          throw new Error(`${errorMsg} -> Sent Redirect URI: '${redirect_uri}', Sent Client ID: '${client_id}'`);
+        }
+        throw new Error(errorMsg);
       }
       res.json(data);
     } catch (err) {

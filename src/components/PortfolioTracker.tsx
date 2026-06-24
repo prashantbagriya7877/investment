@@ -1167,9 +1167,23 @@ export default function PortfolioTracker({
                             </td>
                             <td className="p-2 text-center">
                               {h.isAutoSynced ? (
-                                <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                  Auto-Synced
-                                </span>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    Auto-Synced
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTradeSymbol(h.symbol);
+                                      setTradeLtp(h.currentPrice);
+                                      setTradeModalOpen(true);
+                                    }}
+                                    className="text-slate-400 hover:text-indigo-600 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"
+                                    title="View TradingView Chart & Trade"
+                                  >
+                                    <TrendingUp size={13} />
+                                  </button>
+                                </div>
                               ) : (
                                 <div className="flex items-center justify-center gap-1.5">
                                   <button

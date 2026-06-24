@@ -31,7 +31,7 @@ export function useLivePrices(holdings: Holding[], watchlist: WatchlistItem[]) {
         try {
           const info = await fetchStockPrice(sym);
           if (info && info.currentPrice > 0) {
-            prices[`stock_${sym.toUpperCase()}`] = {
+            prices[`stock_${sym}`] = {
               currentPrice: info.currentPrice,
               dayChange: info.dayChangePercent,
               name: info.longName

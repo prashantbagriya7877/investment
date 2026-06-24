@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously, signInWithCredential } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously, signInWithCredential, setPersistence, indexedDBLocalPersistence } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { getFirestore, doc, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
@@ -14,7 +14,10 @@ export const db = initializeFirestore(app, {
   )
 }, (firebaseConfig as any).firestoreDatabaseId);
 export const auth = getAuth(app);
-
+// Set auth persistence to LOCAL so the user never logs out
+setPersistence(auth, indexedDBLocalPersistence).catch(err => {
+  console.warn("Failed to set auth persistence:", err);
+});
 // Initialize provider and configure Google Sheets scope permissions
 export const googleProvider = new GoogleAuthProvider();
 export const ALL_GOOGLE_SCOPES = [
