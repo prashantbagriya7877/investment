@@ -613,33 +613,33 @@ export default function PortfolioTracker({
       {/* Cash Wallet & Realized P&L Bento Segment */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* Cash Wallet Card */}
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-2 shadow-sm space-y-2">
+        <div className="bg-linear-to-br from-rose-500 to-rose-600 rounded-2xl p-4 shadow-lg border border-rose-400 relative overflow-hidden text-white flex-1 min-w-[200px]">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1.5">
-              <Wallet className="text-slate-600 animate-pulse" size={16} />
-              <h4 className="font-bold text-xs text-slate-750">Investment Cash Balance</h4>
+              <Wallet className="text-white/80" size={16} />
+              <h4 className="font-bold text-xs text-white">Investment Cash Balance</h4>
             </div>
-            <span className="text-[9px] bg-indigo-50 text-indigo-650 font-bold px-1 py-0.5 rounded-full">Liquid cash</span>
+            <span className="text-[9px] bg-white/20 text-white font-bold px-1 py-0.5 rounded-full">Liquid cash</span>
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-800 font-mono flex items-center gap-2">
+            <div className="text-2xl font-black text-white font-mono flex items-center gap-2">
               ₹{((userSettings?.investmentCashBalance || 0) + (brokerFunds?.totalAvailable || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              {isSyncingBrokerData && <RefreshCw size={12} className="animate-spin text-slate-400" />}
+              {isSyncingBrokerData && <RefreshCw size={12} className="animate-spin text-white" />}
             </div>
-            <p className="text-[10px] text-slate-450 mt-1">
+            <p className="text-[10px] text-white/70 mt-1">
               Manual: ₹{(userSettings?.investmentCashBalance || 0).toLocaleString('en-IN')} | Broker: ₹{(brokerFunds?.totalAvailable || 0).toLocaleString('en-IN')}
             </p>
           </div>
           <div className="flex gap-1 pt-1">
             <button
               onClick={() => { setCashActionType('deposit'); setCashAmountInput(''); }}
-              className="flex-1 text-center py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+              className="flex-1 text-center py-1.5 bg-white text-rose-600 hover:bg-rose-50 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
             >
               + Deposit Cash
             </button>
             <button
               onClick={() => { setCashActionType('withdraw'); setCashAmountInput(''); }}
-              className="flex-1 text-center py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+              className="flex-1 text-center py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
             >
               - Withdraw Cash
             </button>
@@ -647,26 +647,26 @@ export default function PortfolioTracker({
         </div>
 
         {/* Realized P&L Summary Card */}
-        <div className="bg-gradient-to-br from-white to-emerald-50/10 border border-slate-200 rounded-2xl p-2 shadow-sm flex flex-col justify-between">
+        <div className="bg-linear-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 shadow-lg border border-emerald-400 relative overflow-hidden text-white flex-1 min-w-[200px]">
           <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-slate-650">
+            <div className="flex items-center gap-1.5 text-emerald-100">
               <FolderCheck size={16} />
-              <h4 className="font-bold text-xs text-slate-750">Booked (Realized) Profit/Loss</h4>
+              <h4 className="font-bold text-xs text-white">Booked (Realized) Profit/Loss</h4>
             </div>
-            <p className="text-[10px] text-slate-450">Cumulative lock-in profit/loss booked from closed trades.</p>
+            <p className="text-[10px] text-emerald-50">Cumulative lock-in profit/loss booked from closed trades.</p>
           </div>
           <div className="mt-1">
-            <div className={`text-2xl font-black font-mono ${(userSettings?.realizedPnL || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <div className="text-2xl font-black font-mono text-white">
               ₹{(userSettings?.realizedPnL || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-[10px] text-slate-400 mt-1.5">
+            <p className="text-[10px] text-emerald-100 mt-1.5">
               Ledger database tracks {realizedTrades?.length || 0} exited positions.
             </p>
           </div>
         </div>
 
         {/* Total Net Worth Card */}
-        <div className="bg-gradient-to-br from-indigo-950 to-slate-900 border border-indigo-900 text-white rounded-2xl p-2 shadow-sm flex flex-col justify-between">
+        <div className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-2xl p-4 shadow-xl border border-indigo-900/30 text-white relative overflow-hidden">
           <div className="space-y-1">
             <p className="text-[10px] uppercase tracking-wider text-indigo-200 font-bold">Total Portfolio Net Worth</p>
             <p className="text-[10px] text-slate-350">Combined sum of active securities and liquid cash.</p>
@@ -1130,11 +1130,11 @@ export default function PortfolioTracker({
                               <button
                                 type="button"
                                 onClick={() => setViewingAssetDetails(h)}
-                                className="font-bold text-slate-800 hover:text-indigo-600 hover:underline truncate text-left flex items-center gap-1 block border-0 bg-transparent p-0 cursor-pointer"
+                                className="font-bold text-slate-800 hover:text-indigo-600 hover:underline truncate text-left flex items-center gap-1 border-0 bg-transparent p-0 cursor-pointer"
                                 title="Click to view charts & analysis"
                               >
                                 <span className="truncate">{h.displayName}</span>
-                                <Eye size={11} className="text-slate-400 flex-shrink-0" />
+                                <Eye size={11} className="text-slate-400 shrink-0" />
                               </button>
                               <div className="text-[10px] text-slate-400 font-medium">
                                 Qty: {h.quantity} • Buy Date: {h.buyDate}
