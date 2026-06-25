@@ -70,16 +70,22 @@ export function useTaskReminder(userId: string | undefined, onTaskOverdueTrigger
           } as ScheduledTask);
         });
 
-        // Initialize notified refs to avoid spamming alerts for historical overdue tasks on load
+        // Pre-fill warnedTasksRef: tasks already marked notified in Firestore should
+        // never trigger in-app alerts again — prevents duplicate toasts on load/re-subscribe
         syncedTasks.forEach((t) => {
           if (t.status === 'completed') {
             warnedTasksRef.current.delete(t.id);
           } else {
-            // If it is already overdue on first load, mark it as warned to prevent dual prompting
-            const dueTime = t.dueDate?.toDate ? t.dueDate.toDate().getTime() : new Date(t.dueDate).getTime();
-            if (dueTime <= Date.now() && !t.notified) {
-              // Add to warned list, but if it was not marked verified in Firestore, we let the Cloud Function handle FCM
+            // If already notified via FCM, mark as warned so interval won't re-trigger
+            if (t.notified) {
               warnedTasksRef.current.add(t.id);
+            } else {
+              // If it is already overdue on first load but not yet notified,
+              // still mark it to prevent rapid firing before Cloud Function catches up
+              const dueTime = t.dueDate?.toDate ? t.dueDate.toDate().getTime() : new Date(t.dueDate).getTime();
+              if (dueTime <= Date.now()) {
+                warnedTasksRef.current.add(t.id);
+              }
             }
           }
         });

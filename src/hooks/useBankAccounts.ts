@@ -23,6 +23,8 @@ export function useBankAccounts(user: User | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BankAccount));
       setBankAccounts(data);
+    }, (error) => {
+      console.error('[useBankAccounts] Firestore listener error:', error.code, error.message);
     });
 
     return () => unsubscribe();

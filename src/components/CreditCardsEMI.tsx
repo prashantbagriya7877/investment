@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Save, BarChart2, AlertTriangle
 } from 'lucide-react';
 import {
-  collection, query, where, onSnapshot, doc, serverTimestamp
+  collection, query, where, onSnapshot, doc, serverTimestamp, deleteField
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { setDoc, updateDoc, deleteDoc } from '../firebase-sync';
@@ -120,9 +120,15 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   };
 
   const handleMarkPaid = async (bill: CreditCardBill) => {
-    const updates = { isPaid: !bill.isPaid, paidDate: !bill.isPaid ? new Date().toISOString().split('T')[0] : undefined };
+    const nowPaid = !bill.isPaid;
+    const updates: any = {
+      isPaid: nowPaid,
+      paidDate: nowPaid ? new Date().toISOString().split('T')[0] : deleteField()
+    };
     if (isGuest) {
-      const updatedBills = bills.map(b => b.id === bill.id ? { ...b, isPaid: !b.isPaid, paidDate: !b.isPaid ? new Date().toISOString() : undefined } : b);
+      const updatedBills = bills.map(b => b.id === bill.id
+        ? { ...b, isPaid: nowPaid, paidDate: nowPaid ? new Date().toISOString().split('T')[0] : undefined }
+        : b);
       localStorage.setItem(`ccbills_${user.uid}`, JSON.stringify(updatedBills));
       setBills(updatedBills);
     } else {

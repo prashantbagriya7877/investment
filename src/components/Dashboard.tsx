@@ -24,6 +24,7 @@ interface DashboardProps {
   onMonthChange: (month: string) => void;
   onNavigateToTab: (tab: string) => void;
   livePrices?: Record<string, { currentPrice: number; dayChange: number; name: string }>;
+  userId?: string; // For user-scoped localStorage keys
 }
 
 export default function Dashboard({
@@ -40,35 +41,38 @@ export default function Dashboard({
   selectedMonth,
   onMonthChange,
   onNavigateToTab,
-  livePrices = {}
+  livePrices = {},
+  userId = 'default'
 }: DashboardProps) {
+  // User-scoped localStorage prefix to prevent cross-user data leakage
+  const lsPrefix = `dashboard_${userId}`;
   // Manual Balance values (Saved locally for high fidelity with ZERO default demo data!)
-  const [manualSavings, setManualSavings] = useState(() => Number(localStorage.getItem('manualSavings') || 0));
-  const [manualGold, setManualGold] = useState(() => Number(localStorage.getItem('manualGold') || 0));
-  const [manualProperty, setManualProperty] = useState(() => Number(localStorage.getItem('manualProperty') || 0));
-  const [manualCarLoan, setManualCarLoan] = useState(() => Number(localStorage.getItem('manualCarLoan') || 0));
-  const [manualHomeLoan, setManualHomeLoan] = useState(() => Number(localStorage.getItem('manualHomeLoan') || 0));
+  const [manualSavings, setManualSavings] = useState(() => Number(localStorage.getItem(`${lsPrefix}_manualSavings`) || 0));
+  const [manualGold, setManualGold] = useState(() => Number(localStorage.getItem(`${lsPrefix}_manualGold`) || 0));
+  const [manualProperty, setManualProperty] = useState(() => Number(localStorage.getItem(`${lsPrefix}_manualProperty`) || 0));
+  const [manualCarLoan, setManualCarLoan] = useState(() => Number(localStorage.getItem(`${lsPrefix}_manualCarLoan`) || 0));
+  const [manualHomeLoan, setManualHomeLoan] = useState(() => Number(localStorage.getItem(`${lsPrefix}_manualHomeLoan`) || 0));
   const [showPreferences, setShowPreferences] = useState(false);
 
   const saveAndSetSavings = (val: number) => {
     setManualSavings(val);
-    localStorage.setItem('manualSavings', String(val));
+    localStorage.setItem(`${lsPrefix}_manualSavings`, String(val));
   };
   const saveAndSetGold = (val: number) => {
     setManualGold(val);
-    localStorage.setItem('manualGold', String(val));
+    localStorage.setItem(`${lsPrefix}_manualGold`, String(val));
   };
   const saveAndSetProperty = (val: number) => {
     setManualProperty(val);
-    localStorage.setItem('manualProperty', String(val));
+    localStorage.setItem(`${lsPrefix}_manualProperty`, String(val));
   };
   const saveAndSetCarLoan = (val: number) => {
     setManualCarLoan(val);
-    localStorage.setItem('manualCarLoan', String(val));
+    localStorage.setItem(`${lsPrefix}_manualCarLoan`, String(val));
   };
   const saveAndSetHomeLoan = (val: number) => {
     setManualHomeLoan(val);
-    localStorage.setItem('manualHomeLoan', String(val));
+    localStorage.setItem(`${lsPrefix}_manualHomeLoan`, String(val));
   };
 
   // Month Human translation

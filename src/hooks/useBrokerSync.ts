@@ -13,6 +13,7 @@ export interface BrokerFunds {
 export function useBrokerSync(userId: string | undefined) {
   const [brokerHoldings, setBrokerHoldings] = useState<Holding[]>([]);
   const [brokerRealizedTrades, setBrokerRealizedTrades] = useState<any[]>([]);
+  // We collect all realized trades in a local array per-refresh to avoid accumulation
   const [brokerFunds, setBrokerFunds] = useState<BrokerFunds>({
     upstox: { available: 0, utilized: 0 },
     dhan: { available: 0, utilized: 0 },
@@ -32,6 +33,7 @@ export function useBrokerSync(userId: string | undefined) {
     const kiteToken = localStorage.getItem('kite_access_token');
 
     let allHoldings: Holding[] = [];
+    let allRealizedTrades: any[] = []; // collect fresh each refresh, never accumulate
     let fundsState = {
       upstox: { available: 0, utilized: 0 },
       dhan: { available: 0, utilized: 0 },
@@ -117,7 +119,7 @@ export function useBrokerSync(userId: string | undefined) {
                 broker: 'Upstox',
                 isAutoSynced: true
              }));
-             setBrokerRealizedTrades((prev) => [...prev, ...mappedPnl]);
+             allRealizedTrades.push(...mappedPnl); // collect, don't set yet
           }
         }
       } catch (err) {
@@ -264,6 +266,7 @@ export function useBrokerSync(userId: string | undefined) {
     fundsState.totalAvailable = fundsState.upstox.available + fundsState.dhan.available + fundsState.angel.available + fundsState.zerodha.available;
 
     setBrokerHoldings(allHoldings);
+    setBrokerRealizedTrades(allRealizedTrades); // Set once, fresh — avoids accumulation bug
     setBrokerFunds(fundsState);
     setIsSyncing(false);
   };

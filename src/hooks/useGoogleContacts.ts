@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAccessToken } from '../firebase';
+import { getAccessToken, setAccessToken } from '../firebase';
 import { GoogleContact } from '../components/ContactsManager';
 
 export function useGoogleContacts(user: any) {
@@ -16,19 +16,23 @@ export function useGoogleContacts(user: any) {
     return () => window.removeEventListener('google-token-changed', handleTokenChange);
   }, [user]);
 
+  const loadLocalContacts = () => {
+    const local = localStorage.getItem(`local_contacts_${user?.uid || 'guest'}`);
+    if (local) {
+      try {
+        setContacts(JSON.parse(local));
+      } catch (e) {
+        console.error('Failed to parse local contacts:', e);
+      }
+    }
+  };
+
   const loadContactsList = async () => {
     setLoadingContacts(true);
     const activeToken = getAccessToken();
     
     if (!activeToken || (user && user.uid.startsWith('guest_offline_'))) {
-      const local = localStorage.getItem(`local_contacts_${user?.uid || 'guest'}`);
-      if (local) {
-        try {
-          setContacts(JSON.parse(local));
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      loadLocalContacts();
       setLoadingContacts(false);
       return;
     }
@@ -41,6 +45,13 @@ export function useGoogleContacts(user: any) {
       });
       
       if (!res.ok) {
+        if (res.status === 401) {
+          // Token expired — clear it and notify the app, then load local fallback
+          console.warn('[useGoogleContacts] Access token expired (401). Clearing token and falling back to local contacts.');
+          setAccessToken(null);
+          window.dispatchEvent(new Event('google-token-changed'));
+          loadLocalContacts();
+        }
         setLoadingContacts(false);
         return;
       }
@@ -79,7 +90,8 @@ export function useGoogleContacts(user: any) {
 
       setContacts(parsedContacts);
     } catch (err: any) {
-      console.error(err);
+      console.error('[useGoogleContacts] Failed to load contacts:', err);
+      loadLocalContacts(); // fallback on network error too
     } finally {
       setLoadingContacts(false);
     }

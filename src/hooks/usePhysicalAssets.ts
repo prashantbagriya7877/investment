@@ -23,6 +23,8 @@ export function usePhysicalAssets(user: User | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhysicalAsset));
       setPhysicalAssets(data);
+    }, (error) => {
+      console.error('[usePhysicalAssets] Firestore listener error:', error.code, error.message);
     });
 
     return () => unsubscribe();

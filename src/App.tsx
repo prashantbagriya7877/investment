@@ -389,7 +389,8 @@ export default function App() {
       clearTimeout(logoutTimer);
       trackedEvents.forEach(e => window.removeEventListener(e, resetInactivityTimer));
     };
-  }, [user]);
+  }, [user, userSettings]); // userSettings added to prevent stale closure reading old PIN config
+
 
   // Authenticate monitor track
   useEffect(() => {
@@ -758,6 +759,36 @@ export default function App() {
 
   const handleEditTransaction = async (id: string, txData: Partial<Transaction>) => {
     if (!user) return;
+
+    // Adjust bank balance for amount/type changes on linked accounts
+    const oldTx = transactions.find(t => t.id === id);
+    if (oldTx?.bankAccountId && (txData.amount !== undefined || txData.type !== undefined || txData.bankAccountId !== undefined)) {
+      const bank = bankAccounts.find(b => b.id === (txData.bankAccountId ?? oldTx.bankAccountId));
+      const oldBank = bankAccounts.find(b => b.id === oldTx.bankAccountId);
+
+      // Reverse the old transaction's effect on the old bank
+      if (oldBank && oldTx.bankAccountId) {
+        const reverseOldAmount = oldTx.type === 'income' ? -oldTx.amount : oldTx.amount;
+        const newOldBalance = oldBank.currentBalance + reverseOldAmount;
+        await handleEditBankAccount(oldBank.id, { currentBalance: newOldBalance });
+      }
+
+      // Apply the new transaction's effect (with updated values)
+      const newType = txData.type ?? oldTx.type;
+      const newAmount = txData.amount ?? oldTx.amount;
+      const newBankId = txData.bankAccountId ?? oldTx.bankAccountId;
+      if (newBankId) {
+        const newBank = bankAccounts.find(b => b.id === newBankId);
+        if (newBank) {
+          // Re-read the current balance after the reverse above
+          const updatedBank = bankAccounts.find(b => b.id === newBankId);
+          const currentBal = updatedBank?.currentBalance ?? newBank.currentBalance;
+          const applyNewAmount = newType === 'income' ? newAmount : -newAmount;
+          await handleEditBankAccount(newBankId, { currentBalance: currentBal + applyNewAmount });
+        }
+      }
+    }
+
     if (user.uid.startsWith('guest_offline_')) {
       const updated = transactions.map(t => t.id === id ? { ...t, ...txData } as Transaction : t);
       setTransactions(updated);
@@ -766,6 +797,7 @@ export default function App() {
     }
     await updateDoc(doc(db, 'transactions', id), txData);
   };
+
 
   const handleDeleteTransaction = async (id: string) => {
     if (!user) return;
@@ -1658,6 +1690,7 @@ export default function App() {
               onMonthChange={setSelectedMonth}
               onNavigateToTab={setActiveTab}
               livePrices={livePrices}
+              userId={user?.uid}
             />} />
 
             <Route path="/analytics" element={<AnalyticsDashboard
