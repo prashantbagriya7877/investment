@@ -537,41 +537,21 @@ export default function ContactsManager({
 
   return (
     <div className="space-y-3 md:p-1" id="contacts-manager-container">
-      {/* Visual Header / Banner */}
-      <div className="bg-slate-900 rounded-3xl p-3 md:p-4 text-white relative overflow-hidden shadow-xl" id="contacts-headline-card">
-        <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
-          <Users size={180} />
+      {/* Simplified Header */}
+      <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-slate-100 shadow-sm mb-2">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl">
+            <Users size={18} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Contacts</h2>
         </div>
-        <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-1 bg-slate-800 border border-slate-705 px-1 py-1 rounded-full text-xs font-semibold tracking-wider text-slate-300">
-            <BookOpen size={12} className="text-emerald-400 animate-pulse" />
-            Workspace Google Contacts Directory
-          </div>
-          <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">Financial Contacts & Rolodex</h2>
-            <p className="text-slate-300 text-xs md:text-sm max-w-xl mt-1 leading-relaxed">
-              Seamless synchronization with Google People API. Link real contacts with pending ledgers, cash flows, and loan trackers directly with absolute safety.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1 pt-1">
-            <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700/60 px-1 py-1.5 rounded-xl text-xs">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-slate-200 font-semibold">Active Google Connection Status</span>
-            </div>
-            
-            <button
-              id="google-contacts-create-btn"
-              onClick={() => handleOpenForm()}
-              className="flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold px-2 py-1.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
-            >
-              <UserPlus size={14} className="text-slate-850" /> Add Contact Record
-            </button>
-          </div>
-        </div>
+        <button
+          id="google-contacts-create-btn"
+          onClick={() => handleOpenForm()}
+          className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+        >
+          <UserPlus size={14} /> Add Contact
+        </button>
       </div>
 
       {/* Financial Rolodex KPI Overview slots */}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Landmark, Plus, Trash2, Edit2, X, ChevronRight, ArrowDownRight, ArrowUpRight, Building2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Building2, Wallet, Landmark, TrendingUp, TrendingDown, ArrowRight, ArrowLeftRight, ChevronRight, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { BankAccount, Transaction } from '../types';
 
 interface BankProfilesProps {
@@ -9,6 +9,7 @@ interface BankProfilesProps {
   onAddBankAccount: (acc: Omit<BankAccount, 'id' | 'userId' | 'currentBalance'>) => Promise<void>;
   onEditBankAccount: (id: string, updates: Partial<BankAccount>) => Promise<void>;
   onDeleteBankAccount: (id: string) => Promise<void>;
+  onNavigateToTab?: (tab: string) => void;
 }
 
 export default function BankProfiles({
@@ -16,7 +17,8 @@ export default function BankProfiles({
   transactions,
   onAddBankAccount,
   onEditBankAccount,
-  onDeleteBankAccount
+  onDeleteBankAccount,
+  onNavigateToTab
 }: BankProfilesProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [bankName, setBankName] = useState('');
@@ -66,12 +68,22 @@ export default function BankProfiles({
             <Building2 size={20} className="text-indigo-600" /> Bank Profiles
           </p>
         </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors"
-        >
-          <Plus size={14} /> Add Bank
-        </button>
+        <div className="flex gap-2">
+          {onNavigateToTab && (
+            <button
+              onClick={() => onNavigateToTab('transactions')}
+              className="flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-xs"
+            >
+              <ArrowLeftRight size={14} /> Journal Ledger
+            </button>
+          )}
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors"
+          >
+            <Plus size={14} /> Add Bank
+          </button>
+        </div>
       </div>
 
       {/* Form Modal */}

@@ -23,6 +23,7 @@ interface PendingPaymentsProps {
   onAddPayment: (p: Omit<PendingPayment, 'id' | 'userId'>) => Promise<void>;
   onEditPayment: (id: string, p: Partial<PendingPayment>) => Promise<void>;
   onDeletePayment: (id: string) => Promise<void>;
+  onNavigateToTab?: (tab: string) => void;
 }
 
 export default function PendingPayments({
@@ -30,7 +31,8 @@ export default function PendingPayments({
   pendingPayments,
   onAddPayment,
   onEditPayment,
-  onDeletePayment
+  onDeletePayment,
+  onNavigateToTab
 }: PendingPaymentsProps) {
   const { contacts } = useGoogleContacts(user);
 
@@ -183,16 +185,26 @@ export default function PendingPayments({
           <p className="text-xs text-slate-450 mt-1 font-sans font-medium">Clear track of payments due or receivable, with date and alerts.</p>
         </div>
         
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setIsFormOpen(true);
-          }}
-          className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
-          id="new-payment-button"
-        >
-          <Plus size={14} /> Record Balance
-        </button>
+        <div className="flex gap-2">
+          {onNavigateToTab && (
+            <button
+              onClick={() => onNavigateToTab('recurring-bills')}
+              className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer shadow-xs"
+            >
+              <DollarSign size={14} /> Auto-Bills
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setEditingId(null);
+              setIsFormOpen(true);
+            }}
+            className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-2 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer shadow-xs"
+            id="new-payment-button"
+          >
+            <Plus size={14} /> Record Balance
+          </button>
+        </div>
       </div>
 
       {/* Aggregate Stats Cards */}

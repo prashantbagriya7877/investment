@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PhysicalAsset } from '../types';
-import { Home, Car, Gem, Plus, Trash2, Edit2, Check, X, TrendingUp } from 'lucide-react';
+import { Home, Car, Gem, Plus, Trash2, Edit2, Check, X, TrendingUp, Landmark } from 'lucide-react';
 
 interface PhysicalAssetsProps {
   assets: PhysicalAsset[];
@@ -73,23 +73,27 @@ export const PhysicalAssets: React.FC<PhysicalAssetsProps> = ({ assets, onAdd, o
   const totalValue = assets.reduce((sum, a) => sum + a.currentValue, 0);
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/40">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Physical Assets</h2>
-          <p className="text-gray-500 text-sm mt-1">Track illiquid wealth like real estate, gold, and vehicles</p>
+    <div className="space-y-3 md:p-1" id="physical-assets-container">
+      {/* Simplified Header */}
+      <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-slate-100 shadow-sm mb-2">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl">
+            <Landmark size={18} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Physical Assets</h2>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Total Value</p>
-            <p className="text-2xl font-bold text-indigo-600">₹{totalValue.toLocaleString('en-IN')}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden sm:block mr-2">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Value</p>
+            <p className="text-lg font-black text-slate-900">₹{totalValue.toLocaleString('en-IN')}</p>
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md cursor-pointer"
           >
-            {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showAddForm ? 'Cancel' : 'Add Asset'}
+            {showAddForm ? <X size={14} /> : <Plus size={14} />}
+            <span className="hidden sm:inline">{showAddForm ? 'Cancel' : 'Add Asset'}</span>
+            <span className="sm:hidden">{showAddForm ? 'Close' : 'Add'}</span>
           </button>
         </div>
       </div>

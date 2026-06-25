@@ -1754,6 +1754,7 @@ export default function App() {
               onAddPayment={handleAddPayment}
               onEditPayment={handleEditPayment}
               onDeletePayment={handleDeletePayment}
+              onNavigateToTab={setActiveTab}
             />} />
 
             <Route path="/savings" element={<SavingsGoals
@@ -1771,6 +1772,7 @@ export default function App() {
               onAddBankAccount={handleAddBankAccount}
               onEditBankAccount={handleEditBankAccount}
               onDeleteBankAccount={handleDeleteBankAccount}
+              onNavigateToTab={setActiveTab}
             />} />
 
             <Route path="/assets" element={<PhysicalAssets

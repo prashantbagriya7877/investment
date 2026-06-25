@@ -733,17 +733,17 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start font-sans">
           
-          {/* Left panel: Vertical Menu selection */}
-          <div className="lg:col-span-3 space-y-1">
+          {/* Left panel: Vertical Menu on Desktop / Horizontal on Mobile */}
+          <div className="lg:col-span-3 space-y-1 w-full overflow-hidden">
             <p className="text-[9.5px] font-black uppercase tracking-widest text-slate-500 pl-1">Select Google Application</p>
-            <div className="bg-white border border-slate-100 rounded-3xl p-1 shadow-xs space-y-1">
+            <div className="bg-white border border-slate-100 rounded-3xl p-1 shadow-xs flex overflow-x-auto lg:flex-col gap-1 lg:gap-0 lg:space-y-1 scrollbar-hide w-full">
               
               <button
                 type="button"
                 onClick={() => setActiveService('drive')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'drive'
-                    ? 'bg-blue-50 text-blue-800 font-extrabold border-l-4 border-blue-600 pl-1.5'
+                    ? 'bg-blue-50 text-blue-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-blue-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -751,15 +751,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <FolderOpen size={16} className={activeService === 'drive' ? 'text-blue-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Drive</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('gmail')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'gmail'
-                    ? 'bg-red-50 text-red-800 font-extrabold border-l-4 border-red-650 pl-1.5'
+                    ? 'bg-red-50 text-red-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-red-650 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -767,15 +767,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <Mail size={16} className={activeService === 'gmail' ? 'text-red-500' : 'text-slate-500'} />
                   <span className="text-xs">Gmail Message</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('meet')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'meet'
-                    ? 'bg-emerald-50 text-emerald-800 font-extrabold border-l-4 border-emerald-600 pl-1.5'
+                    ? 'bg-emerald-50 text-emerald-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-emerald-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -783,15 +783,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <Video size={16} className={activeService === 'meet' ? 'text-emerald-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Meet</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('tasks')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'tasks'
-                    ? 'bg-cyan-50 text-cyan-800 font-extrabold border-l-4 border-cyan-600 pl-1.5'
+                    ? 'bg-cyan-50 text-cyan-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-cyan-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -799,15 +799,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <CheckSquare size={16} className={activeService === 'tasks' ? 'text-cyan-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Tasks</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('chat')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'chat'
-                    ? 'bg-indigo-50 text-indigo-800 font-extrabold border-l-4 border-indigo-600 pl-1.5'
+                    ? 'bg-indigo-50 text-indigo-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-indigo-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -815,15 +815,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <MessageSquare size={16} className={activeService === 'chat' ? 'text-indigo-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Chat</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('forms')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'forms'
-                    ? 'bg-purple-50 text-purple-800 font-extrabold border-l-4 border-purple-600 pl-1.5'
+                    ? 'bg-purple-50 text-purple-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-purple-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -831,15 +831,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <FileText size={16} className={activeService === 'forms' ? 'text-purple-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Forms</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('classroom')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'classroom'
-                    ? 'bg-amber-50 text-amber-800 font-extrabold border-l-4 border-amber-600 pl-1.5'
+                    ? 'bg-amber-50 text-amber-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-amber-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -847,15 +847,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <GraduationCap size={16} className={activeService === 'classroom' ? 'text-amber-650' : 'text-slate-500'} />
                   <span className="text-xs">Google Classroom</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('docs')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'docs'
-                    ? 'bg-blue-50 text-blue-800 font-extrabold border-l-4 border-blue-600 pl-1.5'
+                    ? 'bg-blue-50 text-blue-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-blue-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -863,15 +863,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <FileText size={16} className={activeService === 'docs' ? 'text-blue-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Docs</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('slides')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'slides'
-                    ? 'bg-yellow-50 text-yellow-800 font-extrabold border-l-4 border-yellow-600 pl-1.5'
+                    ? 'bg-yellow-50 text-yellow-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-yellow-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -879,15 +879,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <Presentation size={16} className={activeService === 'slides' ? 'text-yellow-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Slides</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('picker')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'picker'
-                    ? 'bg-slate-100 text-slate-800 font-extrabold border-l-4 border-slate-600 pl-1.5'
+                    ? 'bg-slate-100 text-slate-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-slate-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -895,15 +895,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <MousePointerClick size={16} className={activeService === 'picker' ? 'text-slate-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Picker</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('photos')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'photos'
-                    ? 'bg-cyan-50 text-cyan-800 font-extrabold border-l-4 border-cyan-600 pl-1.5'
+                    ? 'bg-cyan-50 text-cyan-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-cyan-600 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -911,15 +911,15 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <Image size={16} className={activeService === 'photos' ? 'text-cyan-600' : 'text-slate-500'} />
                   <span className="text-xs">Google Photos</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveService('calendar')}
-                className={`w-full flex items-center justify-between p-1.5 rounded-xl cursor-pointer transition-all ${
+                className={`shrink-0 lg:w-full flex items-center justify-between p-2 lg:p-1.5 rounded-xl cursor-pointer transition-all ${
                   activeService === 'calendar'
-                    ? 'bg-orange-50 text-orange-800 font-extrabold border-l-4 border-orange-500 pl-1.5'
+                    ? 'bg-orange-50 text-orange-800 font-extrabold lg:border-l-4 lg:border-b-0 border-b-4 border-orange-500 lg:pl-1.5'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
@@ -927,7 +927,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                   <Calendar size={16} className={activeService === 'calendar' ? 'text-orange-500' : 'text-slate-500'} />
                   <span className="text-xs">Google Calendar</span>
                 </div>
-                <ChevronRight size={12} className="text-slate-300" />
+                <ChevronRight size={12} className="text-slate-300 hidden lg:block" />
               </button>
 
             </div>

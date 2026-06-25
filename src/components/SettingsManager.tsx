@@ -116,10 +116,7 @@ export default function SettingsManager({
     return stored === 'true' && !!getAccessToken();
   });
 
-  // Google OAuth setup states
-  const [showCustomConfig, setShowCustomConfig] = useState(false);
-  const [customClientId, setCustomClientId] = useState(() => localStorage.getItem('custom_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '');
-  const [customClientSecret, setCustomClientSecret] = useState(() => localStorage.getItem('custom_google_client_secret') || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '');
+  // Removed custom config states since Firebase handles OAuth automatically
   const [manualAccessToken, setManualAccessToken] = useState('');
   
   // Spreadsheet settings configuration
@@ -245,107 +242,20 @@ export default function SettingsManager({
   // Standard Google Sign in Redirect Auth flow
   const handleOAuthLogin = async (targetService: ServiceType) => {
     const serviceName = getServiceLabel(targetService);
-
-    // NATIVE FLOW
-    const { Capacitor } = await import('@capacitor/core');
-    if (Capacitor.isNativePlatform()) {
-      addLog(`📱 Native environment detected. Requesting Google Auth natively for ${serviceName}...`);
-      try {
-        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        const { ALL_GOOGLE_SCOPES } = await import('../firebase');
-        
-        const result = await FirebaseAuthentication.signInWithGoogle({
-          scopes: ALL_GOOGLE_SCOPES,
-          customParameters: [
-             { key: 'prompt', value: 'consent' },
-             { key: 'access_type', value: 'offline' }
-          ]
-        });
-        
-        if (result.credential?.accessToken) {
-          setAccessToken(result.credential.accessToken);
-          setToken(result.credential.accessToken);
-          
-          setServiceLinkedState(targetService, true);
-          localStorage.setItem(`google_${targetService}_linked`, 'true');
-          
-          window.dispatchEvent(new Event('google-token-changed'));
-          addLog(`✅ Google Auth connection linked successfully via native flow.`);
-          alert(`🎉 Successfully connected and configured ${serviceName}!`);
-        } else {
-          throw new Error("No access token returned from native Google Auth");
-        }
-      } catch (err: any) {
-         addLog(`❌ Native Auth error: ${err.message}`);
-         alert(`Native Google Sign-In Error: ${err.message}`);
-      }
-      return;
-    }
-
-    if (!customClientId) {
-      alert("Please enter a valid Google Client ID first.");
-      return;
-    }
-    localStorage.setItem('custom_google_client_id', customClientId.trim());
-    localStorage.setItem('custom_google_client_secret', customClientSecret.trim());
-    
-    const redirectUri = window.location.origin;
-    const scopes = encodeURIComponent(
-      'https://www.googleapis.com/auth/spreadsheets ' + 
-      'https://www.googleapis.com/auth/contacts ' + 
-      'https://www.googleapis.com/auth/calendar ' + 
-      'https://www.googleapis.com/auth/drive ' + 
-      'https://www.googleapis.com/auth/drive.readonly ' + 
-      'https://www.googleapis.com/auth/tasks ' +
-      'https://www.googleapis.com/auth/gmail.send ' +
-      'https://www.googleapis.com/auth/gmail.readonly ' +
-      'https://www.googleapis.com/auth/chat.spaces.readonly ' +
-      'https://www.googleapis.com/auth/chat.messages.create ' +
-      'https://www.googleapis.com/auth/classroom.courses.readonly ' +
-      'https://www.googleapis.com/auth/documents ' +
-      'https://www.googleapis.com/auth/presentations ' +
-      'https://www.googleapis.com/auth/photoslibrary.readonly'
-    );
-    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${customClientId.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scopes}`;
-    
-    // Check if mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-    
-    if (isMobile) {
-      addLog(`📱 Mobile environment detected. Redirecting to Google Auth for ${serviceName}...`);
-      localStorage.setItem('oauth_target_service', targetService);
-      localStorage.setItem('oauth_return_tab', 'settings');
-      window.location.href = oauthUrl;
-      return;
-    }
-
-    addLog(`🔗 Initiating Google OAuth Login Popup for ${serviceName}...`);
-    const size = "width=600,height=700,left=150,top=100";
-    const authWindow = window.open(oauthUrl, 'GoogleCustomOAuthLogin', size);
-    
-    if (authWindow) {
-      const listener = (event: MessageEvent) => {
-        if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.token) {
-          setAccessToken(event.data.token);
-          setToken(event.data.token);
-          
-          setServiceLinkedState(targetService, true);
-          localStorage.setItem(`google_${targetService}_linked`, 'true');
-          
-          window.dispatchEvent(new Event('google-token-changed'));
-          addLog(`✅ Google Auth connection linked successfully via custom client ID.`);
-          alert(`🎉 Successfully connected and configured ${serviceName}!`);
-          window.removeEventListener('message', listener);
-        }
-      };
-      window.addEventListener('message', listener);
-    } else {
-      addLog(`⚠️ Popup blocked. Falling back to direct redirect flow...`);
-      if (confirm("Popup was blocked by your browser. Would you like to redirect directly to authorize Google Services?")) {
-        localStorage.setItem('oauth_target_service', targetService);
-        localStorage.setItem('oauth_return_tab', 'settings');
-        window.location.href = oauthUrl;
-      }
+    addLog(`🔗 Connecting ${serviceName} using standard Firebase Auth...`);
+    try {
+      const { signInWithGoogle } = await import('../firebase');
+      await signInWithGoogle();
+      
+      setServiceLinkedState(targetService, true);
+      localStorage.setItem(`google_${targetService}_linked`, 'true');
+      
+      window.dispatchEvent(new Event('google-token-changed'));
+      addLog(`✅ Google Auth connection linked successfully.`);
+      alert(`🎉 Successfully connected and configured ${serviceName}!`);
+    } catch (err: any) {
+       addLog(`❌ Auth error: ${err.message}`);
+       alert(`Sign-In Error: ${err.message}`);
     }
   };
 
@@ -555,31 +465,64 @@ export default function SettingsManager({
         </div>
       </div>
 
-      {/* GOOGLE PERMANENT SYNC INTEGRATION */}
+      {/* GOOGLE INTEGRATIONS LIST */}
       <div className="mt-4 border-t border-slate-200 pt-4">
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-100 rounded-2xl p-3">
-          <div>
-            <h3 className="text-sm font-extrabold text-blue-900">Google Workspace Sync</h3>
-            <p className="text-[10px] text-blue-700 font-medium">Enable offline permanent sync so you never have to re-authorize again.</p>
-          </div>
-          <button
-            onClick={async () => {
-              addLog("Initiating Google Offline Authorization...");
-              try {
-                const { authorizeGoogleOffline } = await import('../firebase');
-                await authorizeGoogleOffline(user.uid);
-                addLog("✅ Permanent Google Sync Enabled Successfully!");
-                alert("Permanent Google Sync Enabled Successfully!");
-                window.dispatchEvent(new Event('google-token-changed'));
-              } catch (err: any) {
-                addLog(`❌ Failed to enable sync: ${err.message}`);
-                alert(`Error: ${err.message}`);
-              }
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2 px-4 rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2"
-          >
-            <RefreshCw size={14} /> Enable Permanent Sync
-          </button>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-extrabold text-slate-900">Google Workspace Integrations</h3>
+          <span className="bg-slate-100 text-slate-600 text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">
+            {serviceConfigs.length} Modules
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {serviceConfigs.map((config) => (
+            <div key={config.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between hover:border-slate-200 hover:bg-white transition-all hover:shadow-xs">
+              <div>
+                <div className="flex justify-between items-start mb-2">
+                  <div className={`p-2 rounded-xl bg-${config.themeColor}-100 text-${config.themeColor}-600`}>
+                    <config.icon size={18} />
+                  </div>
+                  {isLinked(config.id) ? (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                      <Check size={12} /> Connected
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+                      Disconnected
+                    </span>
+                  )}
+                </div>
+                <h4 className="text-sm font-bold text-slate-900">{config.name}</h4>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5 mb-2">{config.category}</p>
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">{config.description}</p>
+              </div>
+              
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between mt-auto">
+                {isLinked(config.id) ? (
+                  <>
+                    <button
+                      onClick={() => onNavigateToTab(config.tabName)}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                    >
+                      <ExternalLink size={12} /> Open Tool
+                    </button>
+                    <button
+                      onClick={() => handleUnlink(config.id)}
+                      className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
+                    >
+                      <Trash2 size={12} /> Disconnect
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleOAuthLogin(config.id)}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Link2 size={14} /> Connect via Google Auth
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
