@@ -88,7 +88,7 @@ export default function LoginScreen({
             </button>
 
             <a
-              href="https://investmant.onrender.com/app.apk"
+              href="https://investment-1-1yl3.onrender.com/app.apk"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-4 px-6 rounded-2xl transition-all border border-indigo-100 hover:border-indigo-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer text-decoration-none mt-2"
