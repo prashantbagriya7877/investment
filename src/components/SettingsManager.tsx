@@ -555,6 +555,34 @@ export default function SettingsManager({
         </div>
       </div>
 
+      {/* GOOGLE PERMANENT SYNC INTEGRATION */}
+      <div className="mt-4 border-t border-slate-200 pt-4">
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-100 rounded-2xl p-3">
+          <div>
+            <h3 className="text-sm font-extrabold text-blue-900">Google Workspace Sync</h3>
+            <p className="text-[10px] text-blue-700 font-medium">Enable offline permanent sync so you never have to re-authorize again.</p>
+          </div>
+          <button
+            onClick={async () => {
+              addLog("Initiating Google Offline Authorization...");
+              try {
+                const { authorizeGoogleOffline } = await import('../firebase');
+                await authorizeGoogleOffline(user.uid);
+                addLog("✅ Permanent Google Sync Enabled Successfully!");
+                alert("Permanent Google Sync Enabled Successfully!");
+                window.dispatchEvent(new Event('google-token-changed'));
+              } catch (err: any) {
+                addLog(`❌ Failed to enable sync: ${err.message}`);
+                alert(`Error: ${err.message}`);
+              }
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2 px-4 rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2"
+          >
+            <RefreshCw size={14} /> Enable Permanent Sync
+          </button>
+        </div>
+      </div>
+
       {/* BROKER MANAGER INTEGRATION */}
       <div className="mt-4 border-t border-slate-200 pt-4">
         <BrokerManager user={user} />

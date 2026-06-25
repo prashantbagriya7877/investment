@@ -4,7 +4,7 @@ import {
   GraduationCap, Search, Upload, Send, Plus, RefreshCw, Check, Trash2, 
   ExternalLink, ChevronRight, AlertCircle, Sparkles, Presentation, MousePointerClick, Image, Calendar
 } from 'lucide-react';
-import { getAccessToken } from '../firebase';
+import { getAccessToken, refreshGoogleTokenIfNeeded } from '../firebase';
 import InfoTooltip from './InfoTooltip';
 import GooglePicker from './GooglePicker';
 
@@ -131,8 +131,23 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       setToken(getAccessToken());
     };
     window.addEventListener('google-token-changed', handleTokenChange);
+    
+    // Attempt silent refresh on mount if token is absent or potentially expired
+    const attemptSilentRefresh = async () => {
+      try {
+        const newToken = await refreshGoogleTokenIfNeeded(user.uid);
+        if (newToken) {
+          setToken(newToken);
+          window.dispatchEvent(new Event('google-token-changed'));
+        }
+      } catch (err) {
+        console.warn("Silent refresh failed", err);
+      }
+    };
+    attemptSilentRefresh();
+    
     return () => window.removeEventListener('google-token-changed', handleTokenChange);
-  }, []);
+  }, [user.uid]);
 
   // Fetch functions for active service changes
   useEffect(() => {

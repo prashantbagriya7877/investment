@@ -34,6 +34,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
+    match /users/{userId}/integrations/{integrationId} {
+      allow read, write: if isOwner(userId);
+    }
 
     match /usersettings/{userId} {
       allow read, write: if isOwner(userId);

@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously, signInWithCredential, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { getFirestore, doc, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocFromServer, setDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 export const app = initializeApp(firebaseConfig);
@@ -162,6 +162,115 @@ export async function signInGuestAnonymously() {
     console.error("Anonymous Sign-In failed:", error);
     throw error;
   }
+}
+
+// Google Offline Access (Refresh Token Flow)
+export async function authorizeGoogleOffline(userId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !(window as any).google) {
+      reject(new Error("Google Identity Services not loaded."));
+      return;
+    }
+    
+    const clientId = localStorage.getItem('custom_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientSecret = localStorage.getItem('custom_google_client_secret') || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
+
+    if (!clientId || !clientSecret) {
+      reject(new Error("Google Client ID or Secret is missing. Go to Settings and configure custom OAuth credentials first."));
+      return;
+    }
+
+    const client = (window as any).google.accounts.oauth2.initCodeClient({
+      client_id: clientId,
+      scope: ALL_GOOGLE_SCOPES.join(' '),
+      ux_mode: 'popup',
+      callback: async (response: any) => {
+        if (response.error) {
+          reject(new Error(response.error));
+          return;
+        }
+        
+        try {
+          const res = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              code: response.code,
+              client_id: clientId,
+              client_secret: clientSecret,
+              redirect_uri: 'postmessage',
+              grant_type: 'authorization_code'
+            })
+          });
+          
+          const data = await res.json();
+          if (data.error) {
+            throw new Error(data.error_description || data.error);
+          }
+          
+          if (data.refresh_token) {
+            await setDoc(doc(db, 'users', userId, 'integrations', 'google'), {
+              refresh_token: data.refresh_token,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          }
+          
+          if (data.access_token) {
+            setAccessToken(data.access_token);
+          }
+          
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      },
+    });
+    
+    client.requestCode();
+  });
+}
+
+export async function refreshGoogleTokenIfNeeded(userId: string): Promise<string | null> {
+  try {
+    const docRef = doc(db, 'users', userId, 'integrations', 'google');
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+    
+    const data = docSnap.data();
+    if (!data.refresh_token) return null;
+    
+    const clientId = localStorage.getItem('custom_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientSecret = localStorage.getItem('custom_google_client_secret') || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
+    
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: data.refresh_token,
+        grant_type: 'refresh_token'
+      })
+    });
+    
+    const tokenData = await res.json();
+    if (tokenData.error) {
+      console.error("Token refresh failed:", tokenData);
+      return null;
+    }
+    
+    if (tokenData.access_token) {
+      setAccessToken(tokenData.access_token);
+      return tokenData.access_token;
+    }
+  } catch (err) {
+    console.error("Failed to refresh token", err);
+  }
+  return null;
 }
 
 // Logout utility
