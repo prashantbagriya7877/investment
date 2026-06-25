@@ -371,7 +371,7 @@ export default function TransactionTracker({
           />
           <button 
             type="button" 
-            onClick={handleSmsParse}
+            onClick={() => handleSmsParse()}
             className="bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-2 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0"
           >
             <Clipboard size={12} /> Parse

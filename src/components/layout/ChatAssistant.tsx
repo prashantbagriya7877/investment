@@ -78,7 +78,7 @@ export default function ChatAssistant({ bankAccounts, transactions, physicalAsse
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 transition-all flex items-center justify-center group"
+            className="fixed bottom-6 right-6 z-50 p-4 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 transition-all flex items-center justify-center group"
           >
             <Sparkles className="w-6 h-6 animate-pulse" />
           </motion.button>
@@ -95,7 +95,7 @@ export default function ChatAssistant({ bankAccounts, transactions, physicalAsse
             className="fixed bottom-6 right-6 z-50 w-full max-w-[380px] h-[500px] max-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="px-5 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shrink-0">
+            <div className="px-5 py-4 bg-linear-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
                   <Bot className="w-5 h-5" />
@@ -117,7 +117,7 @@ export default function ChatAssistant({ bankAccounts, transactions, physicalAsse
             <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white'}`}>
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-linear-to-br from-purple-500 to-indigo-500 text-white'}`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                   <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm prose prose-sm prose-p:my-1'}`}>
@@ -131,7 +131,7 @@ export default function ChatAssistant({ bankAccounts, transactions, physicalAsse
               ))}
               {isLoading && (
                 <div className="flex items-end gap-2">
-                  <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-500 text-white">
+                  <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-linear-to-br from-purple-500 to-indigo-500 text-white">
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">

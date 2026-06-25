@@ -76,7 +76,7 @@ export const PhysicalAssets: React.FC<PhysicalAssetsProps> = ({ assets, onAdd, o
     <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/40">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Physical Assets</h2>
+          <h2 className="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Physical Assets</h2>
           <p className="text-gray-500 text-sm mt-1">Track illiquid wealth like real estate, gold, and vehicles</p>
         </div>
         <div className="flex items-center gap-4">
