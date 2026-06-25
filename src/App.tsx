@@ -71,7 +71,6 @@ import Header from './components/layout/Header';
 import BottomNavigation from './components/layout/BottomNavigation';
 import NotificationCenter from './components/layout/NotificationCenter';
 import NavigationDrawer from './components/layout/NavigationDrawer';
-import ChatAssistant from './components/layout/ChatAssistant';
 import { useRecurringBills } from './hooks/useRecurringBills';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { useSmsListener } from './hooks/useSmsListener';
@@ -1884,14 +1883,6 @@ export default function App() {
           </Routes>
         </div>
 
-        {/* Global Floating AI Chatbot */}
-        {user && (
-          <ChatAssistant 
-            bankAccounts={bankAccounts}
-            transactions={transactions}
-            physicalAssets={physicalAssets}
-          />
-        )}
       </main>
 
       {/* Toasts overlay notifications on overdue task alarms */}

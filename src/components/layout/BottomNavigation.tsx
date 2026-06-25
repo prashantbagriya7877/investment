@@ -33,7 +33,7 @@ export default function BottomNavigation({
 
   const ledgerTabs = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-    { id: 'transactions', label: 'Ledger', icon: ArrowLeftRight },
+    { id: 'transactions', label: 'Expenses', icon: ArrowLeftRight },
     { id: 'pending', label: 'Dues', icon: Clock },
     { id: 'recurring-bills', label: 'AutoBills', icon: Repeat },
     { id: 'tasks', label: 'Alerts', icon: Bell },

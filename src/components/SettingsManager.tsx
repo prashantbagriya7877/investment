@@ -531,35 +531,6 @@ export default function SettingsManager({
         <BrokerManager user={user} />
       </div>
 
-      {/* OPERATIONS LOG SCREEN */}
-      <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-2 space-y-1">
-        <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-            Real-time Credentials Status Log Handshaker
-          </span>
-          <button
-            type="button"
-            onClick={() => setLogs([])}
-            className="text-[8px] text-slate-700 hover:text-slate-300 uppercase tracking-widest cursor-pointer"
-          >
-            Clear Screen Logs
-          </button>
-        </div>
-        
-        <div className="font-mono text-[9px] md:text-[10px] text-emerald-400 space-y-1 max-h-[120px] overflow-y-auto scrollbar-hide py-1">
-          {logs.length === 0 ? (
-            <p className="text-slate-700 text-center italic py-1">Waiting for interaction. Authorize a service below to watch authorization handshakes...</p>
-          ) : (
-            logs.map((log, index) => (
-              <div key={index} className="transition-all animate-fadeIn leading-relaxed border-b border-slate-850/30 pb-1 wrap-break-word">
-                {log}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
     </div>
   );
 }

@@ -148,21 +148,29 @@ export default function RecurringBills({
       {/* Header */}
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80">
         <div>
-          <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Automated Alerts</h2>
           <p className="text-xl font-bold text-slate-900 tracking-tight font-sans mt-0.5">Auto-Bills & Salary</p>
-          <p className="text-xs text-slate-450 mt-1 font-sans font-medium">Track your recurring income and expenses.</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setType('expense');
-            setCategory(EXPENSE_CATEGORIES[0]);
-            setIsFormOpen(true);
-          }}
-          className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
-        >
-          <Plus size={14} /> Add Bill
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              // Add record balance logic or navigate
+            }}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+          >
+            Record Balance
+          </button>
+          <button
+            onClick={() => {
+              setEditingId(null);
+              setType('expense');
+              setCategory(EXPENSE_CATEGORIES[0]);
+              setIsFormOpen(true);
+            }}
+            className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+          >
+            <Plus size={14} /> Add Bill
+          </button>
+        </div>
       </div>
 
       {/* Form */}

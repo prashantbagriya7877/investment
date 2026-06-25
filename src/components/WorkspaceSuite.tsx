@@ -192,7 +192,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       }
     } catch (err: any) {
       console.error(`Error loading service ${activeService}:`, err);
-      setErrorMsg(`Failed to query Google ${activeService} API. Please check your credentials or active scopes. Detailed error: ${err.message || err}`);
+      // Suppressed detailed error message from UI
     } finally {
       setIsLoading(false);
     }
@@ -689,16 +689,8 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       {/* Title block */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 pb-2">
         <div>
-          <div className="flex items-center gap-1.5 md:gap-1 mb-1">
-            <span className="p-1 px-1.5 bg-linear-to-r from-teal-500 to-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse">
-              Active Session
-            </span>
-            <span className="p-1 px-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full text-[9px] font-bold uppercase tracking-wider">
-              Google Apps Suite
-            </span>
-          </div>
           <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center">
-            Central Workspace Suite
+            Workspace
             <InfoTooltip text="Access secure, linked operations directly across Google Drive, Gmail, Google Meet, Google Tasks, Chat rooms, Forms, and Google Classroom courses." />
           </h2>
         </div>

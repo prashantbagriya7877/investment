@@ -444,60 +444,31 @@ export default function TasksSection({
     <div className="space-y-3 text-slate-800 font-sans" id="tasks-section-root">
 
       {/* Upper Area Summary / Vitals bar */}
-      <div className="bg-white rounded-3xl p-3 border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white rounded-xl p-3 border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-1">
-            <Sparkles className="text-yellow-500 w-5 h-5 animate-pulse" /> Task Scheduler & Reminders
-            <InfoTooltip text="Set robust time-critical triggers. Our minute-precision daemon alerts you and dispatches warning mail 30 minutes before due time." />
+          <h2 className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-1">
+            <Sparkles className="text-yellow-500 w-4 h-4" /> Reminders & Tasks
           </h2>
         </div>
 
         {/* Display Push Authorization Status Badge */}
-        <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
-          <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Web-Push Protocol</span>
+        <div className="flex items-center gap-2">
           {notificationStatus === 'granted' ? (
-            <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-1 py-1.5 rounded-xl">
-              <Bell className="w-3.5 h-3.5 text-emerald-600" /> Notifications Active
+            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-2 py-1 rounded-lg">
+              <Bell className="w-3 h-3 text-emerald-600" /> Notifications Active
             </div>
           ) : notificationStatus === 'denied' ? (
-            <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-1 py-1.5 rounded-xl">
-              <BellOff className="w-3.5 h-3.5 text-amber-500" /> Blocked by Browser
+            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-2 py-1 rounded-lg">
+              <BellOff className="w-3 h-3 text-amber-500" /> Notifications Blocked
             </div>
           ) : (
             <button
               onClick={handleEnableNotifications}
               disabled={isRegisteringToken}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold text-xs py-1.5 px-1 rounded-xl transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold text-xs py-1 px-2 rounded-lg transition-all shadow-xs cursor-pointer"
               id="fcm-activate-button"
             >
-              <Bell className="w-3.5 h-3.5 animate-bounce" /> Enable Push Alerts
-            </button>
-          )}
-
-          {tokenStatusMessage && (
-            <span className="text-[10px] font-medium text-slate-500 leading-none mt-1">
-              {tokenStatusMessage}
-            </span>
-          )}
-          {notificationStatus === 'granted' && (
-            <button
-              onClick={async () => {
-                alert("Triggering test notification now. If you don't see a popup after this alert closes, your browser is blocking it.");
-                try {
-                  const reg = await navigator.serviceWorker?.getRegistration();
-                  if (reg && reg.showNotification) {
-                    await reg.showNotification("Test Notification", { body: "Service Worker notification working!" });
-                  } else {
-                    const n = new Notification("Test Notification", { body: "Native notification working!" });
-                    n.onclick = () => { window.focus(); n.close(); };
-                  }
-                } catch (e) {
-                  alert("Error triggering notification: " + e);
-                }
-              }}
-              className="mt-1 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1 px-2 rounded-xl transition-all shadow-xs cursor-pointer"
-            >
-              Test Notification
+              <Bell className="w-3 h-3" /> Enable Alerts
             </button>
           )}
         </div>
@@ -508,9 +479,9 @@ export default function TasksSection({
 
         {/* Creating task form Card (Left Panel) */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-3 shadow-xs sticky top-24">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-1 border-b border-slate-100 pb-1">
-              <Plus className="text-slate-700 w-4 h-4" /> Schedule New Reminder
+          <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs sticky top-24">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-1 pb-1">
+              <Plus className="text-slate-700 w-4 h-4" /> Add Reminder
             </h3>
 
             {formError && (
