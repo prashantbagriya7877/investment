@@ -113,7 +113,7 @@ export interface Holding {
   buyPrice: number; // buy price (NAV or stock price)
   quantity: number; // quantity (shares or units)
   buyDate: string; // YYYY-MM-DD
-  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash';
+  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Options' | 'F&O' | 'Intraday';
   broker?: string; // Zerodha, Groww, Upstox, etc.
   schemeCode?: string; // MF Scheme Code (e.g., 102885)
   isAutoSynced?: boolean; // Flag to indicate if this holding is auto-synced from a broker

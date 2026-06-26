@@ -295,7 +295,7 @@ export function useBrokerSync(userId: string | undefined) {
       }
     }
 
-    fundsState.totalAvailable = Object.values(fundsState).reduce((acc, curr) => typeof curr === 'object' ? acc + curr.available : acc, 0);
+    fundsState.totalAvailable = fundsState.upstox.available + fundsState.dhan.available + fundsState.angel.available + fundsState.zerodha.available;
 
     setBrokerHoldings(allHoldings);
     setBrokerRealizedTrades(allRealizedTrades); // Set once, fresh — avoids accumulation bug
