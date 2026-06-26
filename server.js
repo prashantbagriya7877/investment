@@ -96,6 +96,40 @@ function setupUpstoxRoutes(app2) {
       res.status(500).json({ error: err.message });
     }
   });
+  app2.get("/api/upstox/short-term-positions", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/portfolio/short-term-positions", {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app2.get("/api/upstox/orders", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      const response = await fetch("https://api.upstox.com/v2/order/retrieve-all", {
+        headers: {
+          "Api-Version": "2.0",
+          "Authorization": token,
+          "Accept": "application/json"
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
   app2.get("/api/upstox/market-quote", async (req, res) => {
     try {
       const token = req.headers.authorization;

@@ -124,6 +124,7 @@ export default function NavigationDrawer({
                     <>
                       <NavButton active={activeTab === 'portfolio'} onClick={() => handleTabClick('portfolio')} icon={<TrendingUp size={16} />} label="Stock & MFs" />
                       <NavButton active={activeTab === 'market-data'} onClick={() => handleTabClick('market-data')} icon={<BarChart3 size={16} />} label="Live Market Data" />
+                      <NavButton active={activeTab === 'terminal'} onClick={() => handleTabClick('terminal')} icon={<Activity size={16} className="text-indigo-500" />} label="Stock Terminal" />
                       <NavButton active={activeTab === 'sips'} onClick={() => handleTabClick('sips')} icon={<CalendarRange size={16} />} label="Active SIPs" />
                       <NavButton active={activeTab === 'fds'} onClick={() => handleTabClick('fds')} icon={<Landmark size={16} />} label="FD/RD Lockers" />
                       <NavButton active={activeTab === 'tax'} onClick={() => handleTabClick('tax')} icon={<Percent size={16} />} label="Tax Capital Gains" />

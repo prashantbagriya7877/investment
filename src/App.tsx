@@ -61,6 +61,7 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { CreditCardsEMI } from './components/CreditCardsEMI';
 import BankProfiles from './components/BankProfiles';
 import PhysicalAssetsManager from './components/PhysicalAssetsManager';
+import StockTerminal from './components/StockTerminal';
 import { exportFullLedgerToCSV } from './utils/csvExport';
 import { useTaskReminder } from './utils/useTaskReminder';
 
@@ -1765,6 +1766,7 @@ export default function App() {
             />} />
 
             <Route path="/market-data" element={<MarketView />} />
+            <Route path="/terminal" element={<StockTerminal />} />
 
             <Route path="/sips" element={<SipTracker
               sips={sips}

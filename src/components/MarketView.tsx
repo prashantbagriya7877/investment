@@ -376,7 +376,7 @@ export default function MarketView() {
                   </tr>
                 </thead>
                 <tbody className="bg-white">
-                  {optionChainData.length === 0 ? (
+                  {!Array.isArray(optionChainData) || optionChainData.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-slate-500">
                         {expiryDate ? "No chain data found for this expiry." : "Select expiry date and fetch."}
