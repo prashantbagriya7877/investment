@@ -31,6 +31,7 @@ interface PortfolioTrackerProps {
     angel: { available: number; utilized: number };
     totalAvailable: number;
   };
+  brokerOrders?: any[]; // Passed from useBrokerSync
   isSyncingBrokerData?: boolean;
   onRefreshBrokerData?: () => void;
 }
@@ -69,6 +70,7 @@ export default function PortfolioTracker({
   refreshPrices,
   loadingPrices = false,
   brokerFunds,
+  brokerOrders = [], // Default to empty
   isSyncingBrokerData = false,
   onRefreshBrokerData
 }: PortfolioTrackerProps) {
@@ -111,7 +113,7 @@ export default function PortfolioTracker({
   const [chartTimeframe, setChartTimeframe] = useState<'1M' | '3M' | '6M' | '1Y'>('3M');
 
   const [deductCashFromWallet, setDeductCashFromWallet] = useState(false);
-  const [portfolioViewMode, setPortfolioViewMode] = useState<'holdings' | 'ledger'>('holdings');
+  const [portfolioViewMode, setPortfolioViewMode] = useState<'holdings' | 'ledger' | 'orders'>('holdings');
 
   // Trade Execution Modal State
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
@@ -711,6 +713,13 @@ export default function PortfolioTracker({
                   >
                     Exited / Booked ({realizedTrades?.length || 0})
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setPortfolioViewMode('orders')}
+                    className={`px-1 py-1 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'orders' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
+                  >
+                    Live Orders ({brokerOrders?.length || 0})
+                  </button>
                 </div>
               </div>
               <button
@@ -1029,7 +1038,50 @@ export default function PortfolioTracker({
             </AnimatePresence>
 
             {/* Holdings Table */}
-            {portfolioViewMode === 'ledger' ? (
+            {portfolioViewMode === 'orders' ? (
+              (!brokerOrders || brokerOrders.length === 0) ? (
+                <div className="p-4 flex flex-col items-center text-center space-y-1">
+                  <div className="p-1 bg-slate-50 rounded-full text-slate-500">
+                    <Layers size={21} />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-705">No recent orders found</h3>
+                  <p className="text-[10px] text-slate-500 max-w-xs">
+                    Your synced broker order book will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-150 bg-slate-50/40 text-slate-500 uppercase tracking-wider text-[9px] font-bold">
+                        <th className="p-2">Symbol</th>
+                        <th className="p-2 text-center">Type</th>
+                        <th className="p-2 text-center">Side</th>
+                        <th className="p-2 text-right">Qty</th>
+                        <th className="p-2 text-right">Price</th>
+                        <th className="p-2 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {brokerOrders.map((o, idx) => (
+                        <tr key={`ord-${idx}`} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <td className="p-2 font-bold text-slate-800">{o.trading_symbol || o.instrument_token}</td>
+                          <td className="p-2 text-center font-mono text-[10px]">{o.transaction_type}</td>
+                          <td className="p-2 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded-md font-bold text-[9px] ${o.transaction_type === 'BUY' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                              {o.transaction_type}
+                            </span>
+                          </td>
+                          <td className="p-2 text-right font-mono text-[11px]">{o.quantity}</td>
+                          <td className="p-2 text-right font-mono text-[11px]">₹{parseFloat(o.price || o.average_price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2 text-center text-[10px] font-bold text-slate-600">{o.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : portfolioViewMode === 'ledger' ? (
               (!realizedTrades || realizedTrades.length === 0) ? (
                 <div className="p-4 flex flex-col items-center text-center space-y-1">
                   <div className="p-1 bg-slate-50 rounded-full text-slate-500">

@@ -479,7 +479,7 @@ export default function Dashboard({
       </AnimatePresence>
 
       {/* Quick stats grid bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-slate-50 border border-slate-150 p-2 rounded-2xl text-xs font-sans text-slate-800">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-50 border border-slate-150 p-2 rounded-2xl text-xs font-sans text-slate-800">
         <div className="flex items-center gap-1.5 p-1">
           <div className="p-1 bg-white rounded-xl shadow-xs text-slate-900 border border-slate-100">
             <PiggyBank size={16} />
@@ -517,6 +517,16 @@ export default function Dashboard({
           <div>
             <span className="text-[10px] text-slate-500 font-bold">ACTIVE EMIs</span>
             <p className="font-extrabold text-[13px]">{activeEmis.length} running <span className="text-[10px] font-mono text-slate-500">(-₹{totalMonthlyEmi}/mo)</span></p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 p-1">
+          <div className="p-1 bg-white rounded-xl shadow-xs text-indigo-600 border border-slate-100 cursor-pointer hover:bg-indigo-50" onClick={() => onNavigateToTab('assets')}>
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-500 font-bold">PHYSICAL ASSETS</span>
+            <p className="font-extrabold text-[13px]">{physicalAssets.length} tracked items</p>
           </div>
         </div>
       </div>

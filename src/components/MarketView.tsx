@@ -384,26 +384,46 @@ export default function MarketView() {
                     </tr>
                   ) : (
                     optionChainData.map((row: any, idx) => {
-                      const ce = row.call_options;
-                      const pe = row.put_options;
+                      const ce = row.call_options || row.ce_quote || row.ce;
+                      const pe = row.put_options || row.pe_quote || row.pe;
                       const strike = row.strike_price;
+                      
+                      const getVal = (opt: any, field1: string, field2: string) => {
+                        if (!opt) return null;
+                        if (opt.market_data && opt.market_data[field1] !== undefined) return opt.market_data[field1];
+                        if (opt.market_data && opt.market_data[field2] !== undefined) return opt.market_data[field2];
+                        if (opt[field1] !== undefined) return opt[field1];
+                        if (opt[field2] !== undefined) return opt[field2];
+                        return null;
+                      };
+
+                      const ceOI = getVal(ce, 'oi', 'open_interest') ?? '-';
+                      const ceVol = getVal(ce, 'volume', 'traded_volume') ?? '-';
+                      const ceLtp = getVal(ce, 'ltp', 'last_price') ?? '-';
+                      const ceChg = getVal(ce, 'net_change', 'change') ?? 0;
+
+                      const peOI = getVal(pe, 'oi', 'open_interest') ?? '-';
+                      const peVol = getVal(pe, 'volume', 'traded_volume') ?? '-';
+                      const peLtp = getVal(pe, 'ltp', 'last_price') ?? '-';
+                      const peChg = getVal(pe, 'net_change', 'change') ?? 0;
+
                       return (
                         <tr key={idx} className="hover:bg-indigo-50/30 border-b border-slate-100 font-mono">
-                          <td className="p-1 border-r border-slate-100">{ce?.market_data?.oi || '-'}</td>
-                          <td className="p-1 border-r border-slate-100">{ce?.market_data?.volume || '-'}</td>
-                          <td className="p-1 border-r border-slate-100 font-bold text-emerald-600 bg-emerald-50/10">{ce?.market_data?.ltp || '-'}</td>
-                          <td className={`p-1 border-r border-slate-200 ${(ce?.market_data?.net_change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {ce?.market_data?.net_change?.toFixed(2) || '-'}
+                          <td className="p-1 border-r border-slate-100">{ceOI}</td>
+                          <td className="p-1 border-r border-slate-100">{ceVol}</td>
+                          <td className="p-1 border-r border-slate-100 font-bold text-emerald-600 bg-emerald-50/10">{ceLtp}</td>
+                          <td className={`p-1 border-r border-slate-200 ${Number(ceChg) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {Number(ceChg).toFixed(2)}
                           </td>
                           
                           <td className="p-1 border-r border-slate-200 font-black text-slate-800 bg-slate-50">{strike}</td>
                           
-                          <td className={`p-1 border-r border-slate-100 ${(pe?.market_data?.net_change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {pe?.market_data?.net_change?.toFixed(2) || '-'}
+                          <td className={`p-1 border-r border-slate-100 ${Number(peChg) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {Number(peChg).toFixed(2)}
                           </td>
-                          <td className="p-1 border-r border-slate-100 font-bold text-rose-600 bg-rose-50/10">{pe?.market_data?.ltp || '-'}</td>
-                          <td className="p-1 border-r border-slate-100">{pe?.market_data?.volume || '-'}</td>
-                          <td className="p-1">{pe?.market_data?.oi || '-'}</td>
+                          <td className="p-1 border-r border-slate-100 font-bold text-rose-600 bg-rose-50/10">{peLtp}</td>
+                          <td className="p-1 border-r border-slate-100">{peVol}</td>
+                          <td className="p-1">{peOI}</td>
                         </tr>
                       );
                     })

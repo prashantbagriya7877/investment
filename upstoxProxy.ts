@@ -103,6 +103,46 @@ export function setupUpstoxRoutes(app: express.Application) {
     }
   });
 
+  // 4b. Fetch Short-Term Positions (Intraday/F&O)
+  app.get("/api/upstox/short-term-positions", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+
+      const response = await fetch('https://api.upstox.com/v2/portfolio/short-term-positions', {
+        headers: {
+          'Api-Version': '2.0',
+          'Authorization': token,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 4c. Fetch Order Book
+  app.get("/api/upstox/orders", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+
+      const response = await fetch('https://api.upstox.com/v2/order/retrieve-all', {
+        headers: {
+          'Api-Version': '2.0',
+          'Authorization': token,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // --- UPSTOX BROKER API PROXIES (PHASE 2) ---
 
   // 5. Market Quotes (LTP, OHLC)

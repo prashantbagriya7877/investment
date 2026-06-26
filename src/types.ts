@@ -1,12 +1,13 @@
 export interface Transaction {
   id: string;
   userId: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer' | 'cash_withdrawal';
   category: string;
   amount: number;
   date: string; // YYYY-MM-DD
   notes?: string;
   bankAccountId?: string; // Links transaction to a specific bank account profile
+  toBankAccountId?: string; // For transfers
   createdAt?: any;
 }
 
@@ -16,6 +17,9 @@ export interface BankAccount {
   bankName: string; // e.g. HDFC, SBI, Paytm
   accountName: string; // e.g. Savings, Salary
   accountNumber?: string; // Optional last 4 digits
+  ifscCode?: string;
+  upiIds?: string[];
+  cards?: { id: string; type: 'debit' | 'credit'; name: string; last4: string; expiry: string }[];
   initialBalance: number;
   currentBalance: number;
   createdAt?: any;

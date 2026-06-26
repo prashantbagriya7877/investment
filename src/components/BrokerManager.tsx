@@ -19,6 +19,8 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const [upstoxProfile, setUpstoxProfile] = useState<any>(null);
   const [upstoxFunds, setUpstoxFunds] = useState<any>(null);
   const [upstoxHoldings, setUpstoxHoldings] = useState<any[]>([]);
+  const [upstoxOrders, setUpstoxOrders] = useState<any[]>([]);
+  const [upstoxPositions, setUpstoxPositions] = useState<any[]>([]);
   const [upstoxLoading, setUpstoxLoading] = useState(false);
   
   // Dhan State
@@ -86,10 +88,12 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const fetchUpstoxData = async () => {
     setUpstoxLoading(true);
     try {
-      const [profileRes, fundsRes, holdingsRes] = await Promise.all([
+      const [profileRes, fundsRes, holdingsRes, ordersRes, positionsRes] = await Promise.all([
         proxyFetch('/api/upstox/profile', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
         proxyFetch('/api/upstox/funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/holdings', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
+        proxyFetch('/api/upstox/holdings', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
+        proxyFetch('/api/upstox/orders', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
+        proxyFetch('/api/upstox/short-term-positions', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
       ]);
       if (profileRes.ok) setUpstoxProfile((await profileRes.json()).data);
       if (fundsRes.ok) {
@@ -100,6 +104,14 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
       if (holdingsRes.ok) {
         const hData = await holdingsRes.json();
         setUpstoxHoldings(hData.data || []);
+      }
+      if (ordersRes.ok) {
+        const oData = await ordersRes.json();
+        setUpstoxOrders(oData.data || []);
+      }
+      if (positionsRes.ok) {
+        const pData = await positionsRes.json();
+        setUpstoxPositions(pData.data || []);
       }
     } catch (err) {
       console.error(err);
@@ -470,6 +482,19 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Available Margin</label>
                         <div className="text-lg font-black text-indigo-700">₹{upstoxFunds?.available_margin ? Number(upstoxFunds.available_margin).toLocaleString() : '0.00'}</div>
                         <div className="text-[10px] text-slate-700 font-medium">Used: ₹{upstoxFunds?.used_margin ? Number(upstoxFunds.used_margin).toLocaleString() : '0.00'}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {!upstoxLoading && (upstoxOrders.length > 0 || upstoxPositions.length > 0) && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Today's Orders</label>
+                        <div className="text-lg font-black text-slate-800">{upstoxOrders.length} Orders</div>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Active Positions</label>
+                        <div className="text-lg font-black text-slate-800">{upstoxPositions.length} Positions</div>
                       </div>
                     </div>
                   )}

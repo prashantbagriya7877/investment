@@ -47,12 +47,13 @@ export default function TransactionTracker({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCsvWizardOpen, setIsCsvWizardOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [type, setType] = useState<'income' | 'expense' | 'transfer' | 'cash_withdrawal'>('expense');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [amount, setAmount] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState<string>('');
   const [bankAccountId, setBankAccountId] = useState<string>('');
+  const [toBankAccountId, setToBankAccountId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // SMS & Receipt Parser state
@@ -69,12 +70,14 @@ export default function TransactionTracker({
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
 
-  const handleTypeChange = (newType: 'income' | 'expense') => {
+  const handleTypeChange = (newType: 'income' | 'expense' | 'transfer' | 'cash_withdrawal') => {
     setType(newType);
     if (newType === 'income') {
       setCategory(INCOME_CATEGORIES[0]);
-    } else {
+    } else if (newType === 'expense') {
       setCategory(EXPENSE_CATEGORIES[0]);
+    } else {
+      setCategory('Transfer');
     }
   };
 
@@ -230,27 +233,30 @@ export default function TransactionTracker({
       if (editingId) {
         await onEditTransaction(editingId, {
           type,
-          category,
+          category: type === 'transfer' || type === 'cash_withdrawal' ? 'Transfer' : category,
           amount: parsedAmount,
           date,
           notes: notes.trim() || undefined,
-          bankAccountId: bankAccountId || undefined
+          bankAccountId: bankAccountId || undefined,
+          toBankAccountId: (type === 'transfer' && toBankAccountId) ? toBankAccountId : undefined
         });
         setEditingId(null);
       } else {
         await onAddTransaction({
           type,
-          category,
+          category: type === 'transfer' || type === 'cash_withdrawal' ? 'Transfer' : category,
           amount: parsedAmount,
           date,
           notes: notes.trim() || undefined,
-          bankAccountId: bankAccountId || undefined
+          bankAccountId: bankAccountId || undefined,
+          toBankAccountId: (type === 'transfer' && toBankAccountId) ? toBankAccountId : undefined
         });
       }
       setIsFormOpen(false);
       setAmount('');
       setNotes('');
       setBankAccountId('');
+      setToBankAccountId('');
       setDate(new Date().toISOString().split('T')[0]);
       setType('expense');
       setCategory(EXPENSE_CATEGORIES[0]);
@@ -270,6 +276,7 @@ export default function TransactionTracker({
     setDate(t.date);
     setNotes(t.notes || '');
     setBankAccountId(t.bankAccountId || '');
+    setToBankAccountId(t.toBankAccountId || '');
     setIsFormOpen(true);
   };
 
@@ -411,20 +418,34 @@ export default function TransactionTracker({
                 {/* Type Selection */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Flow Direction</label>
-                  <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-0.5 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 bg-slate-100 p-0.5 rounded-lg">
                     <button
                       type="button"
                       onClick={() => handleTypeChange('expense')}
                       className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${type === 'expense' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-700 hover:text-slate-900'}`}
                     >
-                      Expense (Debit)
+                      Expense
                     </button>
                     <button
                       type="button"
                       onClick={() => handleTypeChange('income')}
                       className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${type === 'income' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-700 hover:text-slate-900'}`}
                     >
-                      Income (Credit)
+                      Income
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTypeChange('transfer')}
+                      className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${type === 'transfer' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-700 hover:text-slate-900'}`}
+                    >
+                      Transfer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTypeChange('cash_withdrawal')}
+                      className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${type === 'cash_withdrawal' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-700 hover:text-slate-900'}`}
+                    >
+                      Cash W/D
                     </button>
                   </div>
                 </div>
@@ -452,11 +473,13 @@ export default function TransactionTracker({
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
+                    disabled={type === 'transfer' || type === 'cash_withdrawal'}
                     className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden"
                   >
                     {type === 'expense' 
                       ? EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
-                      : INCOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                      : type === 'income' ? INCOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                      : <option value="Transfer">Transfer / Withdrawal</option>
                     }
                   </select>
                 </div>
@@ -464,13 +487,36 @@ export default function TransactionTracker({
                 {/* Bank Account */}
                 {bankAccounts.length > 0 && (
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Bank Account</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">
+                      {type === 'income' ? 'To Bank Account' : type === 'expense' || type === 'cash_withdrawal' ? 'From Bank Account' : 'From Bank Account'}
+                    </label>
                     <select
                       value={bankAccountId}
                       onChange={(e) => setBankAccountId(e.target.value)}
                       className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden font-mono"
                     >
                       <option value="">-- No Bank (Cash/Other) --</option>
+                      {bankAccounts.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.bankName} - {b.accountName} (₹{b.currentBalance.toLocaleString()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* To Bank Account (For Transfers Only) */}
+                {type === 'transfer' && bankAccounts.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">
+                      To Bank Account
+                    </label>
+                    <select
+                      value={toBankAccountId}
+                      onChange={(e) => setToBankAccountId(e.target.value)}
+                      className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden font-mono"
+                    >
+                      <option value="">-- Select Bank Account --</option>
                       {bankAccounts.map(b => (
                         <option key={b.id} value={b.id}>
                           {b.bankName} - {b.accountName} (₹{b.currentBalance.toLocaleString()})

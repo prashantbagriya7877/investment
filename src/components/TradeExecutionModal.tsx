@@ -53,13 +53,12 @@ export default function TradeExecutionModal({ isOpen, onClose, symbol, ltp }: Tr
             product: productType === 'DELIVERY' ? 'D' : 'I',
             transaction_type: orderSide,
             type: orderType,
-            price: 0,
             rules: [
               {
                 strategy: 'ENTRY',
                 trigger_type: 'SINGLE',
                 trigger_price: triggerPrice,
-                limit_price: orderType === 'LIMIT' ? price : triggerPrice
+                limit_price: orderType === 'LIMIT' ? price : 0
               }
             ]
           };

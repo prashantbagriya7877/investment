@@ -13,6 +13,7 @@ export interface BrokerFunds {
 export function useBrokerSync(userId: string | undefined) {
   const [brokerHoldings, setBrokerHoldings] = useState<Holding[]>([]);
   const [brokerRealizedTrades, setBrokerRealizedTrades] = useState<any[]>([]);
+  const [brokerOrders, setBrokerOrders] = useState<any[]>([]); // New state for Orders
   // We collect all realized trades in a local array per-refresh to avoid accumulation
   const [brokerFunds, setBrokerFunds] = useState<BrokerFunds>({
     upstox: { available: 0, utilized: 0 },
@@ -34,6 +35,7 @@ export function useBrokerSync(userId: string | undefined) {
 
     let allHoldings: Holding[] = [];
     let allRealizedTrades: any[] = []; // collect fresh each refresh, never accumulate
+    let allOrders: any[] = []; // New local array
     let fundsState = {
       upstox: { available: 0, utilized: 0 },
       dhan: { available: 0, utilized: 0 },
@@ -45,11 +47,13 @@ export function useBrokerSync(userId: string | undefined) {
     // 1. Fetch Upstox
     if (upstoxToken) {
       try {
-        const [fundsRes, holdingsRes, mfRes, pnlRes] = await Promise.all([
+        const [fundsRes, holdingsRes, mfRes, pnlRes, posRes, ordersRes] = await Promise.all([
           proxyFetch('/api/upstox/funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
           proxyFetch('/api/upstox/holdings', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
           proxyFetch('/api/upstox/mutual-funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-          proxyFetch('/api/upstox/trade-pnl?segment=EQ&financial_year=2425&page_number=1&page_size=1000', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
+          proxyFetch('/api/upstox/trade-pnl?segment=EQ&financial_year=2425&page_number=1&page_size=1000', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
+          proxyFetch('/api/upstox/short-term-positions', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
+          proxyFetch('/api/upstox/orders', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
         ]);
 
         if (fundsRes.ok) {
@@ -120,6 +124,34 @@ export function useBrokerSync(userId: string | undefined) {
                 isAutoSynced: true
              }));
              allRealizedTrades.push(...mappedPnl); // collect, don't set yet
+          }
+        }
+
+        if (posRes.ok) {
+          const posData = await posRes.json();
+          if (posData.data) {
+            posData.data.forEach((pos: any) => {
+              allHoldings.push({
+                id: `upstox_pos_${pos.instrument_token}`,
+                userId,
+                type: 'stock', // or option, depending on segment
+                symbol: pos.trading_symbol || pos.instrument_token,
+                name: pos.trading_symbol,
+                buyPrice: parseFloat(pos.buy_price || pos.average_price || 0),
+                quantity: parseInt(pos.net_quantity || pos.quantity || 0),
+                buyDate: new Date().toISOString().split('T')[0],
+                assetClass: pos.instrument_token?.includes('|OPT') ? 'Options' : (pos.product === 'I' ? 'Intraday' : 'F&O'),
+                broker: 'Upstox',
+                isAutoSynced: true
+              });
+            });
+          }
+        }
+
+        if (ordersRes.ok) {
+          const ordData = await ordersRes.json();
+          if (ordData.data) {
+            allOrders.push(...ordData.data);
           }
         }
       } catch (err) {
@@ -263,10 +295,11 @@ export function useBrokerSync(userId: string | undefined) {
       }
     }
 
-    fundsState.totalAvailable = fundsState.upstox.available + fundsState.dhan.available + fundsState.angel.available + fundsState.zerodha.available;
+    fundsState.totalAvailable = Object.values(fundsState).reduce((acc, curr) => typeof curr === 'object' ? acc + curr.available : acc, 0);
 
     setBrokerHoldings(allHoldings);
     setBrokerRealizedTrades(allRealizedTrades); // Set once, fresh — avoids accumulation bug
+    setBrokerOrders(allOrders);
     setBrokerFunds(fundsState);
     setIsSyncing(false);
   };
@@ -277,5 +310,5 @@ export function useBrokerSync(userId: string | undefined) {
     return () => clearInterval(interval);
   }, [userId]);
 
-  return { brokerHoldings, brokerRealizedTrades, brokerFunds, isSyncing, refreshBrokerData: fetchBrokerData };
+  return { brokerHoldings, brokerRealizedTrades, brokerOrders, brokerFunds, isSyncing, refreshBrokerData: fetchBrokerData };
 }

@@ -25,6 +25,8 @@ export default function BankProfiles({
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [upiIdsText, setUpiIdsText] = useState(''); // comma separated
   const [initialBalance, setInitialBalance] = useState('');
 
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -34,6 +36,8 @@ export default function BankProfiles({
     setBankName('');
     setAccountName('');
     setAccountNumber('');
+    setIfscCode('');
+    setUpiIdsText('');
     setInitialBalance('');
     setIsFormOpen(true);
   };
@@ -44,6 +48,8 @@ export default function BankProfiles({
     setBankName(bank.bankName);
     setAccountName(bank.accountName);
     setAccountNumber(bank.accountNumber || '');
+    setIfscCode(bank.ifscCode || '');
+    setUpiIdsText(bank.upiIds?.join(', ') || '');
     setInitialBalance(String(bank.initialBalance ?? bank.currentBalance));
     setIsFormOpen(true);
   };
@@ -54,6 +60,8 @@ export default function BankProfiles({
     setBankName('');
     setAccountName('');
     setAccountNumber('');
+    setIfscCode('');
+    setUpiIdsText('');
     setInitialBalance('');
   };
 
@@ -62,12 +70,16 @@ export default function BankProfiles({
     const balanceNum = parseFloat(initialBalance);
     if (isNaN(balanceNum)) return;
 
+    const upiArray = upiIdsText.split(',').map(u => u.trim()).filter(Boolean);
+
     if (editingBank) {
       // Edit mode — only update name/label/accountNumber fields, not balance
       await onEditBankAccount(editingBank.id, {
         bankName: bankName.trim(),
         accountName: accountName.trim(),
         accountNumber: accountNumber.trim() || undefined,
+        ifscCode: ifscCode.trim() || undefined,
+        upiIds: upiArray.length > 0 ? upiArray : undefined
       });
     } else {
       // Add mode
@@ -78,6 +90,12 @@ export default function BankProfiles({
       };
       if (accountNumber.trim()) {
         accPayload.accountNumber = accountNumber.trim();
+      }
+      if (ifscCode.trim()) {
+        accPayload.ifscCode = ifscCode.trim();
+      }
+      if (upiArray.length > 0) {
+        accPayload.upiIds = upiArray;
       }
       await onAddBankAccount(accPayload);
     }
@@ -151,6 +169,14 @@ export default function BankProfiles({
                 <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">A/C Number (Last 4 digits)</label>
                 <input placeholder="e.g. 1234 (Optional)" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">IFSC Code</label>
+                <input placeholder="e.g. HDFC0001234 (Optional)" value={ifscCode} onChange={e => setIfscCode(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">UPI IDs (Comma separated)</label>
+                <input placeholder="e.g. user@upi, 9876543210@paytm" value={upiIdsText} onChange={e => setUpiIdsText(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
               {!editingBank && (
                 <div>
                   <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">Initial Balance (₹)</label>
@@ -197,6 +223,9 @@ export default function BankProfiles({
                     <div>
                       <h4 className="font-bold text-slate-800 leading-tight">{b.bankName}</h4>
                       <p className="text-xs text-slate-700">{b.accountName} {b.accountNumber ? `(..${b.accountNumber})` : ''}</p>
+                      {b.upiIds && b.upiIds.length > 0 && (
+                        <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[150px]">UPI: {b.upiIds[0]}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

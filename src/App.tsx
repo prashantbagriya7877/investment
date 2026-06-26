@@ -9,7 +9,8 @@ import {
   handleFirestoreError,
   OperationType,
   setAccessToken,
-  getAccessToken
+  getAccessToken,
+  refreshGoogleTokenIfNeeded
 } from './firebase';
 import {
   collection,
@@ -112,7 +113,7 @@ export default function App() {
   const { handleAddBankAccount, handleEditBankAccount, handleDeleteBankAccount } = useBankAccounts(user);
   const { physicalAssets, handleAddPhysicalAsset, handleEditPhysicalAsset, handleDeletePhysicalAsset } = usePhysicalAssets(user);
 
-  const { brokerFunds, brokerHoldings, brokerRealizedTrades, isSyncing, refreshBrokerData } = useBrokerSync(user?.uid);
+  const { brokerFunds, brokerHoldings, brokerOrders, brokerRealizedTrades, isSyncing, refreshBrokerData } = useBrokerSync(user?.uid);
 
   const unifiedHoldings = useMemo(() => {
     return [...holdings, ...(brokerHoldings || [])];
@@ -465,6 +466,11 @@ export default function App() {
       setUser(usr);
       setAuthLoading(false);
 
+      if (usr && !usr.uid.startsWith('guest_offline_')) {
+        // Proactively refresh Google OAuth token on initial load
+        refreshGoogleTokenIfNeeded(usr.uid).catch(console.error);
+      }
+
       // Check and restore return tab after OAuth redirect
       const returnTab = localStorage.getItem('oauth_return_tab');
       if (returnTab) {
@@ -736,8 +742,16 @@ export default function App() {
     if (txData.bankAccountId) {
       const bank = bankAccounts.find(b => b.id === txData.bankAccountId);
       if (bank) {
-        const diff = txData.type === 'income' ? txData.amount : -txData.amount;
+        let diff = 0;
+        if (txData.type === 'income') diff = txData.amount;
+        else if (txData.type === 'expense' || txData.type === 'cash_withdrawal' || txData.type === 'transfer') diff = -txData.amount;
         await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+      }
+    }
+    if (txData.toBankAccountId && txData.type === 'transfer') {
+      const toBank = bankAccounts.find(b => b.id === txData.toBankAccountId);
+      if (toBank) {
+        await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance + txData.amount });
       }
     }
 
@@ -761,29 +775,44 @@ export default function App() {
 
     // Adjust bank balance for amount/type changes on linked accounts
     const oldTx = transactions.find(t => t.id === id);
-    if (oldTx?.bankAccountId && (txData.amount !== undefined || txData.type !== undefined || txData.bankAccountId !== undefined)) {
-      const bank = bankAccounts.find(b => b.id === (txData.bankAccountId ?? oldTx.bankAccountId));
-      const oldBank = bankAccounts.find(b => b.id === oldTx.bankAccountId);
+    if (oldTx) {
+      const netDiffs: Record<string, number> = {};
 
-      // Reverse the old transaction's effect on the old bank
-      if (oldBank && oldTx.bankAccountId) {
-        const reverseOldAmount = oldTx.type === 'income' ? -oldTx.amount : oldTx.amount;
-        const newOldBalance = oldBank.currentBalance + reverseOldAmount;
-        await handleEditBankAccount(oldBank.id, { currentBalance: newOldBalance });
+      // Reverse old
+      if (oldTx.bankAccountId) {
+        const oldType = oldTx.type;
+        let diff = 0;
+        if (oldType === 'income') diff = -oldTx.amount;
+        else if (oldType === 'expense' || oldType === 'cash_withdrawal' || oldType === 'transfer') diff = oldTx.amount;
+        netDiffs[oldTx.bankAccountId] = (netDiffs[oldTx.bankAccountId] || 0) + diff;
+      }
+      if (oldTx.toBankAccountId && oldTx.type === 'transfer') {
+        netDiffs[oldTx.toBankAccountId] = (netDiffs[oldTx.toBankAccountId] || 0) - oldTx.amount;
       }
 
-      // Apply the new transaction's effect (with updated values)
+      // Apply new
       const newType = txData.type ?? oldTx.type;
       const newAmount = txData.amount ?? oldTx.amount;
-      const newBankId = txData.bankAccountId ?? oldTx.bankAccountId;
+      const newBankId = txData.bankAccountId !== undefined ? txData.bankAccountId : oldTx.bankAccountId;
+      const newToBankId = txData.toBankAccountId !== undefined ? txData.toBankAccountId : oldTx.toBankAccountId;
+
       if (newBankId) {
-        const newBank = bankAccounts.find(b => b.id === newBankId);
-        if (newBank) {
-          // Re-read the current balance after the reverse above
-          const updatedBank = bankAccounts.find(b => b.id === newBankId);
-          const currentBal = updatedBank?.currentBalance ?? newBank.currentBalance;
-          const applyNewAmount = newType === 'income' ? newAmount : -newAmount;
-          await handleEditBankAccount(newBankId, { currentBalance: currentBal + applyNewAmount });
+        let diff = 0;
+        if (newType === 'income') diff = newAmount;
+        else if (newType === 'expense' || newType === 'cash_withdrawal' || newType === 'transfer') diff = -newAmount;
+        netDiffs[newBankId] = (netDiffs[newBankId] || 0) + diff;
+      }
+      if (newToBankId && newType === 'transfer') {
+        netDiffs[newToBankId] = (netDiffs[newToBankId] || 0) + newAmount;
+      }
+
+      for (const bankId of Object.keys(netDiffs)) {
+        const diff = netDiffs[bankId];
+        if (diff !== 0) {
+          const bank = bankAccounts.find(b => b.id === bankId);
+          if (bank) {
+            await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+          }
         }
       }
     }
@@ -801,11 +830,21 @@ export default function App() {
   const handleDeleteTransaction = async (id: string) => {
     if (!user) return;
     const tx = transactions.find(t => t.id === id);
-    if (tx?.bankAccountId) {
-      const bank = bankAccounts.find(b => b.id === tx.bankAccountId);
-      if (bank) {
-        const reverseDiff = tx.type === 'income' ? -tx.amount : tx.amount;
-        await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + reverseDiff });
+    if (tx) {
+      if (tx.bankAccountId) {
+        const bank = bankAccounts.find(b => b.id === tx.bankAccountId);
+        if (bank) {
+          let diff = 0;
+          if (tx.type === 'income') diff = -tx.amount;
+          else if (tx.type === 'expense' || tx.type === 'cash_withdrawal' || tx.type === 'transfer') diff = tx.amount;
+          await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+        }
+      }
+      if (tx.toBankAccountId && tx.type === 'transfer') {
+        const toBank = bankAccounts.find(b => b.id === tx.toBankAccountId);
+        if (toBank) {
+          await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance - tx.amount });
+        }
       }
     }
 
@@ -1720,6 +1759,7 @@ export default function App() {
               refreshPrices={refreshPrices}
               loadingPrices={loadingPrices}
               brokerFunds={brokerFunds}
+              brokerOrders={brokerOrders}
               isSyncingBrokerData={isSyncing}
               onRefreshBrokerData={refreshBrokerData}
             />} />
