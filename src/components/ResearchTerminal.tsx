@@ -304,24 +304,7 @@ export default function ResearchTerminal() {
         </div>
       )}
 
-      {/* ─── HEADER (Only visible on Dashboard) ─────────────────────────────────────────────── */}
-      {activeTab === 'dashboard' && (
-        <div className="bg-white border-b border-slate-200 px-4 py-4 shadow-sm">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                <Activity size={18} className="text-white" />
-              </div>
-              <div>
-                <h1 className="font-black text-slate-900 text-lg leading-tight">Research Terminal</h1>
-                <p className="text-xs text-slate-400 font-medium">
-                  {isConnected ? '🟢 Live Upstox Data' : '🟡 Demo Mode — Connect Upstox for Live Data'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
 
       {activeTab === 'dashboard' ? (
@@ -442,28 +425,29 @@ export default function ResearchTerminal() {
                 )}
               </div>
             </div>
-          </div>
-
-          <div className="p-4">
-            {activeTab === 'candlestick' && (
-              <CandlestickChart data={historicalData} instrumentName={stockLabel} theme="light" />
-            )}
-            {activeTab === 'options' && (
-              <OptionChainChart data={optionChainData} theme="light" />
-            )}
-            {activeTab === 'portfolio' && (
-              <PortfolioDonutChart holdings={portfolioData} theme="light" />
-            )}
-            {activeTab === 'heatmap' && (
-              <MarketHeatmap stocks={heatmapData} title="NSE Top Movers" theme="light" />
-            )}
-            {activeTab === 'pnl' && (
-              <PLChart data={plData} theme="light" />
-            )}
-          </div>
         </div>
 
-        {/* Heatmap Stats */}
+        {/* Tool Content */}
+        <div className="p-0 sm:p-2 bg-slate-50/30">
+          {activeTab === 'candlestick' && (
+            <CandlestickChart data={historicalData} instrumentName={stockLabel} theme="light" />
+          )}
+          {activeTab === 'options' && (
+            <OptionChainChart data={optionChainData} theme="light" />
+          )}
+          {activeTab === 'portfolio' && (
+            <PortfolioDonutChart holdings={portfolioData} theme="light" />
+          )}
+          {activeTab === 'heatmap' && (
+            <MarketHeatmap stocks={heatmapData} title="NSE Top Movers" theme="light" />
+          )}
+          {activeTab === 'pnl' && (
+            <PLChart data={plData} theme="light" />
+          )}
+        </div>
+      </div>
+
+      {/* Heatmap Stats */}
         {activeTab === 'heatmap' && heatmapData.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mt-4">
             {[
