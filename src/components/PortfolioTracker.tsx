@@ -375,19 +375,23 @@ export default function PortfolioTracker({
       ? (tickerLookupResult?.name || `Mutual Fund (Code: ${mfSchemeCode})`)
       : (tickerLookupResult?.name || symbol.toUpperCase());
 
-    await onAddHolding({
-      type,
-      symbol: type === 'stock' ? symbol.toUpperCase() : undefined,
-      name: resolvedName,
-      buyPrice: bPrice,
-      quantity: qty,
-      buyDate,
-      assetClass,
-      broker,
-      schemeCode: type === 'mf' ? mfSchemeCode : undefined
-    });
-
-    setIsAdding(false);
+    try {
+      await onAddHolding({
+        type,
+        symbol: type === 'stock' ? symbol.toUpperCase() : undefined,
+        name: resolvedName,
+        buyPrice: bPrice,
+        quantity: qty,
+        buyDate,
+        assetClass,
+        broker,
+        schemeCode: type === 'mf' ? mfSchemeCode : undefined
+      });
+      setIsAdding(false);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error saving holding: ${err.message || String(err)}\nPlease take a screenshot.`);
+    }
     // Reset form
     setSymbol('');
     setMfSchemeCode('');

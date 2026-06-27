@@ -325,6 +325,9 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  if (typeof window !== 'undefined') {
+    window.alert(`Firestore Error (${operationType} on ${path}): ${errInfo.error}\nPlease take a screenshot and tell the developer.`);
+  }
   throw new Error(JSON.stringify(errInfo));
 }
 
