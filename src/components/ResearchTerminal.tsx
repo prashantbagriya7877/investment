@@ -7,14 +7,14 @@ import MarketHeatmap from './charts/MarketHeatmap';
 import PLChart from './charts/PLChart';
 import { upstoxApi } from '../services/upstoxApi';
 
-type TabId = 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl';
+type TabId = 'dashboard' | 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl';
 
 const TABS = [
-  { id: 'candlestick' as TabId, label: 'Historical', icon: LineChart, color: 'text-blue-500' },
-  { id: 'options' as TabId, label: 'Option Chain', icon: BarChart2, color: 'text-indigo-500' },
-  { id: 'portfolio' as TabId, label: 'Portfolio', icon: PieChart, color: 'text-emerald-500' },
-  { id: 'heatmap' as TabId, label: 'Heatmap', icon: Globe, color: 'text-orange-500' },
-  { id: 'pnl' as TabId, label: 'P&L Tracker', icon: TrendingUp, color: 'text-yellow-500' },
+  { id: 'candlestick' as TabId, label: 'Historical Chart', icon: LineChart, color: 'text-blue-500', desc: 'View detailed candlestick patterns and technical analysis.' },
+  { id: 'options' as TabId, label: 'Option Chain', icon: BarChart2, color: 'text-indigo-500', desc: 'Analyze strike prices, open interest, and LTP for options.' },
+  { id: 'portfolio' as TabId, label: 'Portfolio Analytics', icon: PieChart, color: 'text-emerald-500', desc: 'Visualize your holdings distribution and exposure.' },
+  { id: 'heatmap' as TabId, label: 'Market Heatmap', icon: Globe, color: 'text-orange-500', desc: 'Spot top gainers and losers in the market at a glance.' },
+  { id: 'pnl' as TabId, label: 'P&L Tracker', icon: TrendingUp, color: 'text-yellow-500', desc: 'Track your realized and unrealized profit & loss over time.' },
 ];
 
 const POPULAR_STOCKS = [
@@ -98,7 +98,7 @@ function generateMockPortfolio() {
 }
 
 export default function ResearchTerminal() {
-  const [activeTab, setActiveTab] = useState<TabId>('candlestick');
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [optionChainData, setOptionChainData] = useState<any[]>([]);
   const [portfolioData, setPortfolioData] = useState<any[]>([]);
@@ -271,7 +271,7 @@ export default function ResearchTerminal() {
     setInstrumentKey(inputKey.trim());
   };
 
-  const activeTabDef = TABS.find(t => t.id === activeTab)!;
+  const activeTabDef = TABS.find(t => t.id === activeTab) || TABS[0];
   const stockLabel = POPULAR_STOCKS.find(s => s.key === instrumentKey)?.label || instrumentKey.split('|')[1];
 
   return (
@@ -378,26 +378,56 @@ export default function ResearchTerminal() {
         )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Tab Bar */}
-        <div className="flex gap-1 bg-white border border-slate-200 p-1 rounded-2xl shadow-sm mb-4 overflow-x-auto">
-          {TABS.map(({ id, label, icon: Icon, color }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === id
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <Icon size={14} className={activeTab === id ? 'text-white' : color} />
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-          ))}
+      {activeTab === 'dashboard' ? (
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Research Dashboard</h2>
+            <p className="text-slate-500 font-medium">Select a tool below to analyze the market and your portfolio.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-1 transition-all flex flex-col items-start text-left group cursor-pointer"
+              >
+                <div className={`p-3 rounded-2xl bg-slate-50 mb-4 group-hover:bg-slate-100 transition-colors ${tab.color}`}>
+                  <tab.icon size={28} />
+                </div>
+                <h3 className="text-lg font-black text-slate-800 mb-1">{tab.label}</h3>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">{tab.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Tab Bar */}
+          <div className="flex gap-1 bg-white border border-slate-200 p-1 rounded-2xl shadow-sm mb-4 overflow-x-auto relative">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0 border-r border-slate-200 pr-4 mr-1"
+            >
+              ← Back
+            </button>
+            {TABS.map(({ id, label, icon: Icon, color }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === id
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <Icon size={14} className={activeTab === id ? 'text-white' : color} />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
 
-        {/* Chart Card */}
+          {/* Chart Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-slate-50/70 border-b border-slate-100">
             <div className="flex items-center gap-2">
@@ -491,6 +521,7 @@ export default function ResearchTerminal() {
           </div>
         )}
       </div>
+    )}
     </div>
   );
 }

@@ -80,7 +80,7 @@ export const upstoxApi = {
 
   // ─── Trade P&L ─────────────────────────────────────
   getTradePnl: (token: string, segment = 'EQ', financialYear = '2023-24', fromDate?: string, toDate?: string) => {
-    let url = `${BASE_URL}/trade-pnl?segment=${segment}&financial_year=${financialYear}`;
+    let url = `${BASE_URL}/trade-pnl?segment=${segment}&financial_year=${financialYear}&page_number=1`;
     if (fromDate) url += `&from_date=${fromDate}`;
     if (toDate) url += `&to_date=${toDate}`;
     return get(url, token);
