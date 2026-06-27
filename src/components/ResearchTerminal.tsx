@@ -205,15 +205,19 @@ export default function ResearchTerminal() {
           setIsMock(true);
         } else {
           try {
-            const res = await upstoxApi.getMarketInfo(token, 'gainers', 'cash_leaders');
-            const gainers = res?.data?.items || [];
-            const losersRes = await upstoxApi.getMarketInfo(token, 'losers', 'cash_leaders');
-            const losers = losersRes?.data?.items || [];
-            const combined = [
-              ...gainers.map((g: any) => ({ name: g.trading_symbol || g.name, change: g.net_change_percentage || 0, value: Math.abs(g.total_traded_value || 50) })),
-              ...losers.map((l: any) => ({ name: l.trading_symbol || l.name, change: l.net_change_percentage || 0, value: Math.abs(l.total_traded_value || 50) }))
-            ];
-            if (combined.length > 0) {
+            // Use Market Quote for POPULAR_STOCKS as heatmap source since Movers API isn't publicly accessible via proxy
+            const keys = POPULAR_STOCKS.map(s => s.key).join(',');
+            const res = await upstoxApi.getMarketQuote(keys, token);
+            const data = res?.data;
+            if (data && Object.keys(data).length > 0) {
+              const combined = Object.keys(data).map(key => {
+                const quote = data[key];
+                return {
+                  name: POPULAR_STOCKS.find(s => s.key === key)?.label || key.split('|')[1],
+                  change: quote.net_change || 0,
+                  value: Math.abs(quote.last_price || 50)
+                };
+              });
               setHeatmapData(combined);
               setIsMock(false);
             } else {

@@ -188,13 +188,14 @@ export default function AnalyticsDashboard({
   return (
     <div className="space-y-4 font-sans pb-10">
       
-      {/* Header */}
-      <div className="flex flex-col gap-1 bg-white p-4 rounded-3xl border border-slate-200/85 shadow-xs">
-        <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Financial Intelligence</h2>
-        <p className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Activity size={20} className="text-indigo-600" />
-          AI Analytics Dashboard
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-4 rounded-3xl border border-slate-200/85 shadow-xs">
+        <div className="space-y-1">
+          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">Financial Intelligence</h2>
+          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Activity size={20} className="text-indigo-600 shrink-0" />
+            AI Analytics Dashboard
+          </p>
+        </div>
       </div>
 
       {/* Net Worth Summary Widget */}

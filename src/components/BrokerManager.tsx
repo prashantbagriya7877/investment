@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import { proxyFetch } from '../utils/proxyFetch';
+import toast from 'react-hot-toast';
 
 interface BrokerManagerProps {
   user: any;
@@ -19,6 +20,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const [upstoxProfile, setUpstoxProfile] = useState<any>(null);
   const [upstoxFunds, setUpstoxFunds] = useState<any>(null);
   const [upstoxHoldings, setUpstoxHoldings] = useState<any[]>([]);
+  const [upstoxMfHoldings, setUpstoxMfHoldings] = useState<any[]>([]);
   const [upstoxOrders, setUpstoxOrders] = useState<any[]>([]);
   const [upstoxPositions, setUpstoxPositions] = useState<any[]>([]);
   const [upstoxLoading, setUpstoxLoading] = useState(false);
@@ -88,12 +90,13 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const fetchUpstoxData = async () => {
     setUpstoxLoading(true);
     try {
-      const [profileRes, fundsRes, holdingsRes, ordersRes, positionsRes] = await Promise.all([
+      const [profileRes, fundsRes, holdingsRes, ordersRes, positionsRes, mfRes] = await Promise.all([
         proxyFetch('/api/upstox/profile', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
         proxyFetch('/api/upstox/funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
         proxyFetch('/api/upstox/holdings', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
         proxyFetch('/api/upstox/orders', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/short-term-positions', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
+        proxyFetch('/api/upstox/short-term-positions', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
+        proxyFetch('/api/upstox/mutual-funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
       ]);
       if (profileRes.ok) setUpstoxProfile((await profileRes.json()).data);
       if (fundsRes.ok) {
@@ -112,6 +115,10 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
       if (positionsRes.ok) {
         const pData = await positionsRes.json();
         setUpstoxPositions(pData.data || []);
+      }
+      if (mfRes.ok) {
+        const mData = await mfRes.json();
+        setUpstoxMfHoldings(mData.data || []);
       }
     } catch (err) {
       console.error(err);
@@ -143,17 +150,17 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
         setUpstoxToken(data.access_token);
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
-        alert('Upstox connected successfully!');
+        toast.success('Upstox connected successfully!');
       }
     } catch (err: any) {
       console.error(err);
-      alert('Error connecting to Upstox: ' + err.message);
+      toast.error('Error connecting to Upstox: ' + err.message);
     }
   };
 
   const initiateUpstoxLogin = () => {
     if (!upstoxApiKey || !upstoxApiSecret) {
-      alert("Please enter API Key and Secret first.");
+      toast.error("Please enter API Key and Secret first.");
       return;
     }
     localStorage.setItem('upstox_api_key', upstoxApiKey.trim());
@@ -165,13 +172,37 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
 
   const handleSaveDirectUpstoxToken = () => {
     if (!upstoxToken.trim()) {
-      alert('Please enter the Access Token generated from the Upstox portal.');
+      toast.error('Please enter the Access Token generated from the Upstox portal.');
       return;
     }
     localStorage.setItem('upstox_access_token', upstoxToken.trim());
     setUpstoxToken(upstoxToken.trim());
-    alert('Direct Access Token saved! Re-fetching data...');
-    fetchUpstoxData();
+    toast.success('Direct Access Token saved! Re-fetching data...');
+    // Data will re-fetch automatically via useEffect on upstoxToken change
+  };
+
+  const handleCancelUpstoxOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    try {
+      const res = await proxyFetch(`/api/upstox/order/cancel?order_id=${orderId}`, { headers: { 'Authorization': `Bearer ${upstoxToken}` } });
+      if (!res.ok) throw new Error('Failed to cancel order');
+      toast.success('Order cancelled successfully');
+      fetchUpstoxData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleExitAllUpstox = async () => {
+    if (!confirm('KILL SWITCH: Are you sure you want to exit all open positions and cancel all pending orders?')) return;
+    try {
+      const res = await proxyFetch(`/api/upstox/order/exit-all-positions`, { headers: { 'Authorization': `Bearer ${upstoxToken}` } });
+      if (!res.ok) throw new Error('Failed to exit all positions');
+      toast.success('Kill switch activated! All positions exited.');
+      fetchUpstoxData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
   // -- DHAN DATA FETCHING --
@@ -200,8 +231,8 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const saveDhanConfig = () => {
     localStorage.setItem('dhan_client_id', dhanClientId);
     localStorage.setItem('dhan_access_token', dhanAccessToken);
-    alert('Dhan credentials saved!');
-    fetchDhanData();
+    toast.success('Dhan credentials saved!');
+    // Data will re-fetch automatically via useEffect
   };
 
   // -- ANGEL ONE DATA FETCHING --
@@ -274,17 +305,17 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
         localStorage.setItem('kite_access_token', data.data.access_token);
         setKiteToken(data.data.access_token);
         window.history.replaceState({}, document.title, window.location.pathname);
-        alert('Zerodha connected successfully!');
+        toast.success('Zerodha connected successfully!');
       }
     } catch (err: any) {
       console.error(err);
-      alert('Error connecting to Zerodha: ' + err.message);
+      toast.error('Error connecting to Zerodha: ' + err.message);
     }
   };
 
   const initiateKiteLogin = () => {
     if (!kiteApiKey || !kiteApiSecret) {
-      alert("Please enter Kite API Key and Secret first.");
+      toast.error("Please enter Kite API Key and Secret first.");
       return;
     }
     localStorage.setItem('kite_api_key', kiteApiKey);
@@ -304,10 +335,10 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
       localStorage.setItem('smartPostbackUrl', smartPostbackUrl);
       localStorage.setItem('smartPrimaryIp', smartPrimaryIp);
       localStorage.setItem('smartSecondaryIp', smartSecondaryIp);
-      alert('🔒 Angel One SmartAPI configuration successfully saved!');
+      toast.success('🔒 Angel One SmartAPI configuration successfully saved!');
     } catch (err) {
       console.error(err);
-      alert('Error saving configuration.');
+      toast.error('Error saving configuration.');
     } finally {
       setIsSavingApi(false);
     }
@@ -328,7 +359,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
 
   const handleAngelLogin = async () => {
     if (!angelApiKey || !angelClientCode || !angelPin || !angelTotp) {
-      alert("Please fill all Angel One fields including TOTP.");
+      toast.error("Please fill all Angel One fields including TOTP.");
       return;
     }
     setAngelLoading(true);
@@ -352,10 +383,10 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
         localStorage.setItem('angel_api_key', angelApiKey);
         localStorage.setItem('angel_client_code', angelClientCode);
         localStorage.setItem('angel_pin', angelPin); // Usually insecure to save PIN, but ok for demo
-        alert('Angel One connected!');
+        toast.success('Angel One connected!');
       }
     } catch (err: any) {
-      alert(err.message);
+      toast.success(err.message);
     } finally {
       setAngelLoading(false);
     }
@@ -518,14 +549,44 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                   )}
 
                   {!upstoxLoading && (upstoxOrders.length > 0 || upstoxPositions.length > 0) && (
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Today's Orders</label>
-                        <div className="text-lg font-black text-slate-800">{upstoxOrders.length} Orders</div>
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Orders & Positions</label>
+                        <button 
+                          onClick={handleExitAllUpstox}
+                          className="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black uppercase px-3 py-1 rounded-lg transition-colors border border-rose-200"
+                        >
+                          KILL SWITCH (Exit All)
+                        </button>
                       </div>
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Active Positions</label>
-                        <div className="text-lg font-black text-slate-800">{upstoxPositions.length} Positions</div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Today's Orders</label>
+                          <div className="text-lg font-black text-slate-800">{upstoxOrders.length} Orders</div>
+                          {upstoxOrders.length > 0 && (
+                            <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                              {upstoxOrders.map((o, i) => (
+                                <div key={i} className="flex justify-between items-center text-[10px] p-1.5 bg-slate-50 rounded-lg">
+                                  <div>
+                                    <span className={`font-bold ${o.transaction_type === 'BUY' ? 'text-indigo-600' : 'text-rose-600'}`}>{o.transaction_type}</span> {o.tradingsymbol}
+                                    <span className="block text-slate-500">{o.status}</span>
+                                  </div>
+                                  {(o.status === 'open' || o.status === 'pending') && (
+                                    <button 
+                                      onClick={() => handleCancelUpstoxOrder(o.order_id)}
+                                      className="text-rose-500 hover:text-rose-700 p-1 bg-rose-50 rounded-md font-bold"
+                                    >Cancel</button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Active Positions</label>
+                          <div className="text-lg font-black text-slate-800">{upstoxPositions.length} Positions</div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -901,7 +962,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText(angelApiKey || 'fy2JiRJ2');
-                            alert('🔑 Key copied to clipboard!');
+                            toast.success('🔑 Key copied to clipboard!');
                           }}
                           className="text-indigo-600 hover:underline hover:text-indigo-700 font-bold text-[10px] cursor-pointer"
                         >
@@ -953,7 +1014,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                                     setSmartAppName('');
                                     setSmartRedirectUrl('');
                                     setSmartPrimaryIp('');
-                                    alert('Row cleared. Fill form & save to reset App registry.');
+                                    toast.success('Row cleared. Fill form & save to reset App registry.');
                                   }}
                                   className="text-slate-500 hover:text-red-500 text-[10px] font-bold cursor-pointer"
                                 >

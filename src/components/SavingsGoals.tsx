@@ -13,6 +13,8 @@ import {
   Info
 } from 'lucide-react';
 import { SavingsGoal } from '../types';
+import toast from 'react-hot-toast';
+import InfoTooltip from './InfoTooltip';
 
 interface SavingsGoalsProps {
   savingsGoals: SavingsGoal[];
@@ -48,19 +50,19 @@ export default function SavingsGoals({
     const savingsVal = parseFloat(currentSavings || '0');
 
     if (isNaN(targetVal) || targetVal <= 0) {
-      alert('Please enter a valid positive target amount.');
+      toast.error('Please enter a valid positive target amount.');
       return;
     }
     if (isNaN(savingsVal) || savingsVal < 0) {
-      alert('Current savings must be a valid non-negative number.');
+      toast.success('Current savings must be a valid non-negative number.');
       return;
     }
     if (savingsVal > targetVal) {
-      alert('Savings cannot exceed your goal target amount.');
+      toast.success('Savings cannot exceed your goal target amount.');
       return;
     }
     if (!title.trim()) {
-      alert('Please enter a name for your savings goal.');
+      toast.error('Please enter a name for your savings goal.');
       return;
     }
 
@@ -89,7 +91,7 @@ export default function SavingsGoals({
       setDeadline(new Date().getFullYear() + '-12-31');
     } catch (err) {
       console.error(err);
-      alert('Error updating savings target. Check Firestore Rules.');
+      toast.error('Error updating savings target. Check Firestore Rules.');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,13 +101,13 @@ export default function SavingsGoals({
   const handleQuickContribution = async (goal: SavingsGoal) => {
     const contribution = parseFloat(quickAmount);
     if (isNaN(contribution) || contribution <= 0) {
-      alert('Please enter a valid positive contribution amount.');
+      toast.error('Please enter a valid positive contribution amount.');
       return;
     }
 
     const calculatedSavings = goal.currentSavings + contribution;
     if (calculatedSavings > goal.targetAmount) {
-      alert('This amount would overflow your target maximum!');
+      toast.success('This amount would overflow your target maximum!');
       return;
     }
 
@@ -115,7 +117,7 @@ export default function SavingsGoals({
       setQuickAmount('');
     } catch (err) {
       console.error(err);
-      alert('Error updating goal balance.');
+      toast.error('Error updating goal balance.');
     }
   };
 
@@ -157,11 +159,13 @@ export default function SavingsGoals({
     <div className="space-y-3" id="savings-tab">
       
       {/* Header element */}
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
         <div>
-          <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Accumulation targets</h2>
-          <p className="text-xl font-bold text-slate-900 tracking-tight font-sans mt-0.5">Savings Campaigns</p>
-          <p className="text-xs text-slate-450 mt-1 font-sans">Establish goal metrics and track capital progression dynamically.</p>
+          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Accumulation targets</h2>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight font-sans">Savings Campaigns</p>
+            <InfoTooltip text="Establish goal metrics and track capital progression dynamically." />
+          </div>
         </div>
         
         <button
@@ -169,7 +173,7 @@ export default function SavingsGoals({
             setEditingId(null);
             setIsFormOpen(true);
           }}
-          className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors cursor-pointer w-full sm:w-auto"
           id="new-goal-button"
         >
           <Plus size={14} /> Establish Goal

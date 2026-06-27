@@ -14,6 +14,7 @@ import {
   Percent
 } from 'lucide-react';
 import { BudgetLimit, Transaction, EXPENSE_CATEGORIES } from '../types';
+import toast from 'react-hot-toast';
 
 interface BudgetLimitsProps {
   budgetLimits: BudgetLimit[];
@@ -89,14 +90,14 @@ export default function BudgetLimits({
     const limitVal = parseFloat(limitAmount);
 
     if (isNaN(limitVal) || limitVal <= 0) {
-      alert('Please enter a valid positive budget limit amount.');
+      toast.error('Please enter a valid positive budget limit amount.');
       return;
     }
 
     // Check if category limit is already defined for this month
     const existing = currentLimits.some(l => l.category === category);
     if (existing) {
-      alert(`A budget limit for '${category}' is already defined for ${selectedMonth}. Please delete that first to replace it.`);
+      toast.error(`A budget limit for '${category}' is already defined for ${selectedMonth}. Please delete that first to replace it.`);
       return;
     }
 
@@ -111,7 +112,7 @@ export default function BudgetLimits({
       setLimitAmount('');
     } catch (err) {
       console.error(err);
-      alert('Error creating category limit budget. Check Firestore Rules.');
+      toast.error('Error creating category limit budget. Check Firestore Rules.');
     } finally {
       setIsSubmitting(false);
     }

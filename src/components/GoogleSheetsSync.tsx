@@ -8,6 +8,7 @@ import { getAccessToken, setAccessToken, db, signInWithGoogle } from '../firebas
 import { doc } from 'firebase/firestore';
 import { setDoc } from '../firebase-sync';
 import { Transaction, Holding, Sip, Fd, UserSettings } from '../types';
+import toast from 'react-hot-toast';
 
 interface GoogleSheetsSyncProps {
   transactions: Transaction[];
@@ -105,7 +106,7 @@ export default function GoogleSheetsSync({
   const handleCreateNewSpreadsheet = async () => {
     const currentToken = token || getAccessToken();
     if (!currentToken) {
-      alert('Please authorize Google Connection first.');
+      toast.error('Please authorize Google Connection first.');
       return;
     }
 
@@ -150,7 +151,7 @@ export default function GoogleSheetsSync({
       addLog('🚀 Default database structures and tables mapped perfectly!');
     } catch (err: any) {
       addLog(`❌ Failed creating spreadsheet: ${err.message}`);
-      alert(`API Error configuring sheet: ${err.message}`);
+      toast.error(`API Error configuring sheet: ${err.message}`);
     } finally {
       setIsCreatingSheet(false);
     }
@@ -192,11 +193,11 @@ export default function GoogleSheetsSync({
     const currentToken = activeToken || getAccessToken();
     const sheetId = targetId || spreadsheetId;
     if (!currentToken) {
-      alert('Please connect Google Account first.');
+      toast.error('Please connect Google Account first.');
       return;
     }
     if (!sheetId) {
-      alert('Please input a valid Google Spreadsheet ID first.');
+      toast.error('Please input a valid Google Spreadsheet ID first.');
       return;
     }
 
@@ -239,10 +240,10 @@ export default function GoogleSheetsSync({
       await writeSheetRange(sheetId, 'FDs', fdRows, currentToken);
 
       addLog('🏆 Synchronized cloud payload successfully. Google Sheets is fully up-to-date!');
-      alert('✅ All ledger modules uploaded and synchronized to Google Sheets!');
+      toast.success('✅ All ledger modules uploaded and synchronized to Google Sheets!');
     } catch (err: any) {
       addLog(`❌ Synchronization upload failed: ${err.message}`);
-      alert(`Fetch sync error: ${err.message}`);
+      toast.error(`Fetch sync error: ${err.message}`);
     } finally {
       setIsPushing(false);
     }
@@ -266,11 +267,11 @@ export default function GoogleSheetsSync({
   const handlePullFromSheets = async () => {
     const currentToken = token || getAccessToken();
     if (!currentToken) {
-      alert('Please connect Google Account first.');
+      toast.error('Please connect Google Account first.');
       return;
     }
     if (!spreadsheetId) {
-      alert('Please fill set Google Spreadsheet ID.');
+      toast.error('Please fill set Google Spreadsheet ID.');
       return;
     }
 
@@ -355,11 +356,11 @@ export default function GoogleSheetsSync({
       }
 
       addLog('🥇 Sheets download completed! Local cloud database upgraded successfully.');
-      alert('🏆 Synchronization pull completed! Your local app values have matching records from Google Sheets.');
+      toast.success('🏆 Synchronization pull completed! Your local app values have matching records from Google Sheets.');
       onReloadData();
     } catch (err: any) {
       addLog(`❌ Sync Pull Failed: ${err.message}`);
-      alert(`Error synchronizing tables: ${err.message}`);
+      toast.error(`Error synchronizing tables: ${err.message}`);
     } finally {
       setIsPulling(false);
     }

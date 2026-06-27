@@ -44,6 +44,9 @@ export const upstoxApi = {
   getOrders: (token: string) => get(`${BASE_URL}/orders`, token),
   getGttOrders: (token: string) => get(`${BASE_URL}/gtt-orders`, token),
   placeOrder: (token: string, order: object) => post(`${BASE_URL}/order/place`, token, order),
+  modifyOrder: (token: string, order: object) => post(`${BASE_URL}/order/modify`, token, order),
+  cancelOrder: (token: string, orderId: string) => get(`${BASE_URL}/order/cancel?order_id=${orderId}`, token),
+  exitAllPositions: (token: string) => get(`${BASE_URL}/order/exit-all-positions`, token),
 
   // ─── Market Quotes ─────────────────────────────────
   getMarketQuote: (symbol: string, token: string) =>
@@ -113,4 +116,11 @@ export const upstoxApi = {
   // ─── Position Conversion ────────────────────────────
   convertPosition: (token: string, data: object) =>
     post(`${BASE_URL}/positions/convert`, token, data),
+
+  // ─── Mutual Funds ──────────────────────────────────
+  getMutualFundHoldings: (token: string) => get(`${BASE_URL}/portfolio/mutual-fund`, token),
+
+  // ─── Account Settings ──────────────────────────────
+  getKillSwitchStatus: (token: string) => get(`${BASE_URL}/user/kill-switch`, token),
+  updateKillSwitch: (token: string, action: string) => post(`${BASE_URL}/user/kill-switch`, token, { action }),
 };

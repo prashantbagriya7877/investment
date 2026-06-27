@@ -221,11 +221,11 @@ export default function TransactionTracker({
     const cleanAmountStr = amount.replace(/[^\d.]/g, '');
     const parsedAmount = parseFloat(cleanAmountStr);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert('Please enter a valid positive decimal amount.');
+      toast.error('Please enter a valid positive decimal amount.');
       return;
     }
     if (!category) {
-      alert('Please select a category.');
+      toast.error('Please select a category.');
       return;
     }
 
@@ -264,7 +264,7 @@ export default function TransactionTracker({
       toast.success(editingId ? 'Log updated successfully!' : 'Log saved successfully!');
     } catch (err) {
       console.error(err);
-      alert('Error updating transaction in cloud.');
+      toast.error('Error updating transaction in cloud.');
     } finally {
       setIsSubmitting(false);
     }

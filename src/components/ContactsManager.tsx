@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { getAccessToken, setAccessToken, signInWithGoogle, logout } from '../firebase';
 import { PendingPayment, Transaction } from '../types';
+import toast from 'react-hot-toast';
 
 export interface GoogleContact {
   resourceName: string;
@@ -263,7 +264,7 @@ export default function ContactsManager({
   const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formGivenName.trim()) {
-      alert('Given Name is required.');
+      toast.success('Given Name is required.');
       return;
     }
 
@@ -315,7 +316,7 @@ export default function ContactsManager({
     // Google API Save / Update Mode
     const activeToken = token || getAccessToken();
     if (!activeToken) {
-      alert('Authorizing session is stale. Please log in first.');
+      toast.error('Authorizing session is stale. Please log in first.');
       setLoading(false);
       return;
     }
@@ -387,7 +388,7 @@ export default function ContactsManager({
       setIsFormOpen(false);
     } catch (err: any) {
       addLog(`❌ Failed to synchronize action: ${err.message || err}`);
-      alert(`Synchronize failed: ${err.message || err}`);
+      toast.error(`Synchronize failed: ${err.message || err}`);
     } finally {
       setLoading(false);
     }
@@ -409,7 +410,7 @@ export default function ContactsManager({
 
     const activeToken = token || getAccessToken();
     if (!activeToken) {
-      alert('OAuth session is missing. Log in to delete contacts.');
+      toast.success('OAuth session is missing. Log in to delete contacts.');
       setLoading(false);
       return;
     }
@@ -432,7 +433,7 @@ export default function ContactsManager({
       await loadContactsList();
     } catch (err: any) {
       addLog(`❌ Delete operation failed: ${err.message || err}`);
-      alert(`Delete failed: ${err.message || err}`);
+      toast.error(`Delete failed: ${err.message || err}`);
     } finally {
       setLoading(false);
     }
@@ -451,7 +452,7 @@ export default function ContactsManager({
   const handleSaveDue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedContactForDue || !dueAmount || parseFloat(dueAmount) <= 0) {
-      alert('Please fill general requirements correctly.');
+      toast.error('Please fill general requirements correctly.');
       return;
     }
 
@@ -466,10 +467,10 @@ export default function ContactsManager({
           notes: `${dueNotes} ${selectedContactForDue.phone ? `(${selectedContactForDue.phone})` : ''}`.trim()
         });
         addLog(`💸 Linked new due payment of ₹${dueAmount} to ${selectedContactForDue.name}`);
-        alert('Linked due payment successfully configured on the workspace!');
+        toast.success('Linked due payment successfully configured on the workspace!');
         setIsDueFormOpen(false);
       } else {
-        alert('Due Payment action is not loaded. Try again shortly.');
+        toast.success('Due Payment action is not loaded. Try again shortly.');
       }
     } catch (err: any) {
       addLog(`❌ Failed to link pending payment: ${err.message}`);

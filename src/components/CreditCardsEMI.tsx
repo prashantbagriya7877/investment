@@ -209,17 +209,17 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   return (
     <div className="space-y-4 pb-10 font-sans">
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs flex justify-between items-center">
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Finance Manager</p>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <CreditCard size={20} className="text-indigo-600" />
+          <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+            <CreditCard size={20} className="text-indigo-600 shrink-0" />
             Credit Cards & EMIs
           </h2>
         </div>
         <button
           onClick={() => activeTab === 'cards' ? setShowAddCard(true) : setShowAddEmi(true)}
-          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-colors shadow-sm"
+          className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-colors shadow-sm w-full sm:w-auto"
         >
           <PlusCircle size={14} />
           Add {activeTab === 'cards' ? 'Card Bill' : 'EMI'}

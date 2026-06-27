@@ -95,7 +95,14 @@ export async function proxyFetch(url: string | URL | Request, options: RequestIn
       }
     } else if (path.startsWith('gtt-order')) {
       nativeUrl = 'https://api.upstox.com/v2/order/gtt/place';
-    } else if (path.startsWith('order')) {
+    } else if (path.startsWith('order/modify')) {
+      nativeUrl = 'https://api.upstox.com/v2/order/modify';
+    } else if (path.startsWith('order/cancel')) {
+      const q = path.split('?')[1];
+      nativeUrl = `https://api.upstox.com/v2/order/cancel?${q || ''}`;
+    } else if (path.startsWith('order/exit-all-positions')) {
+      nativeUrl = 'https://api.upstox.com/v2/order/exit-all-positions';
+    } else if (path.startsWith('order/place') || path.startsWith('order')) {
       nativeUrl = 'https://api.upstox.com/v2/order/place';
     }
   }

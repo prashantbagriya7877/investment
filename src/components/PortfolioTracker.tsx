@@ -359,7 +359,7 @@ export default function PortfolioTracker({
     if (deductCashFromWallet) {
       const currentCash = userSettings?.investmentCashBalance || 0;
       if (buyCost > currentCash) {
-        alert(`Insufficient cash in your Investment Wallet (Available: ₹${currentCash.toLocaleString('en-IN')}) to complete this purchase of ₹${buyCost.toLocaleString('en-IN')}. Please deposit cash first or uncheck the "Deduct buy cost" option.`);
+        toast.error(`Insufficient cash in your Investment Wallet (Available: ₹${currentCash.toLocaleString('en-IN')}) to complete this purchase of ₹${buyCost.toLocaleString('en-IN')}. Please deposit cash first or uncheck the "Deduct buy cost" option.`);
         return;
       }
       try {
@@ -367,7 +367,7 @@ export default function PortfolioTracker({
           investmentCashBalance: parseFloat((currentCash - buyCost).toFixed(2))
         });
       } catch (err: any) {
-        alert(`Failed to deduct cash from wallet: ${err.message || err}`);
+        toast.error(`Failed to deduct cash from wallet: ${err.message || err}`);
         return;
       }
     }
@@ -392,7 +392,7 @@ export default function PortfolioTracker({
       toast.success('Holding saved successfully!');
     } catch (err: any) {
       console.error(err);
-      alert(`Error saving holding: ${err.message || String(err)}\nPlease take a screenshot.`);
+      toast.error(`Error saving holding: ${err.message || String(err)}\nPlease take a screenshot.`);
     }
     // Reset form
     setSymbol('');
@@ -426,7 +426,7 @@ export default function PortfolioTracker({
     e.preventDefault();
     const amount = parseFloat(cashAmountInput);
     if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid positive amount.");
+      toast.error("Please enter a valid positive amount.");
       return;
     }
 
@@ -437,7 +437,7 @@ export default function PortfolioTracker({
       nextBalance = currentBalance + amount;
     } else if (cashActionType === 'withdraw') {
       if (amount > currentBalance) {
-        alert("Insufficient cash balance available for withdrawal.");
+        toast.error("Insufficient cash balance available for withdrawal.");
         return;
       }
       nextBalance = currentBalance - amount;
@@ -447,12 +447,12 @@ export default function PortfolioTracker({
       await onUpdateSmartApiSettings({
         investmentCashBalance: parseFloat(nextBalance.toFixed(2))
       });
-      alert(`Successfully ${cashActionType === 'deposit' ? 'deposited' : 'withdrawn'} ₹${amount.toLocaleString('en-IN')}!`);
+      toast.success(`Successfully ${cashActionType === 'deposit' ? 'deposited' : 'withdrawn'} ₹${amount.toLocaleString('en-IN')}!`);
       setCashActionType(null);
       setCashAmountInput('');
       setCashNoteInput('');
     } catch (err: any) {
-      alert(`Failed to update cash balance: ${err.message || err}`);
+      toast.error(`Failed to update cash balance: ${err.message || err}`);
     }
   };
 
@@ -465,11 +465,11 @@ export default function PortfolioTracker({
     const sellPrice = parseFloat(exitPrice);
 
     if (isNaN(qtyToSell) || qtyToSell <= 0 || qtyToSell > exitingHolding.quantity) {
-      alert(`Invalid quantity! Max quantity you can sell is ${exitingHolding.quantity}.`);
+      toast.error(`Invalid quantity! Max quantity you can sell is ${exitingHolding.quantity}.`);
       return;
     }
     if (isNaN(sellPrice) || sellPrice <= 0) {
-      alert("Please enter a valid exit price.");
+      toast.error("Please enter a valid exit price.");
       return;
     }
 
@@ -515,12 +515,12 @@ export default function PortfolioTracker({
         await onUpdateSmartApiSettings(updates);
       }
 
-      alert(`🎉 Sale completed! Booked P&L: ₹${realizedPnLOfTrade.toLocaleString('en-IN')}`);
+      toast.success(`🎉 Sale completed! Booked P&L: ₹${realizedPnLOfTrade.toLocaleString('en-IN')}`);
       setExitingHolding(null);
       setExitQuantity('');
       setExitPrice('');
     } catch (err: any) {
-      alert(`Failed to exit position: ${err.message || err}`);
+      toast.error(`Failed to exit position: ${err.message || err}`);
     }
   };
 
@@ -1266,7 +1266,10 @@ export default function PortfolioTracker({
                                         const currentCash = userSettings?.investmentCashBalance || 0;
                                         onUpdateSmartApiSettings({
                                           investmentCashBalance: parseFloat((currentCash + h.investedValue).toFixed(2))
-                                        }).then(() => onDeleteHolding(h.id));
+                                        }).then(() => {
+                                          onDeleteHolding(h.id);
+                                          toast.success(`Capital of ₹${h.investedValue.toLocaleString('en-IN')} refunded to cash balance!`);
+                                        });
                                       }
                                     }}
                                     className="text-slate-500 hover:text-red-500 p-1 rounded-md transition-colors cursor-pointer border-0 bg-transparent"

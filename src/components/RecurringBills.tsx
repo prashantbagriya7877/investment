@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Edit2, Trash2, X, Calendar, AlertCircle, CheckCircle, Repeat, Sparkles, Mail } from 'lucide-react';
 import { RecurringBill, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 import { proxyFetch } from '../utils/proxyFetch';
+import toast from 'react-hot-toast';
 
 interface RecurringBillsProps {
   recurringBills: RecurringBill[];
@@ -43,11 +44,11 @@ export default function RecurringBills({
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert('Please enter a valid positive decimal amount.');
+      toast.error('Please enter a valid positive decimal amount.');
       return;
     }
     if (!title.trim()) {
-      alert('Please enter a title for the bill.');
+      toast.error('Please enter a title for the bill.');
       return;
     }
 
@@ -80,7 +81,7 @@ export default function RecurringBills({
       setFrequency('monthly');
     } catch (err: any) {
       console.error(err);
-      alert('Error saving recurring bill: ' + (err.message || String(err)));
+      toast.error('Error saving recurring bill: ' + (err.message || String(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -123,13 +124,13 @@ export default function RecurringBills({
           }
         }
         setEmailText('');
-        alert(`Successfully added ${subs.length} subscription(s)!`);
+        toast.success(`Successfully added ${subs.length} subscription(s)!`);
       } else {
-        alert('No subscriptions found in the text.');
+        toast.success('No subscriptions found in the text.');
       }
     } catch (err: any) {
       console.error(err);
-      alert('Error parsing email snippets: ' + (err.message || String(err)));
+      toast.error('Error parsing email snippets: ' + (err.message || String(err)));
     } finally {
       setIsParsingEmail(false);
     }

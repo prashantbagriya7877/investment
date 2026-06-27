@@ -7,6 +7,7 @@ import {
 import { getAccessToken, refreshGoogleTokenIfNeeded } from '../firebase';
 import InfoTooltip from './InfoTooltip';
 import GooglePicker from './GooglePicker';
+import toast from 'react-hot-toast';
 
 interface WorkspaceSuiteProps {
   user: any;
@@ -211,7 +212,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
   const handleCreateTextFile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFileName.trim()) return alert('Please enter a file name.');
+    if (!uploadFileName.trim()) return toast.error('Please enter a file name.');
     
     // Prompt confirmation as per Workspace Mutate design rules
     if (!window.confirm(`Create file "${uploadFileName}.txt" inside your Google Drive?`)) return;
@@ -236,13 +237,13 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
       
-      alert('🎉 Text file created successfully inside your Drive!');
+      toast.success('🎉 Text file created successfully inside your Drive!');
       setUploadFileName('');
       setUploadFileContent('');
       handleFetchDriveFiles();
     } catch (err: any) {
       console.error(err);
-      alert(`Upload failed: ${err.message}`);
+      toast.error(`Upload failed: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -288,7 +289,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!gmailRecipient.trim() || !gmailSubject.trim() || !gmailBody.trim()) {
-      return alert('Please specify all email inputs.');
+      return toast.error('Please specify all email inputs.');
     }
 
     // Prompt confirmation as per Workspace Mutate rules
@@ -322,14 +323,14 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
 
-      alert(`📨 Email sent successfully to: ${gmailRecipient}!`);
+      toast.success(`📨 Email sent successfully to: ${gmailRecipient}!`);
       setGmailRecipient('');
       setGmailSubject('');
       setGmailBody('');
       handleFetchGmailMessages();
     } catch (err: any) {
       console.error(err);
-      alert(`Gmail Dispatch Fail: ${err.message}`);
+      toast.error(`Gmail Dispatch Fail: ${err.message}`);
     } finally {
       setIsSendingEmail(false);
     }
@@ -374,13 +375,13 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       const meetUrl = data.conferenceData?.entryPoints?.find((ep: any) => ep.entryPointType === 'video')?.uri;
       if (meetUrl) {
         setCreatedMeetLink(meetUrl);
-        alert('🎉 Google Meet space created successfully! Click Join link to start.');
+        toast.success('🎉 Google Meet space created successfully! Click Join link to start.');
       } else {
         throw new Error('Calender connected but failed to generate Hangout Meet. Google Admin configuration might restrict dynamic conference creation.');
       }
     } catch (err: any) {
       console.error(err);
-      alert(`Meet Creation Error: ${err.message}`);
+      toast.error(`Meet Creation Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -416,7 +417,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
   const handleCreateGoogleTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim() || !selectedTaskListId) return alert('Enter a task title first.');
+    if (!newTaskTitle.trim() || !selectedTaskListId) return toast.success('Enter a task title first.');
 
     setIsLoading(true);
     try {
@@ -434,13 +435,13 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
       
-      alert('✅ Task added inside Google Tasks!');
+      toast.success('✅ Task added inside Google Tasks!');
       setNewTaskTitle('');
       setNewTaskNotes('');
       await handleFetchTasks(selectedTaskListId);
     } catch (err: any) {
       console.error(err);
-      alert(`Task add fail: ${err.message}`);
+      toast.error(`Task add fail: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -465,11 +466,11 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
       
-      alert('✅ Google Task marked completed successfully.');
+      toast.success('✅ Google Task marked completed successfully.');
       await handleFetchTasks(selectedTaskListId);
     } catch (err: any) {
       console.error(err);
-      alert(`Task completion fail: ${err.message}`);
+      toast.error(`Task completion fail: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -491,7 +492,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       await handleFetchTasks(selectedTaskListId);
     } catch (err: any) {
       console.error(err);
-      alert(`Task delete fail: ${err.message}`);
+      toast.error(`Task delete fail: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -544,12 +545,12 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
       
-      alert('💬 Message posted successfully!');
+      toast.success('💬 Message posted successfully!');
       setChatMessage('');
       handleFetchChatMessages(selectedSpaceName);
     } catch (err: any) {
       console.error(err);
-      alert(`Chat Post error: ${err.message}`);
+      toast.error(`Chat Post error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -589,12 +590,12 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
 
       if (!res.ok) throw new Error(await res.text() || res.statusText);
       
-      alert('🎉 Google Form created successfully! You can find it inside your Google Drive.');
+      toast.success('🎉 Google Form created successfully! You can find it inside your Google Drive.');
       setNewFormTitle('New Form');
       handleFetchForms();
     } catch (err: any) {
       console.error(err);
-      alert(`Form create error: ${err.message}`);
+      toast.error(`Form create error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -635,7 +636,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
       }
     } catch (e: any) {
       console.error('Error fetching course details:', e);
-      alert('Failed to load course details');
+      toast.error('Failed to load course details');
     } finally {
       setIsLoading(false);
     }
@@ -1594,11 +1595,11 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                           try {
                             const { createGoogleDoc } = await import('./GoogleDocsManager');
                             const doc = await createGoogleDoc(newDocTitle || 'Untitled Document');
-                            alert(`✅ Google Doc Created Successfully!`);
+                            toast.success(`✅ Google Doc Created Successfully!`);
                             setNewDocTitle('');
                             handleFetchDocs();
                           } catch (err: any) {
-                            alert(`Error creating Google Doc: ${err.message}`);
+                            toast.error(`Error creating Google Doc: ${err.message}`);
                           } finally {
                             setIsLoading(false);
                           }
@@ -1672,11 +1673,11 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                           try {
                             const { createGoogleSlide } = await import('./GoogleSlidesManager');
                             const deckId = await createGoogleSlide(newSlideTitle || 'Untitled Presentation');
-                            alert(`✅ Google Slide Created Successfully!`);
+                            toast.success(`✅ Google Slide Created Successfully!`);
                             setNewSlideTitle('');
                             handleFetchSlides();
                           } catch (err: any) {
-                            alert(`Error creating Google Slide: ${err.message}`);
+                            toast.error(`Error creating Google Slide: ${err.message}`);
                           } finally {
                             setIsLoading(false);
                           }
@@ -1749,7 +1750,7 @@ export default function WorkspaceSuite({ user, onNavigateToTab }: WorkspaceSuite
                       <GooglePicker 
                         label="Open Official Google Picker" 
                         onSelect={(file) => {
-                          alert(`You selected: ${file.name}\nMIME: ${file.mimeType}\nURL: ${file.url}`);
+                          toast.success(`You selected: ${file.name}\nMIME: ${file.mimeType}\nURL: ${file.url}`);
                         }} 
                       />
                     </div>

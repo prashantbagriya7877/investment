@@ -113,14 +113,14 @@ export default function BankProfiles({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest font-sans">Banking Hub</h2>
-          <p className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-            <Building2 size={20} className="text-indigo-600" /> Bank Profiles
+          <h2 className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest font-sans">Banking Hub</h2>
+          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+            <Building2 size={20} className="text-indigo-600 shrink-0" /> Bank Profiles
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto">
           {onNavigateToTab && (
             <button
               onClick={() => onNavigateToTab('transactions')}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { getAccessToken } from '../firebase';
+import toast from 'react-hot-toast';
 
 interface GooglePickerProps {
   onSelect: (file: any) => void;
@@ -38,12 +39,12 @@ export default function GooglePicker({ onSelect, apiKey, label = "Pick File from
   const handleOpenPicker = () => {
     const token = getAccessToken();
     if (!token) {
-      alert("You need to connect your Google Account first to access Google Drive.");
+      toast.success("You need to connect your Google Account first to access Google Drive.");
       return;
     }
 
     if (!pickerApiLoaded || !window.google || !window.google.picker) {
-      alert("Google Picker API is still loading. Please try again in a moment.");
+      toast.error("Google Picker API is still loading. Please try again in a moment.");
       return;
     }
 

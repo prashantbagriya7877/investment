@@ -22,6 +22,7 @@ import { getMessaging, getToken } from 'firebase/messaging';
 import { app, db, auth, getAccessToken } from '../firebase';
 import { doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { setDoc } from '../firebase-sync';
+import toast from 'react-hot-toast';
 
 interface TasksSectionProps {
   tasks: ScheduledTask[];
@@ -106,7 +107,7 @@ export default function TasksSection({
 
     const token = getAccessToken();
     if (!token) {
-      alert("Authentication token expired. Please re-authenticate inside settings tab.");
+      toast.error("Authentication token expired. Please re-authenticate inside settings tab.");
       return;
     }
 
@@ -144,12 +145,12 @@ export default function TasksSection({
         throw new Error(`Google Calendar API error.`);
       }
 
-      alert(`✅ Successfully synced "${task.title}" to your Google Calendar!`);
+      toast.success(`✅ Successfully synced "${task.title}" to your Google Calendar!`);
       localStorage.setItem(`task_synced_calendar_${task.id}`, 'true');
       fetchCalendarEvents();
     } catch (err: any) {
       console.error(err);
-      alert(`❌ Sync failed: Unable to connect to Google Calendar API.`);
+      toast.error(`❌ Sync failed: Unable to connect to Google Calendar API.`);
     } finally {
       setSyncingTasks(prev => ({ ...prev, [task.id]: false }));
     }
@@ -480,9 +481,12 @@ export default function TasksSection({
         {/* Creating task form Card (Left Panel) */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs sticky top-24">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-2 flex items-center gap-1 pb-1">
-              <Plus className="text-slate-700 w-4 h-4" /> Add Reminder
-            </h3>
+            <div className="flex justify-between items-center mb-2 pb-1">
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1">
+                <Plus className="text-slate-700 w-4 h-4" /> Add Reminder
+              </h3>
+              <InfoTooltip text="Tasks will shift Overdue and trigger browser alerts in real time once their target timeline is breached." />
+            </div>
 
             {formError && (
               <div className="mb-2 p-1 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-1 text-rose-700 text-xs font-medium">
@@ -572,15 +576,10 @@ export default function TasksSection({
                   />
                   <span className="text-[11px] font-extrabold text-slate-700">Auto-Sync to Google Tasks</span>
                 </label>
-                {(!isCalendarLinked && !isTasksLinked) ? (
-                  <p className="text-[9px] text-slate-500 leading-normal font-sans">
-                    * Link Google Calendar or Google Tasks on the Settings page to unlock automatic, instant, real-time publishing as tasks are added.
-                  </p>
-                ) : (
-                  <p className="text-[9px] text-rose-600 font-bold leading-normal font-sans">
-                    * Automatically creates linked representations across your selected Google ecosystem targets.
-                  </p>
-                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Auto-Sync Sync</span>
+                  <InfoTooltip text="Link Google Calendar/Tasks in Settings for automatic publishing." />
+                </div>
               </div>
 
               <button
@@ -599,13 +598,7 @@ export default function TasksSection({
               </button>
             </form>
 
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-2 mt-2 text-[10px] text-slate-500 flex items-start gap-1">
-              <AlertTriangle className="w-4 h-4 text-slate-700 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-600 block">Reminder Automation Matrix</span>
-                Tasks will shift <span className="text-rose-500 font-bold">Overdue</span> and trigger browser alerts in real time once their target timeline is breached.
-              </div>
-            </div>
+
           </div>
         </div>
 
@@ -753,7 +746,7 @@ export default function TasksSection({
                                   description: event.description || '',
                                   dueDate: startDate
                                 });
-                                alert('Task imported to Scheduler successfully.');
+                                toast.success('Task imported to Scheduler successfully.');
                               }}
                               className="text-indigo-600 font-bold hover:underline"
                             >

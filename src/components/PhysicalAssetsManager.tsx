@@ -79,16 +79,16 @@ export default function PhysicalAssetsManager({ assets, onAdd, onEdit, onDelete 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Asset Management</h2>
-          <p className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 mt-0.5">
-            <Car size={20} className="text-indigo-600" /> Physical Assets
+          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">Asset Management</h2>
+          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 mt-0.5">
+            <Car size={20} className="text-indigo-600 shrink-0" /> Physical Assets
           </p>
         </div>
         <button
           onClick={openAddForm}
-          className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors"
+          className="flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors w-full sm:w-auto"
         >
           <Plus size={14} /> Log Asset
         </button>

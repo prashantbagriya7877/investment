@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { PendingPayment } from '../types';
 import { useGoogleContacts } from '../hooks/useGoogleContacts';
+import toast from 'react-hot-toast';
 
 interface PendingPaymentsProps {
   user?: any;
@@ -61,11 +62,11 @@ export default function PendingPayments({
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert('Please enter a valid positive decimal amount.');
+      toast.error('Please enter a valid positive decimal amount.');
       return;
     }
     if (!person.trim()) {
-      alert('Please enter the name of the person.');
+      toast.error('Please enter the name of the person.');
       return;
     }
 
@@ -100,7 +101,7 @@ export default function PendingPayments({
       setDueDate(new Date().toISOString().split('T')[0]);
     } catch (err) {
       console.error(err);
-      alert('Error syncing payment to cloud. Verify security rules.');
+      toast.error('Error syncing payment to cloud. Verify security rules.');
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +125,7 @@ export default function PendingPayments({
       await onEditPayment(p.id, { completed: !p.completed });
     } catch (err) {
       console.error(err);
-      alert('Error updating status in Firestore.');
+      toast.error('Error updating status in Firestore.');
     }
   };
 

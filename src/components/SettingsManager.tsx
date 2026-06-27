@@ -9,6 +9,7 @@ import { UserSettings } from '../types';
 import InfoTooltip from './InfoTooltip';
 import GooglePicker from './GooglePicker';
 import BrokerManager from './BrokerManager';
+import toast from 'react-hot-toast';
 interface SettingsManagerProps {
   user: any;
   userSettings: UserSettings | null;
@@ -252,10 +253,10 @@ export default function SettingsManager({
       
       window.dispatchEvent(new Event('google-token-changed'));
       addLog(`✅ Google Auth connection linked successfully.`);
-      alert(`🎉 Successfully connected and configured ${serviceName}!`);
+      toast.success(`🎉 Successfully connected and configured ${serviceName}!`);
     } catch (err: any) {
        addLog(`❌ Auth error: ${err.message}`);
-       alert(`Sign-In Error: ${err.message}`);
+       toast.error(`Sign-In Error: ${err.message}`);
     }
   };
 
@@ -263,7 +264,7 @@ export default function SettingsManager({
   const handleApplyManualToken = (targetService: ServiceType) => {
     const cleanToken = manualAccessToken.trim();
     if (!cleanToken) {
-      alert("Please paste a valid Google Access Token.");
+      toast.error("Please paste a valid Google Access Token.");
       return;
     }
     setAccessToken(cleanToken);
@@ -275,7 +276,7 @@ export default function SettingsManager({
     window.dispatchEvent(new Event('google-token-changed'));
     const serviceName = getServiceLabel(targetService);
     addLog(`✅ Manual access token loaded for ${serviceName}.`);
-    alert(`🎉 Success! Access Token activated for ${serviceName}.`);
+    toast.success(`🎉 Success! Access Token activated for ${serviceName}.`);
     setManualAccessToken('');
   };
 
@@ -289,10 +290,10 @@ export default function SettingsManager({
         googleSpreadsheetId: spreadsheetId.trim()
       });
       addLog(`✅ Target spreadsheet updated inside remote metadata.`);
-      alert('📅 Google Spreadsheet ID updated successfully!');
+      toast.success('📅 Google Spreadsheet ID updated successfully!');
     } catch (err: any) {
       addLog(`❌ Spreadsheet save failed: ${err.message}`);
-      alert(`Error saving Spreadsheet ID: ${err.message}`);
+      toast.error(`Error saving Spreadsheet ID: ${err.message}`);
     } finally {
       setSavingSpreadsheetId(false);
     }
@@ -317,7 +318,7 @@ export default function SettingsManager({
       }
 
       window.dispatchEvent(new Event('google-token-changed'));
-      alert(`✅ ${serviceLabel} disconnected successfully!`);
+      toast.success(`✅ ${serviceLabel} disconnected successfully!`);
     }
   };
 
