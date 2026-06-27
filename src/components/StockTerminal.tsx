@@ -81,6 +81,12 @@ export default function StockTerminal() {
       });
       const data = await res.json();
       
+      if (data.status === 'error' || data.errors) {
+        setError(data.errors?.[0]?.message || data.error || 'Failed to fetch data');
+        setLoading(false);
+        return;
+      }
+      
       if (data.data && data.data.candles) {
         // Upstox historical candles format: [ timestamp, open, high, low, close, volume, OI ]
         const formattedData = data.data.candles.map((c: any) => {
@@ -151,27 +157,27 @@ export default function StockTerminal() {
   };
 
   return (
-    <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-50' : 'h-[calc(100vh-80px)]'}`}>
+    <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-50' : 'h-[calc(100vh-80px)] overflow-y-auto'}`}>
       {/* Header bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
           <div className="flex items-center gap-2">
             <Activity className="text-indigo-600" size={24} />
-            <h1 className="font-black text-slate-900 tracking-tight text-xl">Stock Terminal</h1>
+            <h1 className="font-black text-slate-900 tracking-tight text-lg md:text-xl">Stock Terminal</h1>
           </div>
           
-          <div className="h-6 w-px bg-slate-200 mx-2"></div>
+          <div className="hidden md:block h-6 w-px bg-slate-200 mx-2"></div>
           
           <form 
             onSubmit={(e) => { e.preventDefault(); setSymbol(inputSymbol); }}
-            className="flex items-center"
+            className="flex items-center flex-1 w-full md:w-auto mt-2 md:mt-0"
           >
             <input 
               type="text" 
               value={inputSymbol}
               onChange={(e) => setInputSymbol(e.target.value)}
               placeholder="e.g. NSE_EQ|INE002A01018"
-              className="bg-slate-100 border border-slate-200 rounded-l-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="bg-slate-100 border border-slate-200 rounded-l-lg px-3 py-1.5 text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button type="submit" className="bg-indigo-600 text-white px-3 py-1.5 rounded-r-lg font-bold text-sm hover:bg-indigo-700 transition-colors">
               Load
@@ -182,7 +188,7 @@ export default function StockTerminal() {
           {error && <span className="text-xs text-rose-500 font-bold">{error}</span>}
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between w-full md:w-auto gap-4 mt-2 md:mt-0">
           {quote && (
             <div className="text-right mr-4">
               <div className="text-lg font-black text-slate-900 font-mono flex items-center gap-2">
@@ -204,14 +210,14 @@ export default function StockTerminal() {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-auto md:overflow-hidden">
         {/* Chart Area */}
-        <div className="flex-1 bg-white relative">
+        <div className="flex-1 bg-white relative min-h-[300px] md:min-h-0">
           <div ref={chartContainerRef} className="absolute inset-0" />
         </div>
 
         {/* Fundamentals Sidebar */}
-        <div className="w-80 bg-slate-50 border-l border-slate-200 overflow-y-auto flex flex-col shadow-inner">
+        <div className="w-full md:w-80 bg-slate-50 md:border-l border-slate-200 overflow-y-auto flex flex-col shadow-inner">
           <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10">
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Company Overview</h2>
             <h3 className="font-bold text-slate-900 break-all text-sm leading-tight">
