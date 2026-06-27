@@ -163,6 +163,17 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
     window.location.href = upstoxAuthUrl;
   };
 
+  const handleSaveDirectUpstoxToken = () => {
+    if (!upstoxToken.trim()) {
+      alert('Please enter the Access Token generated from the Upstox portal.');
+      return;
+    }
+    localStorage.setItem('upstox_access_token', upstoxToken.trim());
+    setUpstoxToken(upstoxToken.trim());
+    alert('Direct Access Token saved! Re-fetching data...');
+    fetchUpstoxData();
+  };
+
   // -- DHAN DATA FETCHING --
   useEffect(() => {
     if (dhanAccessToken && dhanClientId) {
@@ -452,14 +463,34 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                   </code>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex flex-col sm:flex-row gap-3 border-b border-slate-200 pb-4">
                   <button
                     onClick={initiateUpstoxLogin}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm py-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm py-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {upstoxToken ? <RefreshCw size={18} /> : <LinkIcon size={18} />}
-                    {upstoxToken ? 'Reconnect Upstox Account' : 'Connect to Upstox API'}
+                    {upstoxToken ? 'Reconnect via OAuth' : 'Login via OAuth'}
                   </button>
+                </div>
+
+                <div className="pt-2">
+                  <h4 className="text-sm font-bold text-slate-800 mb-2">OR: Use Generated Access Token</h4>
+                  <p className="text-xs text-slate-600 mb-3">If you generated an Access Token directly from the Upstox Developer Apps dashboard, paste it here to connect instantly without OAuth.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={upstoxToken}
+                      onChange={(e) => setUpstoxToken(e.target.value)}
+                      placeholder="eyJ0eXAiOiJKV1Qi..."
+                      className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 font-mono"
+                    />
+                    <button
+                      onClick={handleSaveDirectUpstoxToken}
+                      className="px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap cursor-pointer"
+                    >
+                      <CheckCircle2 size={16} /> Save Token
+                    </button>
+                  </div>
                 </div>
               </div>
 
