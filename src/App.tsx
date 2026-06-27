@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import {
   auth,
   db,
@@ -1615,9 +1616,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col pb-8 font-sans text-slate-900">
-
-      {/* Guest Mode Notification Bar Removed */}
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-indigo-500/30">
+      <Toaster position="top-right" toastOptions={{ className: 'font-sans text-sm font-bold', style: { borderRadius: '12px', background: '#334155', color: '#fff' } }} />
 
       {/* Top Navigation */}
       <Header

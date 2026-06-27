@@ -7,6 +7,7 @@ import { Transaction, EXPENSE_CATEGORIES, INCOME_CATEGORIES, ALL_CATEGORIES, Pen
 import { parseBankSMS } from '../utils/financeHelpers';
 import { proxyFetch } from '../utils/proxyFetch';
 import InfoTooltip from './InfoTooltip';
+import toast from 'react-hot-toast';
 
 import BankProfiles from './BankProfiles';
 import CsvImportWizard from './CsvImportWizard';
@@ -260,6 +261,7 @@ export default function TransactionTracker({
       setDate(new Date().toISOString().split('T')[0]);
       setType('expense');
       setCategory(EXPENSE_CATEGORIES[0]);
+      toast.success(editingId ? 'Log updated successfully!' : 'Log saved successfully!');
     } catch (err) {
       console.error(err);
       alert('Error updating transaction in cloud.');

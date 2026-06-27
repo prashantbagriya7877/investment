@@ -8,6 +8,7 @@ import { Holding, WatchlistItem, UserSettings, RealizedTrade } from '../types';
 import { fetchStockPrice, fetchMutualFundNav, calculateXIRR, fetchStockSearch } from '../utils/financeHelpers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import InfoTooltip from './InfoTooltip';
+import toast from 'react-hot-toast';
 import TradeExecutionModal from './TradeExecutionModal';
 
 interface PortfolioTrackerProps {
@@ -388,6 +389,7 @@ export default function PortfolioTracker({
         schemeCode: type === 'mf' ? mfSchemeCode : undefined
       });
       setIsAdding(false);
+      toast.success('Holding saved successfully!');
     } catch (err: any) {
       console.error(err);
       alert(`Error saving holding: ${err.message || String(err)}\nPlease take a screenshot.`);
