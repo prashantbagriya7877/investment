@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ─── Helper Functions ──────────────────────────────────────────
+    function isSignedIn() {
+      // Allow both email-verified users AND anonymous/guest users
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && userId == request.auth.uid;
+    }
+
+    // ─── User Profile & Settings ───────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/integrations/{integrationId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /usersettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─── Generic Rules for All Collections ──────────────────────────
+    match /{collection}/{id} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

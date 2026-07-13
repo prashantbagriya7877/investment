@@ -1,0 +1,114 @@
+import React from 'react';
+import { 
+  ArrowLeftRight, TrendingUp, LayoutDashboard, Clock, 
+  Bell, Repeat, CalendarRange, Landmark, Percent,
+  ChevronLeft, ChevronRight, Activity, LineChart, Users
+} from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+interface BottomNavigationProps {
+  currentWorkspace: 'ledger' | 'investmant' | 'research';
+  setCurrentWorkspace: (workspace: 'ledger' | 'investmant' | 'research') => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
+}
+
+export default function BottomNavigation({
+  currentWorkspace,
+  setCurrentWorkspace,
+}: BottomNavigationProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = location.pathname.split('/')[1] || (currentWorkspace === 'ledger' ? 'dashboard' : 'portfolio');
+  
+  const handleTabChange = (tab: string) => {
+    navigate(`/${tab}`);
+  };
+
+  const toggleWorkspace = () => {
+    const next = currentWorkspace === 'ledger' ? 'investmant' : currentWorkspace === 'investmant' ? 'research' : 'ledger';
+    setCurrentWorkspace(next);
+    navigate(next === 'ledger' ? '/dashboard' : next === 'investmant' ? '/portfolio' : '/market');
+  };
+
+  const ledgerTabs = [
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+    { id: 'transactions', label: 'Expenses', icon: ArrowLeftRight },
+    { id: 'pending', label: 'Khata', icon: Users },
+    { id: 'tasks', label: 'Alerts', icon: Bell },
+  ];
+
+  const investmantTabs = [
+    { id: 'portfolio', label: 'Portfolio', icon: TrendingUp },
+    { id: 'sips', label: 'SIP Plans', icon: CalendarRange },
+    { id: 'fds', label: 'Lockers', icon: Landmark },
+    { id: 'tax', label: 'Tax', icon: Percent },
+  ];
+
+  const researchTabs = [
+    { id: 'market', label: 'Terminal', icon: LineChart },
+    { id: 'forecaster', label: 'Forecaster', icon: Activity },
+  ];
+
+  const tabs = currentWorkspace === 'ledger' ? ledgerTabs : currentWorkspace === 'investmant' ? investmantTabs : researchTabs;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/97 backdrop-blur-md border-t border-slate-200/80 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)] font-sans">
+      {/* Workspace Switcher Row */}
+      <div className="flex items-center justify-center gap-1 pt-1 pb-0.5">
+        <button
+          onClick={() => { setCurrentWorkspace('ledger'); navigate('/dashboard'); }}
+          className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
+            currentWorkspace === 'ledger'
+              ? 'bg-slate-900 text-white'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+          }`}
+        >
+          💳 Ledger
+        </button>
+        <button
+          onClick={() => { setCurrentWorkspace('investmant'); navigate('/portfolio'); }}
+          className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
+            currentWorkspace === 'investmant'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+          }`}
+        >
+          📈 Invest
+        </button>
+        <button
+          onClick={() => { setCurrentWorkspace('research'); navigate('/market'); }}
+          className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
+            currentWorkspace === 'research'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+          }`}
+        >
+          🔬 Research
+        </button>
+      </div>
+
+      {/* Tab Row */}
+      <div className="flex justify-around py-1.5 px-2">
+        {tabs.map(({ id, label, icon: Icon }) => {
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => handleTabChange(id)}
+              className={`flex flex-col items-center justify-center shrink-0 transition-all duration-200 cursor-pointer flex-1 relative ${
+                isActive ? 'text-slate-950 font-extrabold' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {isActive && (
+                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-slate-900 rounded-full" />
+              )}
+              <Icon size={18} className={isActive ? 'stroke-[2.5px] text-slate-950 scale-110' : ''} />
+              <span className="text-[9px] mt-0.5 leading-tight">{label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

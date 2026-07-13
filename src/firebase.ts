@@ -1,0 +1,344 @@
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, signInAnonymously, signInWithCredential, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { getFirestore, doc, getDoc, getDocFromServer, setDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+
+export const app = initializeApp(firebaseConfig);
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true,
+  localCache: persistentLocalCache(
+    Capacitor.isNativePlatform()
+      ? {}
+      : { tabManager: persistentMultipleTabManager() }
+  )
+}, (firebaseConfig as any).firestoreDatabaseId);
+export const auth = getAuth(app);
+// Set auth persistence to LOCAL so the user never logs out
+setPersistence(auth, browserLocalPersistence).catch(err => {
+  console.warn("Failed to set auth persistence:", err);
+});
+// Initialize provider and configure Google Sheets scope permissions
+export const googleProvider = new GoogleAuthProvider();
+export const ALL_GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/contacts',
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/documents',
+  'https://www.googleapis.com/auth/presentations',
+  'https://www.googleapis.com/auth/photoslibrary.readonly',
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/tasks',
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/chat.spaces.readonly',
+  'https://www.googleapis.com/auth/chat.messages.create',
+  'https://www.googleapis.com/auth/classroom.courses.readonly',
+  'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
+  'https://www.googleapis.com/auth/classroom.announcements.readonly'
+];
+
+ALL_GOOGLE_SCOPES.forEach(scope => googleProvider.addScope(scope));
+
+// Force Google to show the consent screen again so it asks for the new Drive scopes
+googleProvider.setCustomParameters({
+  prompt: 'consent',
+  access_type: 'offline' // Good for getting refresh tokens if needed
+});
+
+// Memory cache for the OAuth access token
+let cachedAccessToken: string | null = null;
+
+if (typeof window !== 'undefined') {
+  if (!localStorage.getItem('custom_google_client_id')) {
+    localStorage.setItem('custom_google_client_id', import.meta.env.VITE_GOOGLE_CLIENT_ID || '');
+  }
+  if (!localStorage.getItem('custom_google_client_secret')) {
+    localStorage.setItem('custom_google_client_secret', import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '');
+  }
+}
+
+export function getAccessToken(): string | null {
+  if (!cachedAccessToken && typeof window !== 'undefined') {
+    cachedAccessToken = localStorage.getItem('custom_google_access_token');
+  }
+  return cachedAccessToken;
+}
+
+export function setAccessToken(token: string | null) {
+  cachedAccessToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('custom_google_access_token', token);
+    } else {
+      localStorage.removeItem('custom_google_access_token');
+    }
+  }
+}
+
+// Handle redirect result on load
+export async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setAccessToken(credential.accessToken);
+      }
+    }
+  } catch (error) {
+    console.error("Error getting redirect result:", error);
+  }
+}
+if (typeof window !== 'undefined') {
+  handleRedirectResult();
+}
+
+// Google login utility
+export async function signInWithGoogle() {
+  try {
+    const provider = googleProvider;
+    
+    if (Capacitor.isNativePlatform()) {
+      // Native App Login Flow
+      // We must pass the Web Client ID from Firebase Console to use Google Sign-In natively
+      const result = await FirebaseAuthentication.signInWithGoogle({
+        scopes: ALL_GOOGLE_SCOPES,
+        customParameters: [
+          { key: 'prompt', value: 'consent' },
+          { key: 'access_type', value: 'offline' }
+        ]
+      });
+      
+      if (!result.credential?.idToken) {
+        throw new Error("No ID Token returned from Google Sign-In");
+      }
+      
+      const credential = GoogleAuthProvider.credential(result.credential.idToken);
+      const userCred = await signInWithCredential(auth, credential);
+      
+      // Save the access token for Google Sheets sync
+      if (result.credential.accessToken) {
+        setAccessToken(result.credential.accessToken);
+      }
+      
+      return userCred.user;
+    } else {
+      // Web Flow
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+          setAccessToken(credential.accessToken);
+        }
+        return result.user;
+      } catch (error: any) {
+        // In mobile browsers or webviews, popup might fail. 
+        // We will TRY redirect, but alert the user if it fails.
+        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          // If popup failed for another reason, try redirect as last resort
+          await signInWithRedirect(auth, provider);
+        }
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
+    alert("Google Sign-In failed. Please try Direct Access (Guest). Error: " + (error as any).message);
+    throw error;
+  }
+}
+
+// Anonymous / Guest sign in utility for environments with iframe/cookie blocks
+export async function signInGuestAnonymously() {
+  try {
+    const result = await signInAnonymously(auth);
+    return result.user;
+  } catch (error) {
+    console.error("Anonymous Sign-In failed:", error);
+    throw error;
+  }
+}
+
+// Google Offline Access (Refresh Token Flow)
+export async function authorizeGoogleOffline(userId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !(window as any).google) {
+      reject(new Error("Google Identity Services not loaded."));
+      return;
+    }
+    
+    const clientId = localStorage.getItem('custom_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientSecret = localStorage.getItem('custom_google_client_secret') || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
+
+    if (!clientId || !clientSecret) {
+      reject(new Error("Google Client ID or Secret is missing. Go to Settings and configure custom OAuth credentials first."));
+      return;
+    }
+
+    const client = (window as any).google.accounts.oauth2.initCodeClient({
+      client_id: clientId,
+      scope: ALL_GOOGLE_SCOPES.join(' '),
+      ux_mode: 'popup',
+      callback: async (response: any) => {
+        if (response.error) {
+          reject(new Error(response.error));
+          return;
+        }
+        
+        try {
+          const res = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              code: response.code,
+              client_id: clientId,
+              client_secret: clientSecret,
+              redirect_uri: 'postmessage',
+              grant_type: 'authorization_code'
+            })
+          });
+          
+          const data = await res.json();
+          if (data.error) {
+            throw new Error(data.error_description || data.error);
+          }
+          
+          if (data.refresh_token) {
+            await setDoc(doc(db, 'users', userId, 'integrations', 'google'), {
+              refresh_token: data.refresh_token,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          }
+          
+          if (data.access_token) {
+            setAccessToken(data.access_token);
+          }
+          
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      },
+    });
+    
+    client.requestCode();
+  });
+}
+
+export async function refreshGoogleTokenIfNeeded(userId: string): Promise<string | null> {
+  try {
+    const docRef = doc(db, 'users', userId, 'integrations', 'google');
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+    
+    const data = docSnap.data();
+    if (!data.refresh_token) return null;
+    
+    const clientId = localStorage.getItem('custom_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientSecret = localStorage.getItem('custom_google_client_secret') || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
+    
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: data.refresh_token,
+        grant_type: 'refresh_token'
+      })
+    });
+    
+    const tokenData = await res.json();
+    if (tokenData.error) {
+      console.error("Token refresh failed:", tokenData);
+      return null;
+    }
+    
+    if (tokenData.access_token) {
+      setAccessToken(tokenData.access_token);
+      return tokenData.access_token;
+    }
+  } catch (err) {
+    console.error("Failed to refresh token", err);
+  }
+  return null;
+}
+
+// Logout utility
+export async function logout() {
+  await signOut(auth);
+  cachedAccessToken = null;
+}
+
+// Error handling standard as mandated by the firebase-integration skill
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  if (typeof window !== 'undefined') {
+    window.alert(`Firestore Error (${operationType} on ${path}): ${errInfo.error}\nPlease take a screenshot and tell the developer.`);
+  }
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Connection test on load as mandated by firebase-integration skill
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.warn("[Firebase] Startup connectivity notice: Please check your Firebase configuration if operations are slow. Client appears to be offline.");
+    }
+  }
+}
+testConnection();
