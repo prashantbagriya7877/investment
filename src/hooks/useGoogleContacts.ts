@@ -28,14 +28,17 @@ export function useGoogleContacts(user: any) {
   };
 
   const loadContactsList = async () => {
-    setLoadingContacts(true);
+    // Load local cache immediately for fast initial render
+    loadLocalContacts();
+
     const activeToken = getAccessToken();
     
     if (!activeToken || (user && user.uid.startsWith('guest_offline_'))) {
-      loadLocalContacts();
       setLoadingContacts(false);
       return;
     }
+
+    setLoadingContacts(true);
 
     try {
       const res = await fetch('https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,photos,organizations&pageSize=150', {
@@ -88,6 +91,8 @@ export function useGoogleContacts(user: any) {
         };
       });
 
+      // Save to local storage for offline use and fast subsequent loads
+      localStorage.setItem(`local_contacts_${user?.uid || 'guest'}`, JSON.stringify(parsedContacts));
       setContacts(parsedContacts);
     } catch (err: any) {
       console.error('[useGoogleContacts] Failed to load contacts:', err);

@@ -3,6 +3,7 @@ import { DollarSign, ArrowLeft, Plus } from 'lucide-react';
 import { LedgerProfile } from '../types';
 import { LedgerList } from './Ledger/LedgerList';
 import { LedgerProfileView } from './Ledger/LedgerProfileView';
+import LogEntryForm from './LogEntryForm';
 
 interface PendingPaymentsProps {
   user?: any;
@@ -28,6 +29,7 @@ export default function PendingPayments({
 }: PendingPaymentsProps) {
   const [selectedProfile, setSelectedProfile] = useState<LedgerProfile | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLogFormOpen, setIsLogFormOpen] = useState(false);
 
   return (
     <div className="space-y-3" id="payments-tab">
@@ -58,6 +60,15 @@ export default function PendingPayments({
                   <DollarSign size={14} /> Auto-Bills
                 </button>
               )}
+              {onAddGlobalTransaction && (
+                <button
+                  type="button"
+                  onClick={() => setIsLogFormOpen(!isLogFormOpen)}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors shadow-xs whitespace-nowrap"
+                >
+                  <Plus size={14} /> Log Entry
+                </button>
+              )}
               <button 
                 type="button"
                 onClick={() => setShowAddForm(!showAddForm)}
@@ -67,6 +78,18 @@ export default function PendingPayments({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Manual Global Log Entry Form (Moves from TransactionTracker) */}
+      {!selectedProfile && onAddGlobalTransaction && (
+        <div className="mt-2">
+          <LogEntryForm 
+            onAddTransaction={onAddGlobalTransaction} 
+            bankAccounts={bankAccounts} 
+            isFormOpen={isLogFormOpen} 
+            setIsFormOpen={setIsLogFormOpen} 
+          />
         </div>
       )}
 

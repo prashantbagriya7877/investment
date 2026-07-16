@@ -31,6 +31,8 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
   const [memo, setMemo] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [isSaving, setIsSaving] = useState(false);
+  const [profileBalance, setProfileBalance] = useState(profile.netBalance);
 
   useEffect(() => {
     if (!userId) return;
@@ -70,6 +72,8 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return;
+    if (isSaving) return;
+    setIsSaving(true);
 
     let globalTxId: string | undefined = undefined;
 
@@ -131,14 +135,20 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
     const allProfiles = JSON.parse(localStorage.getItem(`ledger_profiles_${userId}`) || '[]');
     const updatedProfiles = allProfiles.map((p: any) => p.id === profile.id ? { ...p, netBalance: newBalance } : p);
     localStorage.setItem(`ledger_profiles_${userId}`, JSON.stringify(updatedProfiles));
+    
+    setProfileBalance(newBalance);
 
     setAmount('');
     setMemo('');
     setShowTxForm(null);
+    setIsSaving(false);
   };
 
   const handleDeleteTransaction = async (tx: LedgerTransaction) => {
+    if (isSaving) return;
     if (!confirm("Delete this transaction? The net balance will be adjusted accordingly.")) return;
+    
+    setIsSaving(true);
     
     const balanceChange = tx.type === 'gave' ? -tx.amount : tx.amount;
     const newBalance = profile.netBalance + balanceChange;
@@ -167,12 +177,15 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
     const allProfiles = JSON.parse(localStorage.getItem(`ledger_profiles_${userId}`) || '[]');
     const updatedProfiles = allProfiles.map((p: any) => p.id === profile.id ? { ...p, netBalance: newBalance } : p);
     localStorage.setItem(`ledger_profiles_${userId}`, JSON.stringify(updatedProfiles));
+    
+    setProfileBalance(newBalance);
+    setIsSaving(false);
   };
 
   return (
     <div className="space-y-3 pb-20">
       {/* Compact Header */}
-      <div className={`p-3 rounded-xl shadow-xs border flex items-center justify-between gap-2 ${profile.netBalance === 0 ? 'bg-slate-50 border-slate-200/80' : profile.netBalance > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+      <div className={`p-3 rounded-xl shadow-xs border flex items-center justify-between gap-2 ${profileBalance === 0 ? 'bg-slate-50 border-slate-200/80' : profileBalance > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
         <div className="flex items-center gap-2">
           {onBack && (
             <button
@@ -190,10 +203,10 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
         </div>
         <div className="text-right">
           <span className="text-[9px] font-bold tracking-widest font-sans opacity-80 block leading-none mb-0.5 text-slate-900">
-             {profile.netBalance === 0 ? 'Settled Up' : profile.netBalance > 0 ? 'You will get' : 'You owe'}
+             {profileBalance === 0 ? 'Settled Up' : profileBalance > 0 ? 'You will get' : 'You owe'}
           </span>
-          <span className={`text-lg font-black tracking-tight font-sans block leading-none ${profile.netBalance === 0 ? 'text-slate-900' : profile.netBalance > 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-            ₹{Math.abs(profile.netBalance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className={`text-lg font-black tracking-tight font-sans block leading-none ${profileBalance === 0 ? 'text-slate-900' : profileBalance > 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+            ₹{Math.abs(profileBalance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>

@@ -19,6 +19,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
   const [loading, setLoading] = useState(true);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfilePhone, setNewProfilePhone] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   // Google Contacts Auto-complete state
   const { contacts } = useGoogleContacts({ uid: userId });
@@ -64,7 +65,8 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
 
   const handleAddProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId || !newProfileName.trim()) return;
+    if (!userId || !newProfileName.trim() || isSaving) return;
+    setIsSaving(true);
 
     const newProfile: LedgerProfile = {
       id: uuidv4(),
@@ -89,6 +91,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
     setNewProfileName('');
     setNewProfilePhone('');
     setShowAddForm(false);
+    setIsSaving(false);
   };
 
   const handleDeleteProfile = async (profileId: string) => {

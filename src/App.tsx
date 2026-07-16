@@ -1915,7 +1915,7 @@ export default function App() {
               onDeleteGoal={handleDeleteGoal}
             />} />
 
-            <Route path="/credit-cards" element={<CreditCardsEMI user={user} ccBills={ccBills} ccEmis={ccEmis} />} />
+            <Route path="/credit-cards" element={<CreditCardsEMI user={user} ccBills={ccBills} ccEmis={ccEmis} bankAccounts={bankAccounts} onAddGlobalTransaction={handleAddTransaction} />} />
 
             <Route path="/bank-profiles" element={<BankProfiles
               bankAccounts={bankAccounts}

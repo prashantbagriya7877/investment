@@ -348,16 +348,6 @@ export default function TransactionTracker({
           >
             <UploadCloud size={14} /> Bulk Import
           </button>
-          <button
-            id="new-transaction-button"
-            onClick={() => {
-              setEditingId(null);
-              setIsFormOpen(true);
-            }}
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-1.5 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all shadow-xs"
-          >
-            <Plus size={14} /> Log Entry
-          </button>
         </div>
       </div>
 

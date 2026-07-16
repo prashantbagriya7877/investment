@@ -206,6 +206,7 @@ export interface CreditCardBill {
   isPaid: boolean;
   paidDate?: string;
   notes?: string;
+  bankAccountId?: string;
   createdAt?: any;
 }
 
@@ -220,6 +221,7 @@ export interface EmiItem {
   startDate: string; // YYYY-MM-DD
   bank?: string;
   notes?: string;
+  bankAccountId?: string;
   createdAt?: any;
 }
 

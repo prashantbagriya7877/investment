@@ -16,11 +16,13 @@ interface CreditCardsEMIProps {
   user: any;
   ccBills?: CreditCardBill[];
   ccEmis?: EmiItem[];
+  bankAccounts?: any[];
+  onAddGlobalTransaction?: (tx: any) => Promise<void>;
 }
 
 const BANKS = ['HDFC', 'SBI', 'ICICI', 'Axis', 'Kotak', 'IDFC', 'Yes Bank', 'Paytm', 'Amazon Pay', 'Other'];
 
-export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsEMIProps) {
+export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts = [], onAddGlobalTransaction }: CreditCardsEMIProps) {
   const [activeTab, setActiveTab] = useState<'cards' | 'emis'>('cards');
   const [bills, setBills] = useState<CreditCardBill[]>([]);
   const [emis, setEmis] = useState<EmiItem[]>([]);
@@ -30,9 +32,15 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   const [editingEmi, setEditingEmi] = useState<EmiItem | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Bank deduction state
+  const [payingBill, setPayingBill] = useState<CreditCardBill | null>(null);
+  const [payingEmi, setPayingEmi] = useState<EmiItem | null>(null);
+  const [selectedBank, setSelectedBank] = useState<string>('');
+
   // Card form state
   const [cardName, setCardName] = useState('');
-  const [cardBank, setCardBank] = useState('HDFC');
+  const [cardBank, setCardBank] = useState('');
+  const [cardBankAccountId, setCardBankAccountId] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [cardDueDate, setCardDueDate] = useState('');
   const [cardNotes, setCardNotes] = useState('');
@@ -45,6 +53,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   const [emiPaidMonths, setEmiPaidMonths] = useState('0');
   const [emiStartDate, setEmiStartDate] = useState(new Date().toISOString().substring(0, 10));
   const [emiBank, setEmiBank] = useState('');
+  const [emiBankAccountId, setEmiBankAccountId] = useState('');
   const [emiNotes, setEmiNotes] = useState('');
 
   const isGuest = user?.uid?.startsWith('guest_offline_');
@@ -57,7 +66,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   }, [ccBills, ccEmis]);
 
   const resetCardForm = () => {
-    setCardName(''); setCardBank('HDFC'); setCardAmount('');
+    setCardName(''); setCardBank(''); setCardBankAccountId(''); setCardAmount('');
     setCardDueDate(''); setCardNotes(''); setEditingCard(null); setShowAddCard(false);
   };
 
@@ -65,13 +74,14 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
     setEmiItemName(''); setEmiTotal(''); setEmiMonthly('');
     setEmiTotalMonths(''); setEmiPaidMonths('0');
     setEmiStartDate(new Date().toISOString().substring(0, 10));
-    setEmiBank(''); setEmiNotes(''); setEditingEmi(null); setShowAddEmi(false);
+    setEmiBank(''); setEmiBankAccountId(''); setEmiNotes(''); setEditingEmi(null); setShowAddEmi(false);
   };
 
   const fillCardForm = (bill: CreditCardBill) => {
     setEditingCard(bill);
     setCardName(bill.cardName);
     setCardBank(bill.bank);
+    setCardBankAccountId(bill.bankAccountId || '');
     setCardAmount(String(bill.amount));
     setCardDueDate(bill.dueDate);
     setCardNotes(bill.notes || '');
@@ -87,6 +97,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
     setEmiPaidMonths(String(emi.paidMonths));
     setEmiStartDate(emi.startDate);
     setEmiBank(emi.bank || '');
+    setEmiBankAccountId(emi.bankAccountId || '');
     setEmiNotes(emi.notes || '');
     setShowAddEmi(true);
   };
@@ -98,6 +109,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
       userId: user.uid,
       cardName: cardName.trim(),
       bank: cardBank,
+      bankAccountId: cardBankAccountId || undefined,
       amount: parseFloat(cardAmount),
       dueDate: cardDueDate,
       isPaid: editingCard?.isPaid || false,
@@ -119,21 +131,56 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
     resetCardForm();
   };
 
-  const handleMarkPaid = async (bill: CreditCardBill) => {
-    const nowPaid = !bill.isPaid;
-    const updates: any = {
-      isPaid: nowPaid,
-      paidDate: nowPaid ? new Date().toISOString().split('T')[0] : deleteField()
-    };
+  const handleMarkPaidClick = (bill: CreditCardBill) => {
+    if (bill.isPaid) {
+      handleMarkUnpaid(bill);
+    } else {
+      if (bankAccounts && bankAccounts.length > 0) {
+        setPayingBill(bill);
+        setSelectedBank(bill.bankAccountId || '');
+      } else {
+        handleConfirmPayBill(bill, null);
+      }
+    }
+  };
+
+  const handleMarkUnpaid = async (bill: CreditCardBill) => {
+    const updates: any = { isPaid: false, paidDate: deleteField() };
     if (isGuest) {
-      const updatedBills = bills.map(b => b.id === bill.id
-        ? { ...b, isPaid: nowPaid, paidDate: nowPaid ? new Date().toISOString().split('T')[0] : undefined }
-        : b);
+      const updatedBills = bills.map(b => b.id === bill.id ? { ...b, isPaid: false, paidDate: undefined } : b);
       localStorage.setItem(`ccbills_${user.uid}`, JSON.stringify(updatedBills));
       setBills(updatedBills);
     } else {
       await updateDoc(doc(db, 'ccbills', bill.id), updates);
     }
+  };
+
+  const handleConfirmPayBill = async (bill: CreditCardBill, bankId: string | null) => {
+    if (bankId && onAddGlobalTransaction) {
+      await onAddGlobalTransaction({
+        type: 'expense',
+        category: 'Credit Card Bill',
+        amount: bill.amount,
+        date: new Date().toISOString().split('T')[0],
+        notes: `Paid CC Bill: ${bill.cardName}`,
+        bankAccountId: bankId
+      });
+    }
+
+    const updates: any = {
+      isPaid: true,
+      paidDate: new Date().toISOString().split('T')[0]
+    };
+    if (isGuest) {
+      const updatedBills = bills.map(b => b.id === bill.id ? { ...b, ...updates } : b);
+      localStorage.setItem(`ccbills_${user.uid}`, JSON.stringify(updatedBills));
+      setBills(updatedBills);
+    } else {
+      await updateDoc(doc(db, 'ccbills', bill.id), updates);
+    }
+
+    setPayingBill(null);
+    setSelectedBank('');
   };
 
   const handleDeleteCard = async (id: string) => {
@@ -159,6 +206,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
       paidMonths: parseInt(emiPaidMonths),
       startDate: emiStartDate,
       bank: emiBank.trim() || undefined,
+      bankAccountId: emiBankAccountId || undefined,
       notes: emiNotes.trim() || undefined,
     };
 
@@ -177,8 +225,28 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
     resetEmiForm();
   };
 
-  const handlePayEmiInstallment = async (emi: EmiItem) => {
+  const handlePayEmiClick = (emi: EmiItem) => {
     if (emi.paidMonths >= emi.totalMonths) return;
+    if (bankAccounts && bankAccounts.length > 0) {
+      setPayingEmi(emi);
+      setSelectedBank(emi.bankAccountId || '');
+    } else {
+      handleConfirmPayEmi(emi, null);
+    }
+  };
+
+  const handleConfirmPayEmi = async (emi: EmiItem, bankId: string | null) => {
+    if (bankId && onAddGlobalTransaction) {
+      await onAddGlobalTransaction({
+        type: 'expense',
+        category: 'EMI',
+        amount: emi.emiAmount,
+        date: new Date().toISOString().split('T')[0],
+        notes: `Paid EMI: ${emi.itemName}`,
+        bankAccountId: bankId
+      });
+    }
+
     const updates = { paidMonths: emi.paidMonths + 1 };
     if (isGuest) {
       const updatedEmis = emis.map(e => e.id === emi.id ? { ...e, paidMonths: Math.min(e.totalMonths, e.paidMonths + 1) } : e);
@@ -187,6 +255,9 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
     } else {
       await updateDoc(doc(db, 'ccemis', emi.id), updates);
     }
+    
+    setPayingEmi(null);
+    setSelectedBank('');
   };
 
   const handleDeleteEmi = async (id: string) => {
@@ -207,7 +278,67 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
   const totalOutstanding = bills.filter(b => !b.isPaid).reduce((acc, b) => acc + b.amount, 0);
 
   return (
-    <div className="space-y-4 pb-10 font-sans">
+    <div className="space-y-4 pb-10 font-sans relative">
+      {/* Pay Modal Overlay */}
+      <AnimatePresence>
+        {(payingBill || payingEmi) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white rounded-3xl p-5 shadow-xl w-full max-w-sm"
+            >
+              <h3 className="font-bold text-slate-900 text-lg mb-2">
+                Pay {payingBill ? payingBill.cardName : payingEmi?.itemName}
+              </h3>
+              <p className="text-sm text-slate-600 mb-4">
+                Amount: <span className="font-bold font-mono">₹{payingBill ? payingBill.amount.toLocaleString('en-IN') : payingEmi?.emiAmount.toLocaleString('en-IN')}</span>
+              </p>
+              
+              <div className="space-y-2 mb-5">
+                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider">Select Bank Account to Deduct From</label>
+                <select
+                  value={selectedBank}
+                  onChange={(e) => setSelectedBank(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
+                >
+                  <option value="">-- No Bank (Cash/Other) --</option>
+                  {bankAccounts?.map(b => (
+                    <option key={b.id} value={b.id}>
+                      {b.bankName} - {b.accountName} (₹{b.currentBalance.toLocaleString()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setPayingBill(null); setPayingEmi(null); setSelectedBank(''); }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (payingBill) handleConfirmPayBill(payingBill, selectedBank);
+                    else if (payingEmi) handleConfirmPayEmi(payingEmi, selectedBank);
+                  }}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-sm transition-colors"
+                >
+                  Confirm Pay
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -301,6 +432,13 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
                 <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
                 <input value={cardNotes} onChange={e => setCardNotes(e.target.value)} placeholder="Minimum payment, etc." className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
               </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Linked Bank Account</label>
+                <select value={cardBankAccountId} onChange={e => setCardBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                  <option value="">-- No Linked Bank --</option>
+                  {bankAccounts?.map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountName}</option>)}
+                </select>
+              </div>
               <div className="flex items-end">
                 <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
                   <Save size={14} /> {editingCard ? 'Update Bill' : 'Save Bill'}
@@ -360,6 +498,13 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
                 <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
                 <input value={emiNotes} onChange={e => setEmiNotes(e.target.value)} placeholder="0% interest, etc." className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
               </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Linked Bank Account</label>
+                <select value={emiBankAccountId} onChange={e => setEmiBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                  <option value="">-- No Linked Bank --</option>
+                  {bankAccounts?.map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountName}</option>)}
+                </select>
+              </div>
               <div className="flex items-end">
                 <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 rounded-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
                   <Save size={14} /> {editingEmi ? 'Update EMI' : 'Save EMI'}
@@ -410,7 +555,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
                       <p className={`font-mono font-black text-base ${bill.isPaid ? 'text-slate-500 line-through' : 'text-slate-900'}`}>₹{bill.amount.toLocaleString('en-IN')}</p>
                       {bill.isPaid && bill.paidDate && <p className="text-[9px] text-emerald-600 font-bold">Paid {bill.paidDate}</p>}
                     </div>
-                    <button onClick={() => handleMarkPaid(bill)} className={`px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                    <button onClick={() => handleMarkPaidClick(bill)} className={`px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                       {bill.isPaid ? 'Unpay' : 'Mark Paid'}
                     </button>
                     <button onClick={() => fillCardForm(bill)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer"><Edit2 size={14} /></button>
@@ -488,7 +633,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [] }: CreditCardsE
 
                     <div className="flex flex-col gap-1.5 shrink-0">
                       {!isComplete && (
-                        <button onClick={() => handlePayEmiInstallment(emi)} className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors whitespace-nowrap">
+                        <button onClick={() => handlePayEmiClick(emi)} className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors whitespace-nowrap">
                           + Pay Month
                         </button>
                       )}
