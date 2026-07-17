@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   CreditCard, CalendarDays, PlusCircle, AlertCircle, CheckCircle,
   Trash2, Edit2, X, IndianRupee, TrendingDown, Clock, Wallet,
-  ChevronDown, ChevronUp, Save, BarChart2, AlertTriangle
+  ChevronDown, ChevronUp, Save, BarChart2, AlertTriangle, Lock
 } from 'lucide-react';
 import {
   collection, query, where, onSnapshot, doc, serverTimestamp, deleteField
@@ -11,6 +11,7 @@ import {
 import { db } from '../firebase';
 import { setDoc, updateDoc, deleteDoc } from '../firebase-sync';
 import { CreditCardBill, EmiItem } from '../types';
+import { isEntryLocked } from '../utils/dateUtils';
 
 interface CreditCardsEMIProps {
   user: any;
@@ -340,17 +341,15 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       </AnimatePresence>
 
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Finance Manager</p>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-            <CreditCard size={20} className="text-indigo-600 shrink-0" />
-            Credit Cards & EMIs
-          </h2>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 mb-2">
+        <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans flex items-center gap-2 capitalize">
+          <CreditCard size={20} className="text-indigo-600 shrink-0" />
+          Credit Cards & EMIs
+        </p>
         <button
+          type="button"
           onClick={() => activeTab === 'cards' ? setShowAddCard(true) : setShowAddEmi(true)}
-          className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-colors shadow-sm w-full sm:w-auto"
+          className="flex shrink-0 items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap w-full sm:w-auto"
         >
           <PlusCircle size={14} />
           Add {activeTab === 'cards' ? 'Card Bill' : 'EMI'}
@@ -360,19 +359,19 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-red-50 border border-red-100 rounded-2xl p-3 text-center">
-          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Overdue Bills</p>
+          <p className="text-[10px] font-bold text-red-400 capitalize tracking-wide">Overdue Bills</p>
           <p className="text-2xl font-black text-red-600">{overdueBills.length}</p>
         </div>
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
-          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Due This Week</p>
+          <p className="text-[10px] font-bold text-amber-500 capitalize tracking-wide">Due This Week</p>
           <p className="text-2xl font-black text-amber-600">{dueSoonBills.length}</p>
         </div>
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Outstanding</p>
+          <p className="text-[10px] font-bold text-slate-500 capitalize tracking-wide">Outstanding</p>
           <p className="text-xl font-black text-slate-800 font-mono">₹{totalOutstanding.toLocaleString('en-IN')}</p>
         </div>
         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 text-center">
-          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Monthly EMIs</p>
+          <p className="text-[10px] font-bold text-indigo-400 capitalize tracking-wide">Monthly EMIs</p>
           <p className="text-xl font-black text-indigo-700 font-mono">₹{totalEmiMonthly.toLocaleString('en-IN')}</p>
         </div>
       </div>
@@ -528,6 +527,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
             bills.map(bill => {
               const isOverdue = !bill.isPaid && bill.dueDate < today;
               const isDueSoon = !bill.isPaid && bill.dueDate >= today && bill.dueDate <= new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+              const locked = isEntryLocked(bill.dueDate);
               return (
                 <motion.div
                   key={bill.id}
@@ -555,11 +555,21 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                       <p className={`font-mono font-black text-base ${bill.isPaid ? 'text-slate-500 line-through' : 'text-slate-900'}`}>₹{bill.amount.toLocaleString('en-IN')}</p>
                       {bill.isPaid && bill.paidDate && <p className="text-[9px] text-emerald-600 font-bold">Paid {bill.paidDate}</p>}
                     </div>
-                    <button onClick={() => handleMarkPaidClick(bill)} className={`px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-                      {bill.isPaid ? 'Unpay' : 'Mark Paid'}
-                    </button>
-                    <button onClick={() => fillCardForm(bill)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer"><Edit2 size={14} /></button>
-                    <button onClick={() => handleDeleteCard(bill.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
+                    {!locked && (
+                      <button onClick={() => handleMarkPaidClick(bill)} className={`px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                        {bill.isPaid ? 'Unpay' : 'Mark Paid'}
+                      </button>
+                    )}
+                    {locked ? (
+                      <div className="p-1.5 text-slate-300 flex justify-center" title="Locked (older than 30 days)">
+                        <Lock size={14} />
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => fillCardForm(bill)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer"><Edit2 size={14} /></button>
+                        <button onClick={() => handleDeleteCard(bill.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -584,6 +594,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
               const amountPaid = emi.emiAmount * emi.paidMonths;
               const amountLeft = emi.totalAmount - amountPaid;
               const isComplete = emi.paidMonths >= emi.totalMonths;
+              const locked = isEntryLocked(emi.startDate);
               return (
                 <motion.div
                   key={emi.id}
@@ -632,13 +643,21 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                     </div>
 
                     <div className="flex flex-col gap-1.5 shrink-0">
-                      {!isComplete && (
+                      {!isComplete && !locked && (
                         <button onClick={() => handlePayEmiClick(emi)} className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors whitespace-nowrap">
                           + Pay Month
                         </button>
                       )}
-                      <button onClick={() => fillEmiForm(emi)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer flex justify-center"><Edit2 size={14} /></button>
-                      <button onClick={() => handleDeleteEmi(emi.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer flex justify-center"><Trash2 size={14} /></button>
+                      {locked ? (
+                        <div className="p-1.5 text-slate-300 flex justify-center mt-2" title="Locked (older than 30 days)">
+                          <Lock size={14} />
+                        </div>
+                      ) : (
+                        <>
+                          <button onClick={() => fillEmiForm(emi)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer flex justify-center"><Edit2 size={14} /></button>
+                          <button onClick={() => handleDeleteEmi(emi.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer flex justify-center"><Trash2 size={14} /></button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </motion.div>

@@ -30,6 +30,11 @@ export function useTaskReminder(userId: string | undefined, onTaskOverdueTrigger
     if (userId.startsWith('guest_offline_')) {
       const loadTasks = () => {
         const raw = localStorage.getItem(`tasks_${userId}`) || '[]';
+        if (warnedTasksRef.current.has(`_raw_cache_${userId}`)) {
+          if (warnedTasksRef.current.has(`_raw_cache_data_${raw}`)) {
+            return; // No change
+          }
+        }
         try {
           const parsed = JSON.parse(raw);
           const fetched = parsed.map((t: any) => ({
@@ -38,6 +43,8 @@ export function useTaskReminder(userId: string | undefined, onTaskOverdueTrigger
               toDate: () => new Date(t.dueDate)
             }
           }));
+          warnedTasksRef.current.add(`_raw_cache_${userId}`);
+          warnedTasksRef.current.add(`_raw_cache_data_${raw}`);
           setTasks(fetched);
         } catch (e) {
           console.error(e);

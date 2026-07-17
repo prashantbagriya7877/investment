@@ -4,7 +4,8 @@ import { setDoc, deleteDoc, updateDoc } from '../../firebase-sync';
 import { db } from '../../firebase';
 import { LedgerProfile, LedgerTransaction } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowLeft, Trash2, Calendar, TrendingDown, TrendingUp, DollarSign } from 'lucide-react';
+import { ArrowLeft, Trash2, Calendar, TrendingDown, TrendingUp, DollarSign, Lock } from 'lucide-react';
+import { isEntryLocked } from '../../utils/dateUtils';
 
 interface LedgerProfileViewProps {
   profile: LedgerProfile;
@@ -158,12 +159,12 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
       await updateDoc(doc(db, 'ledger_profiles', profile.id), {
         netBalance: newBalance
       });
-      
-      if (tx.linkedGlobalTxId && onDeleteGlobalTransaction) {
-        await onDeleteGlobalTransaction(tx.linkedGlobalTxId);
-      }
     } catch (err) {
       console.warn("Failed to delete from cloud", err);
+    }
+
+    if (tx.linkedGlobalTxId && onDeleteGlobalTransaction) {
+      await onDeleteGlobalTransaction(tx.linkedGlobalTxId);
     }
 
     profile.netBalance = newBalance;
@@ -224,6 +225,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
             {/* We want to show oldest at top, newest at bottom like a chat, so we reverse the array for display */}
             {[...transactions].reverse().map(tx => {
               const isGave = tx.type === 'gave';
+              const locked = isEntryLocked(tx.date);
               return (
                 <div key={tx.id} className={`flex flex-col max-w-[85%] ${isGave ? 'self-end items-end' : 'self-start items-start'}`}>
                   
@@ -233,14 +235,20 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
                       <span className={`text-lg font-bold font-mono ${isGave ? 'text-slate-900' : 'text-emerald-700'}`}>
                         ₹{tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteTransaction(tx)}
-                        className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors rounded-full hover:bg-slate-50"
-                        title="Delete entry"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      {locked ? (
+                        <div className="p-1.5 text-slate-300" title="Locked (older than 30 days)">
+                          <Lock size={12} />
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteTransaction(tx)}
+                          className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors rounded-full hover:bg-slate-50 cursor-pointer"
+                          title="Delete entry"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </div>
                     
                     {tx.memo && (

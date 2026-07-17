@@ -113,25 +113,25 @@ export default function BankProfiles({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <h2 className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest font-sans">Banking Hub</h2>
-          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-            <Building2 size={20} className="text-indigo-600 shrink-0" /> Bank Profiles
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 mb-2">
+        <p className="text-lg sm:text-xl font-black text-slate-900 font-sans tracking-tight flex items-center gap-2 capitalize">
+          <Building2 size={20} className="text-slate-800 shrink-0" />
+          Bank Profiles
+        </p>
         <div className="flex gap-2 w-full sm:w-auto overflow-x-auto">
           {onNavigateToTab && (
             <button
+              type="button"
               onClick={() => onNavigateToTab('transactions')}
-              className="flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-xs"
+              className="flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-sm cursor-pointer"
             >
               <ArrowLeftRight size={14} /> Journal Ledger
             </button>
           )}
           <button
+            type="button"
             onClick={openAddForm}
-            className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors"
+            className="flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-sm cursor-pointer"
           >
             <Plus size={14} /> Add Bank
           </button>
@@ -145,7 +145,7 @@ export default function BankProfiles({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl relative"
+            className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xl relative"
           >
             <button
               onClick={closeForm}
@@ -153,43 +153,43 @@ export default function BankProfiles({
             >
               <X size={16} />
             </button>
-            <h3 className="font-bold text-slate-800 mb-3 text-sm flex items-center gap-1.5">
-              {editingBank ? <><Edit2 size={14} className="text-indigo-600" /> Edit Bank Profile</> : <><Plus size={14} className="text-indigo-600" /> Add New Bank Account</>}
+            <h3 className="font-bold text-slate-900 font-sans text-xs tracking-wider mb-3 flex items-center gap-1.5">
+              {editingBank ? <><Edit2 size={14} className="text-slate-800" /> Edit Bank Profile</> : <><Plus size={14} className="text-slate-800" /> Add New Bank Account</>}
             </h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">Bank Name</label>
-                <input required placeholder="e.g. HDFC, SBI" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">Bank Name</label>
+                <input required placeholder="e.g. HDFC, SBI" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">Account Label</label>
-                <input required placeholder="e.g. Primary Savings" value={accountName} onChange={e => setAccountName(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">Account Label</label>
+                <input required placeholder="e.g. Primary Savings" value={accountName} onChange={e => setAccountName(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">A/C Number (Last 4 digits)</label>
-                <input placeholder="e.g. 1234 (Optional)" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">A/C Number (Last 4 digits)</label>
+                <input placeholder="e.g. 1234 (Optional)" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">IFSC Code</label>
-                <input placeholder="e.g. HDFC0001234 (Optional)" value={ifscCode} onChange={e => setIfscCode(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">IFSC Code</label>
+                <input placeholder="e.g. HDFC0001234 (Optional)" value={ifscCode} onChange={e => setIfscCode(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">UPI IDs (Comma separated)</label>
-                <input placeholder="e.g. user@upi, 9876543210@paytm" value={upiIdsText} onChange={e => setUpiIdsText(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">UPI IDs (Comma separated)</label>
+                <input placeholder="e.g. user@upi, 9876543210@paytm" value={upiIdsText} onChange={e => setUpiIdsText(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-sans" />
               </div>
               {!editingBank && (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-1">Initial Balance (₹)</label>
-                  <input required type="number" step="0.01" placeholder="0.00" value={initialBalance} onChange={e => setInitialBalance(e.target.value)} className="w-full border border-slate-200 rounded-lg p-2 text-sm font-mono bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                  <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans mb-1">Initial Balance (₹)</label>
+                  <input required type="number" step="0.01" placeholder="0.00" value={initialBalance} onChange={e => setInitialBalance(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-slate-250 rounded-md focus:outline-hidden bg-white transition-all font-mono" />
                 </div>
               )}
               {editingBank && (
                 <div className="flex items-end">
-                  <p className="text-[10px] text-slate-500 italic">Current balance is auto-managed by transactions. Edit the initial balance via a manual correction transaction.</p>
+                  <p className="text-[10px] text-slate-500 italic font-sans">Current balance is auto-managed by transactions. Edit the initial balance via a manual correction transaction.</p>
                 </div>
               )}
               <div className="md:col-span-2 pt-2">
-                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <button type="submit" className="w-full px-4 py-1.5 bg-slate-900 hover:bg-slate-950 text-white font-semibold rounded text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5">
                   <Save size={14} /> {editingBank ? 'Save Changes' : 'Save Bank Account'}
                 </button>
               </div>
@@ -205,7 +205,7 @@ export default function BankProfiles({
             <div className="col-span-full py-10 text-center text-slate-500 border border-dashed border-slate-300 rounded-2xl">
               <Landmark size={32} className="mx-auto mb-2 opacity-50" />
               <p className="text-sm">No bank profiles added yet.</p>
-              <button onClick={openAddForm} className="mt-3 text-indigo-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first bank</button>
+              <button onClick={openAddForm} className="mt-3 text-slate-900 font-bold text-xs hover:underline cursor-pointer">+ Add your first bank</button>
             </div>
           ) : (
             bankAccounts.map(b => (
@@ -213,11 +213,11 @@ export default function BankProfiles({
                 whileHover={{ scale: 1.01 }}
                 key={b.id} 
                 onClick={() => setSelectedBankId(b.id)}
-                className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs cursor-pointer flex flex-col justify-between group"
+                className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs cursor-pointer flex flex-col justify-between group"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
                       <Landmark size={18} />
                     </div>
                     <div>
@@ -231,12 +231,12 @@ export default function BankProfiles({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => openEditForm(b, e)}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Edit profile"
                     >
                       <Edit2 size={13} />
                     </button>
-                    <ChevronRight size={18} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                    <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-800 transition-colors" />
                   </div>
                 </div>
                 <div className="mt-4 border-t border-slate-100 pt-3">
@@ -254,15 +254,15 @@ export default function BankProfiles({
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+          className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden"
         >
-          <div className="bg-slate-900 p-4 text-white flex justify-between items-center">
+          <div className="bg-slate-900 p-4 text-white flex justify-between items-center rounded-t-xl">
             <div>
               <button onClick={() => setSelectedBankId(null)} className="text-slate-500 hover:text-white text-xs font-bold mb-1 flex items-center gap-1 cursor-pointer">
                 ← Back to Profiles
               </button>
               <h3 className="text-lg font-black flex items-center gap-2">
-                <Landmark size={18} className="text-indigo-400" /> {selectedBank.bankName} - {selectedBank.accountName}
+                <Landmark size={18} className="text-slate-400" /> {selectedBank.bankName} - {selectedBank.accountName}
               </h3>
             </div>
             <div className="text-right">
@@ -281,7 +281,7 @@ export default function BankProfiles({
                     openEditForm(selectedBank, e as any);
                     setSelectedBankId(null);
                   }}
-                  className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  className="text-slate-700 hover:text-slate-950 text-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Edit2 size={12} /> Edit Profile
                 </button>

@@ -10,10 +10,11 @@ interface LedgerPageProps {
 
 export default function LedgerPage({ user }: LedgerPageProps) {
   const [selectedProfile, setSelectedProfile] = useState<LedgerProfile | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   if (selectedProfile) {
     return <LedgerProfileView profile={selectedProfile} onBack={() => setSelectedProfile(null)} userId={user?.uid} />;
   }
 
-  return <LedgerList onSelectProfile={setSelectedProfile} userId={user?.uid} />;
+  return <LedgerList onSelectProfile={setSelectedProfile} userId={user?.uid} showAddForm={showAddForm} setShowAddForm={setShowAddForm} />;
 }

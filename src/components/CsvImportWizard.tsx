@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, Check, AlertCircle, Trash2, ArrowRight } from 'lucide-react';
+import { UploadCloud, FileText, Check, AlertCircle, Trash2, ArrowRight, X } from 'lucide-react';
 import { Transaction, BankAccount } from '../types';
 import { proxyFetch } from '../utils/proxyFetch';
 
@@ -87,28 +87,33 @@ export default function CsvImportWizard({ onAddTransaction, bankAccounts, onClos
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl font-sans">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white rounded-2xl p-5 border border-slate-150 shadow-2xl font-sans">
+      <div className="flex justify-between items-start pb-3 border-b border-slate-100 mb-4">
         <div>
-          <h2 className="text-lg font-black text-slate-800">AI Bank Statement Import</h2>
-          <p className="text-xs text-slate-700 font-bold mt-1">Upload your Bank CSV and let AI do the data entry.</p>
+          <h2 className="text-base font-black text-slate-900 tracking-tight">AI Bank Statement Import</h2>
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Upload your Bank CSV and let AI do the data entry.</p>
         </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 hover:bg-slate-100 p-1.5 rounded-full cursor-pointer">
+          <X size={14} />
+        </button>
       </div>
 
       {!parsedData ? (
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center bg-slate-50 relative hover:bg-slate-100 transition-colors">
+          <div className="border border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-50/50 relative hover:bg-slate-50 transition-colors group cursor-pointer">
             <input 
               type="file" 
               accept=".csv"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <UploadCloud size={48} className="text-indigo-400 mb-4" />
-            <p className="font-bold text-slate-700 text-sm">
+            <div className="bg-white p-3 rounded-full shadow-sm mb-3 group-hover:scale-110 transition-transform border border-slate-150">
+              <UploadCloud size={20} className="text-indigo-600" />
+            </div>
+            <p className="font-bold text-slate-800 text-xs">
               {file ? file.name : 'Tap to upload or drag & drop CSV'}
             </p>
-            <p className="text-[10px] text-slate-500 font-bold mt-1">Only CSV files supported</p>
+            <p className="text-[10px] text-slate-500 font-medium mt-1">Only CSV files supported</p>
           </div>
 
           {error && (
@@ -121,31 +126,31 @@ export default function CsvImportWizard({ onAddTransaction, bankAccounts, onClos
           <button
             disabled={!file || loading}
             onClick={handleParse}
-            className="w-full bg-slate-900 text-white font-bold text-sm py-3 rounded-xl shadow-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full bg-slate-900 text-white font-bold text-xs py-2.5 rounded-lg shadow-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
             {loading ? (
               <span className="animate-pulse">AI is reading statement...</span>
             ) : (
-              <>Analyze with AI <ArrowRight size={16} /></>
+              <>Analyze with AI <ArrowRight size={14} /></>
             )}
           </button>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-xs font-bold flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Check size={16} />
+          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-2.5 rounded-lg text-xs font-bold flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <Check size={14} className="text-emerald-600" />
               <p>Found {parsedData.length} transactions!</p>
             </div>
             <button 
               onClick={() => setParsedData(null)}
-              className="text-emerald-800 underline cursor-pointer"
+              className="text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
             >
               Upload another
             </button>
           </div>
 
-          <div className="max-h-[300px] overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="max-h-[280px] overflow-y-auto border border-slate-150 rounded-xl divide-y divide-slate-100 bg-white">
             {parsedData.map((item, idx) => {
               const isSelected = selectedIndices.has(idx);
               const bankName = item.matched_bank_account_id ? bankAccounts.find(b => b.id === item.matched_bank_account_id)?.bankName : 'Cash/Wallet';
@@ -153,22 +158,22 @@ export default function CsvImportWizard({ onAddTransaction, bankAccounts, onClos
                 <div 
                   key={idx} 
                   onClick={() => toggleSelect(idx)}
-                  className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50/30' : 'hover:bg-slate-50'}`}
+                  className={`p-2.5 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50/40' : 'hover:bg-slate-50'}`}
                 >
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-300'}`}>
-                    {isSelected && <Check size={12} strokeWidth={3} />}
+                  <div className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white'}`}>
+                    {isSelected && <Check size={10} strokeWidth={3} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 text-sm truncate">{item.note}</p>
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-slate-500">
+                    <p className="font-bold text-slate-800 text-[11px] truncate">{item.note}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[9px] font-bold text-slate-500 uppercase tracking-wide">
                       <span>{item.date}</span>
                       <span>•</span>
-                      <span className="bg-slate-100 px-1.5 rounded">{item.category}</span>
+                      <span className="bg-slate-100 px-1 rounded text-slate-600">{item.category}</span>
                       <span>•</span>
-                      <span className="text-indigo-400">{bankName}</span>
+                      <span className="text-indigo-500">{bankName}</span>
                     </div>
                   </div>
-                  <div className={`font-black font-mono tracking-tight shrink-0 ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  <div className={`font-black font-mono tracking-tight shrink-0 text-xs ${item.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}`}>
                     {item.type === 'income' ? '+' : '-'}₹{Number(item.amount).toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -179,7 +184,7 @@ export default function CsvImportWizard({ onAddTransaction, bankAccounts, onClos
           <button
             disabled={importing || selectedIndices.size === 0}
             onClick={handleImport}
-            className="w-full bg-indigo-600 text-white font-bold text-sm py-3 rounded-xl shadow-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full bg-indigo-600 text-white font-bold text-xs py-2.5 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             {importing ? (
               <span className="animate-pulse">Importing...</span>

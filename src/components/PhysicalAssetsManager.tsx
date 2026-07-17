@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, X, Car, Home, Camera, Diamond, MoreHorizontal, Save, Calculator } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Car, Home, Camera, Diamond, MoreHorizontal, Save, Calculator, Lock } from 'lucide-react';
 import { PhysicalAsset } from '../types';
+import { isEntryLocked } from '../utils/dateUtils';
 
 interface PhysicalAssetsManagerProps {
   assets: PhysicalAsset[];
@@ -79,16 +80,14 @@ export default function PhysicalAssetsManager({ assets, onAdd, onEdit, onDelete 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">Asset Management</h2>
-          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5 mt-0.5">
-            <Car size={20} className="text-indigo-600 shrink-0" /> Physical Assets
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3 px-1 mb-2">
+        <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 capitalize">
+          <Car size={20} className="text-indigo-600 shrink-0" /> Physical Assets
+        </p>
         <button
+          type="button"
           onClick={openAddForm}
-          className="flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors w-full sm:w-auto"
+          className="flex shrink-0 items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap"
         >
           <Plus size={14} /> Log Asset
         </button>
@@ -101,11 +100,12 @@ export default function PhysicalAssetsManager({ assets, onAdd, onEdit, onDelete 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white p-4 rounded-2xl border border-slate-200 shadow-lg relative"
+            className="bg-white p-4 rounded-2xl border border-slate-150 shadow-sm relative"
           >
             <button
+              type="button"
               onClick={() => setIsFormOpen(false)}
-              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
             >
               <X size={16} />
             </button>
@@ -159,16 +159,17 @@ export default function PhysicalAssetsManager({ assets, onAdd, onEdit, onDelete 
       {/* List of Assets */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {assets.length === 0 ? (
-          <div className="col-span-full py-10 text-center text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white">
+          <div className="col-span-full py-10 text-center text-slate-500 border border-dashed border-slate-300 rounded-2xl bg-white shadow-sm">
             <Car size={32} className="mx-auto mb-2 opacity-50" />
             <p className="text-sm font-semibold">No physical assets logged yet.</p>
             <p className="text-xs mt-1 max-w-sm mx-auto">Track your bikes, cars, property, and gold here to include them in your net worth.</p>
-            <button onClick={openAddForm} className="mt-3 text-indigo-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first asset</button>
+            <button type="button" onClick={openAddForm} className="mt-3 text-indigo-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first asset</button>
           </div>
         ) : (
           assets.map(a => {
             const appreciation = a.currentValue - a.purchasePrice;
             const pct = a.purchasePrice > 0 ? (appreciation / a.purchasePrice) * 100 : 0;
+            const locked = isEntryLocked(a.purchaseDate);
             return (
               <motion.div 
                 key={a.id} 
@@ -185,12 +186,20 @@ export default function PhysicalAssetsManager({ assets, onAdd, onEdit, onDelete 
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openEditForm(a)} className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                      <Edit2 size={13} />
-                    </button>
-                    <button onClick={() => { if(window.confirm('Delete this asset?')) onDelete(a.id); }} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 size={13} />
-                    </button>
+                    {locked ? (
+                      <div className="p-1.5 text-slate-300" title="Locked (older than 30 days)">
+                        <Lock size={13} />
+                      </div>
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => openEditForm(a)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer">
+                          <Edit2 size={13} />
+                        </button>
+                        <button type="button" onClick={() => { if(window.confirm('Delete this asset?')) onDelete(a.id); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
+                          <Trash2 size={13} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 

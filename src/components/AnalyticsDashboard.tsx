@@ -188,47 +188,44 @@ export default function AnalyticsDashboard({
   return (
     <div className="space-y-4 font-sans pb-10">
       
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-4 rounded-3xl border border-slate-200/85 shadow-xs">
-        <div className="space-y-1">
-          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest">Financial Intelligence</h2>
-          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <Activity size={20} className="text-indigo-600 shrink-0" />
-            AI Analytics Dashboard
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-2 px-1 mb-2">
+        <p className="text-lg sm:text-xl font-black text-slate-900 font-sans tracking-tight flex items-center gap-2 capitalize">
+          <Activity size={20} className="text-indigo-600 shrink-0" />
+          AI Analytics Dashboard
+        </p>
       </div>
 
       {/* Net Worth Summary Widget */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-slate-900 p-5 rounded-3xl text-white shadow-lg relative overflow-hidden"
+          className="bg-slate-900 p-4 rounded-2xl text-white shadow-sm relative overflow-hidden"
         >
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500 rounded-full blur-3xl opacity-30"></div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+          <p className="text-xs font-bold text-slate-400 font-sans capitalize mb-1 flex items-center gap-1.5">
             <IndianRupee size={12} /> Live Net Worth
           </p>
-          <p className="text-3xl font-black font-mono tracking-tight">₹{netWorth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+          <p className="text-2xl font-black font-mono tracking-tight">₹{netWorth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
         </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs"
+          className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm"
         >
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+          <p className="text-xs font-bold text-slate-500 font-sans capitalize mb-1 flex items-center gap-1.5">
             <TrendingUp size={12} className="text-emerald-500" /> Total Assets
           </p>
-          <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{totalAssets.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+          <p className="text-xl font-black text-slate-900 font-mono tracking-tight">₹{totalAssets.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
         </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs"
+          className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm"
         >
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+          <p className="text-xs font-bold text-slate-500 font-sans capitalize mb-1 flex items-center gap-1.5">
             <ShieldAlert size={12} className="text-red-500" /> Total Liabilities
           </p>
-          <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{totalLiabilities.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+          <p className="text-xl font-black text-slate-900 font-mono tracking-tight">₹{totalLiabilities.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
         </motion.div>
       </div>
 
@@ -238,10 +235,10 @@ export default function AnalyticsDashboard({
         {/* Expenses by Category */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
-          className="bg-white border border-slate-200 p-4 rounded-3xl shadow-xs"
+          className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm"
         >
-          <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
-            <PieChartIcon size={16} className="text-indigo-500" /> Expenses by Category
+          <h3 className="font-bold text-slate-800 text-xs font-sans mb-4 flex items-center gap-1.5 capitalize">
+            <PieChartIcon size={14} className="text-indigo-500" /> Expenses by Category
           </h3>
           {expensesByCategory.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-20">No expense data available.</p>
@@ -255,10 +252,10 @@ export default function AnalyticsDashboard({
         {/* Monthly Trend */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-          className="bg-white border border-slate-200 p-4 rounded-3xl shadow-xs"
+          className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm"
         >
-          <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
-            <Activity size={16} className="text-indigo-500" /> Monthly Cashflow Trend
+          <h3 className="font-bold text-slate-800 text-xs font-sans mb-4 flex items-center gap-1.5 capitalize">
+            <Activity size={14} className="text-indigo-500" /> Monthly Cashflow Trend
           </h3>
           {monthlyTrend.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-20">No monthly data available.</p>
@@ -272,10 +269,10 @@ export default function AnalyticsDashboard({
         {/* Area Chart: Expense Growth Curve */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }}
-          className="bg-white border border-slate-200 p-4 rounded-3xl shadow-xs lg:col-span-2"
+          className="bg-white border border-slate-150 p-4 rounded-2xl shadow-sm lg:col-span-2"
         >
-          <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
-            <TrendingUp size={16} className="text-pink-500" /> Expense Velocity Curve
+          <h3 className="font-bold text-slate-800 text-xs font-sans mb-4 flex items-center gap-1.5 capitalize">
+            <TrendingUp size={14} className="text-pink-500" /> Expense Velocity Curve
           </h3>
           {monthlyTrend.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-20">No monthly data available.</p>

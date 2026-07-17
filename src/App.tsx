@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
@@ -184,6 +184,11 @@ export default function App() {
   const location = useLocation();
   const activeTab = location.pathname.split('/')[1] || (currentWorkspace === 'ledger' ? 'dashboard' : currentWorkspace === 'research' ? 'market-data' : 'portfolio');
   const setActiveTab = (tab: string) => navigate(`/${tab}`);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().substring(0, 7)
   );
@@ -269,7 +274,7 @@ export default function App() {
   };
 
   // Sound alarms for overdue events
-  const handleTaskOverdueClientAlert = (task: ScheduledTask) => {
+  const handleTaskOverdueClientAlert = useCallback((task: ScheduledTask) => {
     const isAlreadyToasted = activeToasts.some(t => t.id === task.id);
     if (isAlreadyToasted) return;
 
@@ -286,11 +291,18 @@ export default function App() {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      
       osc.connect(gainNode);
       gainNode.connect(audioCtx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(820, audioCtx.currentTime);
-      gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      
       osc.start();
       osc.stop(audioCtx.currentTime + 0.25);
     } catch (e) {
@@ -302,7 +314,7 @@ export default function App() {
       tag: `task_overdue_${task.id}`,
       requireInteraction: true
     });
-  };
+  }, [activeToasts, sendNotification]);
 
   const { tasks: scheduledTasks } = useTaskReminder(user?.uid, handleTaskOverdueClientAlert);
 
@@ -805,7 +817,7 @@ export default function App() {
   }, [user]);
 
   // mutations
-  const handleAddTransaction = async (txData: Omit<Transaction, 'id' | 'userId'>) => {
+  const handleAddTransaction = async (txData: Omit<Transaction, 'id' | 'userId'> & { id?: string }) => {
     if (!user) return;
 
     // Adjust Bank Account balance if linked
@@ -828,7 +840,7 @@ export default function App() {
     if (user.uid.startsWith('guest_offline_')) {
       const newTx: Transaction = {
         ...txData,
-        id: 'tx_' + Math.random().toString(36).substring(2, 11),
+        id: txData.id || 'tx_' + Math.random().toString(36).substring(2, 11),
         userId: user.uid
       };
       const updated = [...transactions, newTx];
@@ -836,8 +848,9 @@ export default function App() {
       localStorage.setItem(`tx_${user.uid}`, JSON.stringify(updated));
       return;
     }
-    const docRef = doc(collection(db, 'transactions'));
-    await setDoc(docRef, { ...txData, id: docRef.id, userId: user.uid, createdAt: serverTimestamp() });
+    const docId = txData.id || doc(collection(db, 'transactions')).id;
+    const docRef = doc(db, 'transactions', docId);
+    await setDoc(docRef, { ...txData, id: docId, userId: user.uid, createdAt: serverTimestamp() });
   };
 
   const handleEditTransaction = async (id: string, txData: Partial<Transaction>) => {

@@ -4,7 +4,7 @@ import {
   Bell, Repeat, CalendarRange, Landmark, Percent,
   ChevronLeft, ChevronRight, Activity, LineChart, Users
 } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface BottomNavigationProps {
   currentWorkspace: 'ledger' | 'investmant' | 'research';
@@ -17,19 +17,8 @@ export default function BottomNavigation({
   currentWorkspace,
   setCurrentWorkspace,
 }: BottomNavigationProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.split('/')[1] || (currentWorkspace === 'ledger' ? 'dashboard' : 'portfolio');
-  
-  const handleTabChange = (tab: string) => {
-    navigate(`/${tab}`);
-  };
-
-  const toggleWorkspace = () => {
-    const next = currentWorkspace === 'ledger' ? 'investmant' : currentWorkspace === 'investmant' ? 'research' : 'ledger';
-    setCurrentWorkspace(next);
-    navigate(next === 'ledger' ? '/dashboard' : next === 'investmant' ? '/portfolio' : '/market');
-  };
 
   const ledgerTabs = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -56,8 +45,9 @@ export default function BottomNavigation({
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/97 backdrop-blur-md border-t border-slate-200/80 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)] font-sans">
       {/* Workspace Switcher Row */}
       <div className="flex items-center justify-center gap-1 pt-1 pb-0.5">
-        <button
-          onClick={() => { setCurrentWorkspace('ledger'); navigate('/dashboard'); }}
+        <Link
+          to="/dashboard"
+          onClick={() => setCurrentWorkspace('ledger')}
           className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
             currentWorkspace === 'ledger'
               ? 'bg-slate-900 text-white'
@@ -65,9 +55,10 @@ export default function BottomNavigation({
           }`}
         >
           💳 Ledger
-        </button>
-        <button
-          onClick={() => { setCurrentWorkspace('investmant'); navigate('/portfolio'); }}
+        </Link>
+        <Link
+          to="/portfolio"
+          onClick={() => setCurrentWorkspace('investmant')}
           className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
             currentWorkspace === 'investmant'
               ? 'bg-indigo-600 text-white'
@@ -75,9 +66,10 @@ export default function BottomNavigation({
           }`}
         >
           📈 Invest
-        </button>
-        <button
-          onClick={() => { setCurrentWorkspace('research'); navigate('/market'); }}
+        </Link>
+        <Link
+          to="/market"
+          onClick={() => setCurrentWorkspace('research')}
           className={`flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black tracking-wide transition-all ${
             currentWorkspace === 'research'
               ? 'bg-blue-600 text-white'
@@ -85,7 +77,7 @@ export default function BottomNavigation({
           }`}
         >
           🔬 Research
-        </button>
+        </Link>
       </div>
 
       {/* Tab Row */}
@@ -93,9 +85,9 @@ export default function BottomNavigation({
         {tabs.map(({ id, label, icon: Icon }) => {
           const isActive = activeTab === id;
           return (
-            <button
+            <Link
               key={id}
-              onClick={() => handleTabChange(id)}
+              to={`/${id}`}
               className={`flex flex-col items-center justify-center shrink-0 transition-all duration-200 cursor-pointer flex-1 relative ${
                 isActive ? 'text-slate-950 font-extrabold' : 'text-slate-400 hover:text-slate-600'
               }`}
@@ -105,7 +97,7 @@ export default function BottomNavigation({
               )}
               <Icon size={18} className={isActive ? 'stroke-[2.5px] text-slate-950 scale-110' : ''} />
               <span className="text-[9px] mt-0.5 leading-tight">{label}</span>
-            </button>
+            </Link>
           );
         })}
       </div>

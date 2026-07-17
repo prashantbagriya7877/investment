@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar as CalIcon, Plus, Trash2, ArrowUpRight, TrendingUp, Sparkles, 
-  AlertCircle, Bell, CheckCircle, Edit2, Save, X
+  AlertCircle, Bell, CheckCircle, Edit2, Save, X, Lock
 } from 'lucide-react';
 import { Sip } from '../types';
 import { calculateXIRR } from '../utils/financeHelpers';
+import { isEntryLocked } from '../utils/dateUtils';
 
 interface SipTrackerProps {
   sips: Sip[];
@@ -374,7 +375,9 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
                     </tr>
                   </thead>
                   <tbody>
-                    {processedSips.map((sip) => (
+                    {processedSips.map((sip) => {
+                      const locked = isEntryLocked(sip.startDate);
+                      return (
                       <tr key={sip.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                         <td className="p-2 max-w-[180px]">
                           <p className="font-bold text-slate-800 truncate" title={sip.name}>{sip.name}</p>
@@ -401,18 +404,26 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
                               className="p-1 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="Schedule SIP Reminder">
                               <Bell size={10} className="text-slate-500" />
                             </button>
-                            <button onClick={() => openEditForm(sip)}
-                              className="p-1 border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 text-slate-500 hover:text-indigo-600 rounded-md transition-colors cursor-pointer" title="Edit SIP">
-                              <Edit2 size={11} />
-                            </button>
-                            <button onClick={() => onDeleteSip(sip.id)}
-                              className="text-slate-350 hover:text-red-500 p-1 rounded-md cursor-pointer transition-colors" title="Delete SIP">
-                              <Trash2 size={13} />
-                            </button>
+                            {locked ? (
+                              <div className="p-1 text-slate-300" title="Locked (older than 30 days)">
+                                <Lock size={13} />
+                              </div>
+                            ) : (
+                              <>
+                                <button onClick={() => openEditForm(sip)}
+                                  className="p-1 border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 text-slate-500 hover:text-indigo-600 rounded-md transition-colors cursor-pointer" title="Edit SIP">
+                                  <Edit2 size={11} />
+                                </button>
+                                <button onClick={() => onDeleteSip(sip.id)}
+                                  className="text-slate-350 hover:text-red-500 p-1 rounded-md cursor-pointer transition-colors" title="Delete SIP">
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

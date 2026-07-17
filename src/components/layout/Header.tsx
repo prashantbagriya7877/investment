@@ -21,8 +21,7 @@ interface HeaderProps {
   unreadCount?: number;
 }
 
-import { useNavigate, useLocation } from 'react-router-dom';
-
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 let globalDeferredPrompt: any = null;
 window.addEventListener('beforeinstallprompt', (e: any) => {
   e.preventDefault();
@@ -111,14 +110,13 @@ export default function Header({
               </span>
             </div>
 
-            {/* Workspace Pill Switcher (Always visible) */}
             <div className="flex bg-slate-100/80 border border-slate-200/60 rounded-xl p-0.5 gap-0.5 ml-1 sm:ml-2" id="workspace-pill-switcher">
-              <button
+              <Link
                 id="workspace-ledger-btn"
                 onClick={() => {
                   setCurrentWorkspace('ledger');
-                  handleTabChange('dashboard');
                 }}
+                to="/dashboard"
                 className={`flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold transition-all cursor-pointer ${
                   currentWorkspace === 'ledger'
                     ? 'bg-slate-900 text-white shadow-xs ring-1 ring-slate-950/5'
@@ -127,13 +125,13 @@ export default function Header({
               >
                 <ArrowLeftRight size={11} className={currentWorkspace === 'ledger' ? 'text-emerald-400' : 'text-slate-500'} /> 
                 <span className="hidden xs:inline">Ledger</span>
-              </button>
-              <button
+              </Link>
+              <Link
                 id="workspace-investmant-btn"
                 onClick={() => {
                   setCurrentWorkspace('investmant');
-                  handleTabChange('portfolio');
                 }}
+                to="/portfolio"
                 className={`flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold transition-all cursor-pointer ${
                   currentWorkspace === 'investmant'
                     ? 'bg-slate-900 text-white shadow-xs ring-1 ring-slate-950/5'
@@ -142,7 +140,7 @@ export default function Header({
               >
                 <TrendingUp size={11} className={currentWorkspace === 'investmant' ? 'text-emerald-400' : 'text-slate-500'} /> 
                 <span className="hidden xs:inline">InvestMant</span>
-              </button>
+              </Link>
             </div>
           </div>
 

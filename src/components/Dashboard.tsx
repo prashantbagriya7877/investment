@@ -252,7 +252,7 @@ export default function Dashboard({
       {/* Month Navigator Header */}
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200/85">
         <div>
-          <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-widest font-sans">InvestMant Dashboard</h2>
+          <h2 className="text-[11px] font-black text-slate-500 capitalize font-sans">InvestMant Dashboard</h2>
           <p className="text-lg font-extrabold text-slate-900 tracking-tight font-sans mt-0.5">Financial Year Overview • {monthLabel}</p>
         </div>
         
@@ -297,7 +297,7 @@ export default function Dashboard({
         <div className="bg-slate-900 text-white rounded-2xl p-3 shadow-md border border-slate-800 flex flex-col justify-between space-y-2">
           <div className="flex justify-between items-start">
             <div className="space-y-0.5">
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Net Worth</span>
+              <span className="text-xs capitalize text-slate-400 font-bold">Total Net Worth</span>
               <p className="text-3xl font-black font-display text-white mt-1">
                 ₹{netWorthSummary.netWorth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </p>
@@ -330,7 +330,7 @@ export default function Dashboard({
         {/* Portfolio Summary Card */}
         <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm flex flex-col justify-between space-y-2">
           <div>
-            <span className="text-[10px] uppercase tracking-wider text-slate-700 font-black">Liquid Portfolio current value</span>
+            <span className="text-xs capitalize text-slate-500 font-bold">Liquid Portfolio Current Value</span>
             <p className="text-2xl font-black font-display text-slate-900 mt-1">
               ₹{holdingsValuation.current.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </p>
@@ -341,13 +341,13 @@ export default function Dashboard({
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
             <div>
-              <span className="text-[10px] text-slate-700 font-black uppercase">Absolute Return (P&L)</span>
+              <span className="text-xs text-slate-500 font-bold capitalize">Absolute Return (P&L)</span>
               <p className={`font-black font-mono ${holdingsValuation.pnl >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                 ₹{holdingsValuation.pnl.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-slate-700 font-black uppercase">Percent Yield</span>
+              <span className="text-xs text-slate-500 font-bold capitalize">Percent Yield</span>
               <p className={`font-black font-mono ${holdingsValuation.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {holdingsValuation.pnl >= 0 ? '+' : ''}{holdingsValuation.pnlPercent.toFixed(2)}%
               </p>
@@ -366,15 +366,15 @@ export default function Dashboard({
         <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm flex flex-col justify-between space-y-2">
           <div className="flex justify-between items-start">
             <div className="w-full">
-              <span className="text-[10px] uppercase tracking-wider text-slate-700 font-black">Cash Flow Breakdown</span>
+              <span className="text-xs capitalize text-slate-500 font-bold">Cash Flow Breakdown</span>
               
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="bg-emerald-50 rounded-lg p-1.5 border border-emerald-100">
-                  <span className="text-[9px] text-emerald-600 font-bold uppercase">Total Income</span>
+                  <span className="text-xs text-emerald-600 font-bold capitalize">Total Income</span>
                   <p className="text-sm font-black text-emerald-900">₹{financialMonthlyStats.income.toLocaleString()}</p>
                 </div>
                 <div className="bg-rose-50 rounded-lg p-1.5 border border-rose-100">
-                  <span className="text-[9px] text-rose-600 font-bold uppercase">Total Expense</span>
+                  <span className="text-xs text-rose-600 font-bold capitalize">Total Expense</span>
                   <p className="text-sm font-black text-rose-900">₹{financialMonthlyStats.expenses.toLocaleString()}</p>
                 </div>
               </div>
@@ -394,7 +394,7 @@ export default function Dashboard({
           </div>
 
           <div className="pt-2 border-t border-slate-100">
-            <div className="flex justify-between items-center text-[10px] text-slate-750 font-black uppercase mb-1">
+            <div className="flex justify-between items-center text-xs text-slate-750 font-bold capitalize mb-1">
               <span>Savings Benchmark</span>
               <span className="text-blue-700">{financialMonthlyStats.savingsRate}% Saved</span>
             </div>
@@ -426,7 +426,7 @@ export default function Dashboard({
             </div>
             
             <div>
-              <label className="block text-slate-700 font-bold text-[10px] mb-1">EXTERNAL SAVINGS (₹)</label>
+              <label className="block text-slate-700 font-bold text-xs mb-1 capitalize">External Savings (₹)</label>
               <input 
                 type="number" 
                 value={manualSavings} 
@@ -436,7 +436,7 @@ export default function Dashboard({
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold text-[10px] mb-1">GOLD RESERVES (₹)</label>
+              <label className="block text-slate-700 font-bold text-xs mb-1 capitalize">Gold Reserves (₹)</label>
               <input 
                 type="number" 
                 value={manualGold} 
@@ -446,7 +446,7 @@ export default function Dashboard({
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold text-[10px] mb-1">PROPERTY VALUATION (₹)</label>
+              <label className="block text-slate-700 font-bold text-xs mb-1 capitalize">Property Valuation (₹)</label>
               <input 
                 type="number" 
                 value={manualProperty} 
@@ -456,7 +456,7 @@ export default function Dashboard({
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold text-[10px] mb-1">CAR LOAN (LIABILITY - ₹)</label>
+              <label className="block text-slate-700 font-bold text-xs mb-1 capitalize">Car Loan (Liability - ₹)</label>
               <input 
                 type="number" 
                 value={manualCarLoan} 
@@ -466,7 +466,7 @@ export default function Dashboard({
             </div>
 
             <div>
-              <label className="block text-slate-700 font-bold text-[10px] mb-1">HOME LOAN (LIABILITY - ₹)</label>
+              <label className="block text-slate-700 font-bold text-xs mb-1 capitalize">Home Loan (Liability - ₹)</label>
               <input 
                 type="number" 
                 value={manualHomeLoan} 
@@ -485,7 +485,7 @@ export default function Dashboard({
             <PiggyBank size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold">ACTIVE SIP COUNT</span>
+            <span className="text-xs text-slate-500 font-bold capitalize">Active SIP Count</span>
             <p className="font-extrabold text-[13px]">{activeSipsCount} systematic plans</p>
           </div>
         </div>
@@ -495,7 +495,7 @@ export default function Dashboard({
             <Calendar size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold font-sans">PENDING COLLECTIONS</span>
+            <span className="text-xs text-slate-500 font-bold font-sans capitalize">Pending Collections</span>
             <p className="font-extrabold text-[13px]">{pendingCollectionsCount} receivables</p>
           </div>
         </div>
@@ -505,7 +505,7 @@ export default function Dashboard({
             <Wallet size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold">CREDIT CARDS</span>
+            <span className="text-xs text-slate-500 font-bold capitalize">Credit Cards</span>
             <p className="font-extrabold text-[13px]">{unpaidCcBillsCount} pending bills</p>
           </div>
         </div>
@@ -515,7 +515,7 @@ export default function Dashboard({
             <TrendingDown size={16} className="text-red-600" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold">ACTIVE EMIs</span>
+            <span className="text-xs text-slate-500 font-bold capitalize">Active EMIs</span>
             <p className="font-extrabold text-[13px]">{activeEmis.length} running <span className="text-[10px] font-mono text-slate-500">(-₹{totalMonthlyEmi}/mo)</span></p>
           </div>
         </div>
@@ -525,7 +525,7 @@ export default function Dashboard({
             <Sparkles size={16} />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold">PHYSICAL ASSETS</span>
+            <span className="text-xs text-slate-500 font-bold capitalize">Physical Assets</span>
             <p className="font-extrabold text-[13px]">{physicalAssets.length} tracked items</p>
           </div>
         </div>
@@ -600,7 +600,7 @@ export default function Dashboard({
           </div>
 
           <div className="border-t border-slate-100 pt-1">
-            <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider font-sans">AUDIT CONTROL ASSURANCE</span>
+            <span className="text-xs text-slate-500 font-semibold capitalize font-sans">Audit Control Assurance</span>
           </div>
         </div>
 

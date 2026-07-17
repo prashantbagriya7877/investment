@@ -1,15 +1,15 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Plus, Search, Trash2, Edit2, X, Filter, Sparkles, Clipboard, CheckCircle 
+  Plus, Search, Trash2, Edit2, X, Filter, Sparkles, Clipboard, CheckCircle, MessageSquare, Camera, Lock
 } from 'lucide-react';
 import { Transaction, EXPENSE_CATEGORIES, INCOME_CATEGORIES, ALL_CATEGORIES, PendingPayment, RecurringBill } from '../types';
 import { parseBankSMS } from '../utils/financeHelpers';
 import { proxyFetch } from '../utils/proxyFetch';
+import { isEntryLocked } from '../utils/dateUtils';
 import InfoTooltip from './InfoTooltip';
 import toast from 'react-hot-toast';
 
-import BankProfiles from './BankProfiles';
 import CsvImportWizard from './CsvImportWizard';
 import { UploadCloud } from 'lucide-react';
 
@@ -68,8 +68,11 @@ export default function TransactionTracker({
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterBankAccountId, setFilterBankAccountId] = useState<string>('all');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isSmsParserOpen, setIsSmsParserOpen] = useState(false);
 
   const handleTypeChange = (newType: 'income' | 'expense' | 'transfer' | 'cash_withdrawal') => {
     setType(newType);
@@ -138,8 +141,20 @@ export default function TransactionTracker({
     setSmsText('');
     setTimeout(() => {
       setIsSmsParsed(false);
-      setSmsStatus('');
+      setIsScanning(false);
     }, 4000);
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setSmsText(text);
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard", err);
+      toast.error("Clipboard access denied or failed");
+    }
   };
 
   const handleReceiptScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,6 +302,7 @@ export default function TransactionTracker({
     return transactions.filter(t => {
       if (filterType !== 'all' && t.type !== filterType) return false;
       if (filterCategory !== 'all' && t.category !== filterCategory) return false;
+      if (filterBankAccountId !== 'all' && t.bankAccountId !== filterBankAccountId) return false;
       if (filterStartDate && t.date < filterStartDate) return false;
       if (filterEndDate && t.date > filterEndDate) return false;
 
@@ -299,33 +315,26 @@ export default function TransactionTracker({
 
       return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
-  }, [transactions, filterType, filterCategory, filterStartDate, filterEndDate, search]);
+  }, [transactions, filterType, filterCategory, filterBankAccountId, filterStartDate, filterEndDate, search]);
+
+  const hasFiltersApplied = filterType !== 'all' || filterCategory !== 'all' || filterBankAccountId !== 'all' || filterStartDate !== '' || filterEndDate !== '' || search.trim() !== '';
+  const displayedTransactions = hasFiltersApplied ? filteredTransactions : filteredTransactions.slice(0, 10);
 
   return (
     <div className="space-y-3" id="transaction-tab">
 
-      {/* Bank Profiles Hub */}
-      {onAddBankAccount && onEditBankAccount && onDeleteBankAccount && (
-        <BankProfiles 
-          bankAccounts={bankAccounts}
-          transactions={transactions}
-          onAddBankAccount={onAddBankAccount}
-          onEditBankAccount={onEditBankAccount}
-          onDeleteBankAccount={onDeleteBankAccount}
-        />
-      )}
+      {/* Bank Profiles Hub Removed - It has its own dedicated route */}
       
       {/* Header */}
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200/85">
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-3 px-1 mb-2">
         <div>
-          <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Indian ledger flow</h2>
-          <p className="text-xl font-black text-slate-900 tracking-tight font-sans mt-0.5 flex items-center">
+          <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans flex items-center">
             Transactions Ledger
             <InfoTooltip text="Log expenditures, salary, dividend rollups and other Indian financial trades." />
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 scrollbar-hide">
           <input 
             type="file" 
             accept="image/*" 
@@ -334,54 +343,101 @@ export default function TransactionTracker({
             onChange={handleReceiptScan}
             disabled={isScanning}
           />
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-indigo-100 shrink-0">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-indigo-700 font-bold text-xs hover:bg-white hover:shadow-sm cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              <Camera size={14} className={isScanning ? "animate-pulse" : ""} /> Scan Receipt
+            </button>
+            <div className="w-[1px] h-4 bg-slate-200 mx-0.5"></div>
+            <button
+              type="button"
+              onClick={() => setIsSmsParserOpen(!isSmsParserOpen)}
+              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs cursor-pointer transition-all whitespace-nowrap ${isSmsParserOpen ? 'bg-white shadow-sm text-indigo-700' : 'text-slate-600 hover:text-indigo-700'}`}
+            >
+              <MessageSquare size={14} /> Paste SMS
+            </button>
+          </div>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
-            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-indigo-700 px-1.5 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all border border-indigo-200 disabled:opacity-50"
-          >
-            <Sparkles size={14} className={isScanning ? "animate-spin" : ""} /> Scan Receipt
-          </button>
-          <button
+            type="button"
             id="import-csv-button"
             onClick={() => setIsCsvWizardOpen(true)}
-            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-1.5 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all border border-slate-200"
+            className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all border border-slate-200 whitespace-nowrap shrink-0"
           >
             <UploadCloud size={14} /> Bulk Import
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-all border whitespace-nowrap shrink-0 ${isFiltersOpen ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`}
+          >
+            <Filter size={14} className={isFiltersOpen ? "text-indigo-600" : "text-slate-500"} /> 
+            Filters
           </button>
         </div>
       </div>
 
       {/* SMS Parser Card Box */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-2.5 shadow-xs text-xs space-y-1">
-        <div className="flex items-center gap-1">
-          <Sparkles size={15} className="text-indigo-600 animate-pulse" />
-          <h4 className="font-extrabold text-slate-800 text-xs font-display">Indian Bank SMS Parser Tool</h4>
-        </div>
-        <p className="text-[10px] text-slate-500">
-          Paste a bank debit/credit message (HDFC, SBI, Axis, Paytm, GPay) below to instantly parse transaction value.
-        </p>
-
-        <div className="flex gap-1.5">
-          <input 
-            type="text" 
-            placeholder="e.g. HDFC Bank: Your A/c debited Rs. 500.00 for SWIGGY food orders on 2026-06-11..." 
-            value={smsText}
-            onChange={(e) => setSmsText(e.target.value)}
-            className="flex-1 bg-white border border-slate-200 rounded-lg p-1 text-xs focus:ring-1 focus:ring-slate-900"
-          />
-          <button 
-            type="button" 
-            onClick={() => handleSmsParse()}
-            className="bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-2 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0"
+      <AnimatePresence>
+        {isSmsParserOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden bg-white p-2 rounded-2xl border border-slate-150 shadow-sm mb-3"
           >
-            <Clipboard size={12} /> Parse
-          </button>
-        </div>
+            <div className="flex flex-col gap-2 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-0.5">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-indigo-600 animate-pulse" />
+                  <span className="font-bold text-slate-800 text-xs font-sans">Indian Bank SMS Parser</span>
+                </div>
+                <button onClick={() => setIsSmsParserOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium -mt-1">
+                Paste a bank debit/credit message (HDFC, SBI, Axis, Paytm, GPay) below to instantly parse transaction value.
+              </p>
 
-        {smsStatus && (
-          <p className="text-[10px] font-bold text-indigo-700 bg-indigo-50/50 p-1 rounded-lg animate-pulse">{smsStatus}</p>
+              <div className="flex gap-1.5 pt-1">
+                <input 
+                  type="text" 
+                  placeholder="e.g. HDFC Bank: Your A/c debited Rs. 500.00 for SWIGGY food orders on 2026-06-11..." 
+                  value={smsText}
+                  onChange={(e) => setSmsText(e.target.value)}
+                  className="flex-1 bg-slate-50/50 border border-slate-200 rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 font-sans transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSmsParse();
+                  }}
+                />
+                <button 
+                  onClick={() => handleSmsParse()}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1"
+                >
+                  <Sparkles size={12} /> Parse
+                </button>
+                <button 
+                  onClick={handlePaste}
+                  className="bg-white hover:bg-slate-50 text-slate-700 px-2 py-1.5 rounded-lg font-bold border border-slate-200 transition-colors shadow-sm cursor-pointer flex items-center justify-center"
+                  title="Paste from clipboard"
+                >
+                  <Clipboard size={14} />
+                </button>
+              </div>
+              
+              {smsStatus && (
+                <div className={`mt-1 text-[10px] font-bold ${smsStatus.includes('❌') ? 'text-red-600' : 'text-emerald-600'}`}>
+                  {smsStatus}
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* Transaction Entry Form Panel */}
       <AnimatePresence>
@@ -590,81 +646,105 @@ export default function TransactionTracker({
         )}
       </AnimatePresence>
 
-      {/* Filters */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-150 shadow-sm" id="transaction-filters-panel">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
-            <Filter size={12} className="text-slate-500" />
-            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-sans">Filters & Queries</h3>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1.5">
-            <div className="relative">
-              <span className="absolute left-2.5 top-2 text-slate-500"><Search size={12} /></span>
-              <input
-                type="text"
-                placeholder="Search descriptions..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-7 pr-1 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-sans"
-              />
+      {/* Filters (Options Panel) */}
+      <AnimatePresence>
+        {isFiltersOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden bg-white p-2 rounded-2xl border border-slate-150 shadow-sm"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
+              <span className="font-bold text-slate-800 text-xs font-sans">Active Filters</span>
+              <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+                {filteredTransactions.length} results found
+              </span>
             </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+              <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-slate-500"><Search size={12} /></span>
+                    <input
+                      type="text"
+                      placeholder="Search descriptions..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full pl-7 pr-1 py-1.5 text-xs border border-slate-200 rounded-lg bg-white font-sans focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
 
-            <div>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
-                className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden"
-              >
-                <option value="all">All Directions</option>
-                <option value="income">Credits (Income)</option>
-                <option value="expense">Debits (Expenses)</option>
-              </select>
-            </div>
+                  <div>
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value as any)}
+                      className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="all">All Directions</option>
+                      <option value="income">Credits (Income)</option>
+                      <option value="expense">Debits (Expenses)</option>
+                    </select>
+                  </div>
 
-            <div>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden"
-              >
-                <option value="all">All Categories</option>
-                {ALL_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+                  <div>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="all">All Categories</option>
+                      {ALL_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] uppercase font-bold text-slate-500 min-w-[20px]">From</span>
-              <input
-                type="date"
-                value={filterStartDate}
-                onChange={(e) => setFilterStartDate(e.target.value)}
-                className="w-full px-1 py-1 text-xs border border-slate-200 bg-white rounded-lg font-mono"
-              />
-            </div>
+                  <div>
+                    <select
+                      value={filterBankAccountId}
+                      onChange={(e) => setFilterBankAccountId(e.target.value)}
+                      className="w-full px-1 py-1.5 text-xs border border-slate-200 bg-white rounded-lg focus:outline-hidden font-mono truncate focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="all">All Bank Accounts</option>
+                      {bankAccounts.map(b => (
+                        <option key={b.id} value={b.id}>{b.bankName} - {b.accountName}</option>
+                      ))}
+                    </select>
+                  </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] uppercase font-bold text-slate-500 min-w-[20px]">To</span>
-              <input
-                type="date"
-                value={filterEndDate}
-                onChange={(e) => setFilterEndDate(e.target.value)}
-                className="w-full px-1 py-1 text-xs border border-slate-200 bg-white rounded-lg font-mono"
-              />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] uppercase font-bold text-slate-500 min-w-[20px]">From</span>
+                    <input
+                      type="date"
+                      value={filterStartDate}
+                      onChange={(e) => setFilterStartDate(e.target.value)}
+                      className="w-full px-1 py-1 text-xs border border-slate-200 bg-white rounded-lg font-mono focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] uppercase font-bold text-slate-500 min-w-[20px]">To</span>
+                    <input
+                      type="date"
+                      value={filterEndDate}
+                      onChange={(e) => setFilterEndDate(e.target.value)}
+                      className="w-full px-1 py-1 text-xs border border-slate-200 bg-white rounded-lg font-mono focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Ledger Table logs */}
       <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden" id="transactions-list-panel">
         <div className="px-2 py-1.5 border-b border-slate-150 flex justify-between items-center bg-slate-50/45">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-sans">Active Journals ({filteredTransactions.length})</span>
+          <span className="text-xs font-bold text-slate-700 font-sans capitalize">
+            Active Journals ({displayedTransactions.length}{!hasFiltersApplied && filteredTransactions.length > 10 ? ` of ${filteredTransactions.length}` : ''})
+          </span>
         </div>
 
-        {filteredTransactions.length === 0 ? (
+        {displayedTransactions.length === 0 ? (
           <div className="p-6 text-center text-slate-450 bg-white text-xs">No records found.</div>
         ) : (
           <div className="overflow-x-auto text-xs">
@@ -680,7 +760,9 @@ export default function TransactionTracker({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-750 font-sans">
-                {filteredTransactions.map((t) => (
+                {displayedTransactions.map((t) => {
+                  const locked = isEntryLocked(t.date);
+                  return (
                   <tr key={t.id} className="hover:bg-slate-50/30">
                     <td className="p-2 px-2">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold ${t.type === 'income' ? 'bg-emerald-100 text-emerald-800' : t.type === 'refund' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
@@ -692,13 +774,19 @@ export default function TransactionTracker({
                     <td className="p-2 text-slate-500 font-mono">{t.date}</td>
                     <td className="p-2 text-slate-450 max-w-xs truncate" title={t.notes || ''}>{t.notes || <span className="text-slate-300 italic">None</span>}</td>
                     <td className="p-2 text-right">
-                      <div className="flex justify-end gap-1.5 text-slate-500">
-                        <button onClick={() => startEdit(t)} className="p-1 hover:text-slate-900 rounded cursor-pointer"><Edit2 size={11} /></button>
-                        <button onClick={() => onDeleteTransaction(t.id)} className="p-1 hover:text-red-650 rounded cursor-pointer"><Trash2 size={11} /></button>
-                      </div>
+                      {locked ? (
+                        <div className="flex justify-end gap-1.5 text-slate-300" title="Locked (older than 30 days)">
+                          <Lock size={12} className="m-1" />
+                        </div>
+                      ) : (
+                        <div className="flex justify-end gap-1.5 text-slate-500">
+                          <button onClick={() => startEdit(t)} className="p-1 hover:text-slate-900 rounded cursor-pointer"><Edit2 size={11} /></button>
+                          <button onClick={() => onDeleteTransaction(t.id)} className="p-1 hover:text-red-650 rounded cursor-pointer"><Trash2 size={11} /></button>
+                        </div>
+                      )}
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

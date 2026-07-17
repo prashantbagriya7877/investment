@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Plus, Trash2, CalendarCheck, AlertTriangle, 
-  Landmark, Clock, CheckCircle2, Edit2, Save, X
+  Landmark, Clock, CheckCircle2, Edit2, Save, X, Lock
 } from 'lucide-react';
 import { Fd } from '../types';
 import { calculateFdMaturity } from '../utils/financeHelpers';
+import { isEntryLocked } from '../utils/dateUtils';
 
 interface FdRdTrackerProps {
   fds: Fd[];
@@ -283,7 +284,9 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
               </div>
             ) : (
               <div className="p-2 space-y-2">
-                {processedFds.map((fd) => (
+                {processedFds.map((fd) => {
+                  const locked = isEntryLocked(fd.startDate);
+                  return (
                   <div key={fd.id} className="border border-slate-150 rounded-2xl p-2.5 bg-slate-50/20 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2">
                     <div className="space-y-1 md:max-w-xs">
                       <div className="flex items-center gap-1.5">
@@ -317,18 +320,26 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
                         <p className="text-[10px] text-emerald-600 font-bold">₹{fd.interestEarned.toLocaleString('en-IN')} interest profit</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openEditForm(fd)}
-                          className="text-slate-350 hover:text-indigo-600 p-1.5 rounded-lg border border-slate-100 md:border-0 hover:bg-indigo-50 transition-all cursor-pointer" title="Edit Deposit">
-                          <Edit2 size={13} />
-                        </button>
-                        <button onClick={() => onDeleteFd(fd.id)}
-                          className="text-slate-350 hover:text-red-500 p-1.5 rounded-lg border border-slate-100 md:border-0 hover:bg-slate-50 transition-all cursor-pointer" title="Delete Deposit">
-                          <Trash2 size={13} />
-                        </button>
+                        {locked ? (
+                          <div className="p-1.5 text-slate-300" title="Locked (older than 30 days)">
+                            <Lock size={13} />
+                          </div>
+                        ) : (
+                          <>
+                            <button onClick={() => openEditForm(fd)}
+                              className="text-slate-350 hover:text-indigo-600 p-1.5 rounded-lg border border-slate-100 md:border-0 hover:bg-indigo-50 transition-all cursor-pointer" title="Edit Deposit">
+                              <Edit2 size={13} />
+                            </button>
+                            <button onClick={() => onDeleteFd(fd.id)}
+                              className="text-slate-350 hover:text-red-500 p-1.5 rounded-lg border border-slate-100 md:border-0 hover:bg-slate-50 transition-all cursor-pointer" title="Delete Deposit">
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
