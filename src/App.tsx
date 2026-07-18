@@ -1817,7 +1817,7 @@ export default function App() {
       <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
         <div className="transition-all duration-300">
           <React.Suspense fallback={<div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
-            <Routes location={location} key={location.pathname}>
+            <Routes>
             <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : currentWorkspace === 'research' ? '/market-data' : '/portfolio'} replace />} />
             <Route path="/dashboard" element={<Dashboard
               transactions={transactions}
