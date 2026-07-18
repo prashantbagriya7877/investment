@@ -200,27 +200,27 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
               </div>
               <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">SIP Scheme Name</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">SIP Scheme Name</label>
                   <input required value={editName} onChange={e => setEditName(e.target.value)} placeholder="e.g., Parag Parikh Flexi Cap Fund"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Monthly Amount (₹)</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">Monthly Amount (₹)</label>
                   <input required type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)} placeholder="5000"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">SIP Day of Month (1-28)</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">SIP Day of Month (1-28)</label>
                   <input required type="number" min="1" max="28" value={editSipDate} onChange={e => setEditSipDate(parseInt(e.target.value))}
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none font-mono" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Start Date</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">Start Date</label>
                   <input required type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Asset Class</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">Asset Class</label>
                   <select value={editAssetClass} onChange={e => setEditAssetClass(e.target.value as any)}
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none">
                     <option value="Equity">Equity</option>
@@ -230,7 +230,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Broker Platform</label>
+                  <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wide mb-1">Broker Platform</label>
                   <select value={editBroker} onChange={e => setEditBroker(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none">
                     <option value="Zerodha">Zerodha (Coin)</option>
@@ -259,17 +259,17 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
       {/* SIP Net Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
         <div className="bg-slate-900 text-white rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Monthly SIP Outflow</p>
+          <p className="text-[10px] capitalize tracking-wide text-slate-500 font-bold">Total Monthly SIP Outflow</p>
           <p className="text-2xl font-black mt-1 font-display">₹{totals.totalSipPerMonth.toLocaleString('en-IN')}</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Sum of all systematic commitments.</p>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">SIP Invested Capital</p>
+          <p className="text-[10px] capitalize tracking-wide text-slate-500 font-bold">SIP Invested Capital</p>
           <p className="text-2xl font-black mt-1 font-display text-slate-900">₹{totals.totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Total auto-accrued principal base.</p>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Current SIP Valuation</p>
+          <p className="text-[10px] capitalize tracking-wide text-slate-500 font-bold">Current SIP Valuation</p>
           <p className="text-2xl font-black mt-1 font-display text-slate-900">₹{totals.totalCurrent.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
           <div className="flex items-center gap-1 mt-1">
             <TrendingUp size={12} className="text-emerald-500" />
@@ -277,7 +277,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
           </div>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Estimated SIP XIRR</p>
+          <p className="text-[10px] capitalize tracking-wide text-slate-500 font-bold">Estimated SIP XIRR</p>
           <p className="text-2xl font-black mt-1 font-display text-emerald-600">{overallSipXirr > 0 ? '+' : ''}{overallSipXirr.toFixed(2)}%</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Weighted average annualized CAGR.</p>
         </div>
@@ -365,7 +365,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
               <div className="overflow-x-auto text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-150 bg-slate-50/40 text-slate-500 uppercase tracking-wider text-[9px] font-bold">
+                    <tr className="border-b border-slate-150 bg-slate-50/40 text-slate-500 capitalize tracking-wide text-[9px] font-bold">
                       <th className="p-2">SIP Information</th>
                       <th className="p-2">Execution Rules</th>
                       <th className="p-2 text-right">Amortized Cost</th>
@@ -456,7 +456,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
             <div className="border-t border-slate-100 pt-1 space-y-1">
               <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
                 <Sparkles size={11} className="text-emerald-500" />
-                <span>UPCOMING DEBITS</span>
+                <span>Upcoming Debits</span>
               </div>
               {sips.length === 0 ? (
                 <p className="text-[10px] text-slate-500">No scheduled debits.</p>
