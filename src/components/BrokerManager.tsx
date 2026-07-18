@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import { proxyFetch } from '../utils/proxyFetch';
+import { Link } from 'react-router-dom';
+import { upstoxApi } from '../services/upstoxApi';
 import toast from 'react-hot-toast';
 
 interface BrokerManagerProps {
@@ -90,36 +92,27 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const fetchUpstoxData = async () => {
     setUpstoxLoading(true);
     try {
-      const [profileRes, fundsRes, holdingsRes, ordersRes, positionsRes, mfRes] = await Promise.all([
-        proxyFetch('/api/upstox/profile', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/holdings', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/orders', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/short-term-positions', { headers: { 'Authorization': `Bearer ${upstoxToken}` } }),
-        proxyFetch('/api/upstox/mutual-funds', { headers: { 'Authorization': `Bearer ${upstoxToken}` } })
+      const results = await Promise.allSettled([
+        upstoxApi.getProfile(upstoxToken),
+        upstoxApi.getFunds(upstoxToken),
+        upstoxApi.getHoldings(upstoxToken),
+        upstoxApi.getOrders(upstoxToken),
+        upstoxApi.getShortTermPositions(upstoxToken),
+        upstoxApi.getMutualFunds(upstoxToken)
       ]);
-      if (profileRes.ok) setUpstoxProfile((await profileRes.json()).data);
-      if (fundsRes.ok) {
-        const fData = await fundsRes.json();
+
+      const [profileRes, fundsRes, holdingsRes, ordersRes, positionsRes, mfRes] = results;
+
+      if (profileRes.status === 'fulfilled') setUpstoxProfile(profileRes.value.data);
+      if (fundsRes.status === 'fulfilled') {
+        const fData = fundsRes.value;
         // Funds API returns data nested inside equity/commodity keys
         setUpstoxFunds(fData.data?.equity || fData.data);
       }
-      if (holdingsRes.ok) {
-        const hData = await holdingsRes.json();
-        setUpstoxHoldings(hData.data || []);
-      }
-      if (ordersRes.ok) {
-        const oData = await ordersRes.json();
-        setUpstoxOrders(oData.data || []);
-      }
-      if (positionsRes.ok) {
-        const pData = await positionsRes.json();
-        setUpstoxPositions(pData.data || []);
-      }
-      if (mfRes.ok) {
-        const mData = await mfRes.json();
-        setUpstoxMfHoldings(mData.data || []);
-      }
+      if (holdingsRes.status === 'fulfilled') setUpstoxHoldings(holdingsRes.value.data || []);
+      if (ordersRes.status === 'fulfilled') setUpstoxOrders(ordersRes.value.data || []);
+      if (positionsRes.status === 'fulfilled') setUpstoxPositions(positionsRes.value.data || []);
+      if (mfRes.status === 'fulfilled') setUpstoxMfHoldings(mfRes.value.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -184,8 +177,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const handleCancelUpstoxOrder = async (orderId: string) => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
     try {
-      const res = await proxyFetch(`/api/upstox/order/cancel?order_id=${orderId}`, { headers: { 'Authorization': `Bearer ${upstoxToken}` } });
-      if (!res.ok) throw new Error('Failed to cancel order');
+      await upstoxApi.cancelOrder(upstoxToken, orderId);
       toast.success('Order cancelled successfully');
       fetchUpstoxData();
     } catch (err: any) {
@@ -196,8 +188,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const handleExitAllUpstox = async () => {
     if (!confirm('KILL SWITCH: Are you sure you want to exit all open positions and cancel all pending orders?')) return;
     try {
-      const res = await proxyFetch(`/api/upstox/order/exit-all-positions`, { headers: { 'Authorization': `Bearer ${upstoxToken}` } });
-      if (!res.ok) throw new Error('Failed to exit all positions');
+      await upstoxApi.exitAllPositions(upstoxToken);
       toast.success('Kill switch activated! All positions exited.');
       fetchUpstoxData();
     } catch (err: any) {

@@ -5,13 +5,15 @@ import OptionChainChart from './charts/OptionChainChart';
 import PortfolioDonutChart from './charts/PortfolioDonutChart';
 import MarketHeatmap from './charts/MarketHeatmap';
 import PLChart from './charts/PLChart';
+import UpstoxOrderTicket from './UpstoxOrderTicket';
 import { upstoxApi } from '../services/upstoxApi';
 
-type TabId = 'dashboard' | 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl';
+type TabId = 'dashboard' | 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl' | 'order';
 
 const TABS = [
   { id: 'candlestick' as TabId, label: 'Historical Chart', icon: LineChart, color: 'text-blue-500', desc: 'View detailed candlestick patterns and technical analysis.' },
   { id: 'options' as TabId, label: 'Option Chain', icon: BarChart2, color: 'text-indigo-500', desc: 'Analyze strike prices, open interest, and LTP for options.' },
+  { id: 'order' as TabId, label: 'Order Execution', icon: Zap, color: 'text-purple-500', desc: 'Place buy and sell orders directly to your Upstox account.' },
   { id: 'portfolio' as TabId, label: 'Portfolio Analytics', icon: PieChart, color: 'text-emerald-500', desc: 'Visualize your holdings distribution and exposure.' },
   { id: 'heatmap' as TabId, label: 'Market Heatmap', icon: Globe, color: 'text-orange-500', desc: 'Spot top gainers and losers in the market at a glance.' },
   { id: 'pnl' as TabId, label: 'P&L Tracker', icon: TrendingUp, color: 'text-yellow-500', desc: 'Track your realized and unrealized profit & loss over time.' },
@@ -104,6 +106,7 @@ export default function ResearchTerminal() {
   const [portfolioData, setPortfolioData] = useState<any[]>([]);
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [plData, setPlData] = useState<any[]>([]);
+  const [marketQuote, setMarketQuote] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isMock, setIsMock] = useState(false);
   const [instrumentKey, setInstrumentKey] = useState('NSE_EQ|INE002A01018');
@@ -116,13 +119,25 @@ export default function ResearchTerminal() {
   const token = localStorage.getItem('upstox_access_token') || '';
   const isConnected = token.length > 10;
 
-  // ─── Fetch Live Data ────────────────────────────────────────────
+  // ─── Fetch Live Data ────────────────────────────────────────────  // ✨ Fetch Live Data ✨
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setIsMock(false);
     setErrorMsg(null);
+    setMarketQuote(null);
 
     try {
+      if (isConnected) {
+        try {
+          const resQuote = await upstoxApi.getMarketQuote(instrumentKey, token);
+          if (resQuote?.data && resQuote.data[instrumentKey]) {
+            setMarketQuote(resQuote.data[instrumentKey]);
+          }
+        } catch (err) {
+          console.error('Market Quote Error', err);
+        }
+      }
+
       if (activeTab === 'candlestick') {
         if (!isConnected) {
           setHistoricalData(generateMockCandlesticks());
@@ -238,7 +253,7 @@ export default function ResearchTerminal() {
           setIsMock(true);
         } else {
           try {
-            const res = await upstoxApi.getTradePnl(token, 'EQ', '2024-25');
+            const res = await upstoxApi.getTradePnl(token, 'EQ', '2425');
             const trades = res?.data?.trades_count > 0 ? res.data : null;
             if (trades) {
               // Group realized P&L by month
@@ -335,6 +350,31 @@ export default function ResearchTerminal() {
           </div>
         </div>
       ) : (
+        <>
+        {/* ✨ LIVE MARKET QUOTE STRIP ✨ */}
+        {activeTab !== 'dashboard' && marketQuote && (
+          <div className="mx-4 mt-4 bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-6 items-center">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider">LTP</p>
+              <p className="text-xl font-black text-slate-800">₹{marketQuote.last_price}</p>
+            </div>
+            <div className={marketQuote.net_change > 0 ? 'text-emerald-600' : 'text-rose-600'}>
+              <p className="text-[10px] font-bold tracking-wider">CHANGE</p>
+              <p className="text-md font-bold">
+                {marketQuote.net_change > 0 ? '+' : ''}{marketQuote.net_change} ({marketQuote.net_change > 0 ? '+' : ''}{((marketQuote.net_change / (marketQuote.last_price - marketQuote.net_change)) * 100).toFixed(2)}%)
+              </p>
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider">VOLUME</p>
+              <p className="text-md font-bold text-slate-700">{marketQuote.volume?.toLocaleString() || 0}</p>
+            </div>
+            <div className="hidden md:block">
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider">OPEN INTEREST</p>
+              <p className="text-md font-bold text-slate-700">{marketQuote.oi?.toLocaleString() || 0}</p>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-7xl mx-auto px-4 py-4 mt-2 mb-8">
           {/* Quick Stock Chips + Interval Selector (Only when inside relevant tool) */}
           {(activeTab === 'candlestick' || activeTab === 'options') && (
@@ -469,6 +509,7 @@ export default function ResearchTerminal() {
 
 
       </div>
+      </>
     )}
     </div>
   );

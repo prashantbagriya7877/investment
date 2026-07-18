@@ -36,9 +36,11 @@ export const upstoxApi = {
   getProfile: (token: string) => get(`${BASE_URL}/profile`, token),
   getFunds: (token: string) => get(`${BASE_URL}/funds`, token),
 
-  // ─── Portfolio ─────────────────────────────────────
+  // ─── Portfolio ─────────────────────────────────────  // ✨ Portfolio ✨
   getHoldings: (token: string) => get(`${BASE_URL}/holdings`, token),
   getPositions: (token: string) => get(`${BASE_URL}/positions`, token),
+  getShortTermPositions: (token: string) => get(`${BASE_URL}/short-term-positions`, token),
+  getMutualFunds: (token: string) => get(`${BASE_URL}/mutual-funds`, token),
 
   // ─── Orders ────────────────────────────────────────
   getOrders: (token: string) => get(`${BASE_URL}/orders`, token),
