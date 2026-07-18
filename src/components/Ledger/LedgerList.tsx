@@ -4,7 +4,7 @@ import { setDoc, deleteDoc } from '../../firebase-sync';
 import { db } from '../../firebase';
 import { LedgerProfile } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import { Trash2, Plus, User } from 'lucide-react';
+import { Trash2, Plus, User, Search } from 'lucide-react';
 import { useGoogleContacts } from '../../hooks/useGoogleContacts';
 
 interface LedgerListProps {
@@ -17,6 +17,7 @@ interface LedgerListProps {
 export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId, showAddForm, setShowAddForm }) => {
   const [profiles, setProfiles] = useState<LedgerProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfilePhone, setNewProfilePhone] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -125,6 +126,13 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
   const totalOwedToMe = profiles.filter(p => p.netBalance > 0).reduce((acc, p) => acc + p.netBalance, 0);
   const netTotal = totalOwedToMe - totalOwe;
 
+  const filteredProfiles = profiles.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.phone && p.phone.includes(searchQuery))
+  );
+
+  const displayProfiles = searchQuery.trim() === '' ? filteredProfiles.slice(0, 10) : filteredProfiles;
+
   if (loading) return <div className="p-4 text-center text-xs text-slate-500">Loading Khata...</div>;
 
   return (
@@ -132,7 +140,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
       
       {/* Aggregate Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="bg-white p-2 rounded-md border border-slate-200/80 shadow-xs">
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-bold text-slate-500 tracking-widest font-sans">I owe others</span>
             <span className="text-[10px] bg-red-50 text-red-700 px-1 py-0.5 rounded-full tracking-wider font-semibold scale-90">Debit Ledger</span>
@@ -144,7 +152,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
           </div>
         </div>
 
-        <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="bg-white p-2 rounded-md border border-slate-200/80 shadow-xs">
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-bold text-slate-500 tracking-widest font-sans">Others owe me</span>
             <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded-full tracking-wider font-semibold scale-90">Credit Ledger</span>
@@ -156,7 +164,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
           </div>
         </div>
 
-        <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="bg-white p-2 rounded-md border border-slate-200/80 shadow-xs">
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-bold text-slate-500 tracking-widest font-sans">Net Balance</span>
             <span className="text-[10px] bg-slate-100 text-slate-700 px-1 py-0.5 rounded-full tracking-wider font-semibold scale-90 font-sans">Ledger</span>
@@ -170,7 +178,7 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
       </div>
 
       {showAddForm && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-3 overflow-visible mt-3">
+        <div className="bg-white rounded-md border border-slate-200/80 shadow-xs p-3 overflow-visible mt-3">
           <form onSubmit={handleAddProfile} className="space-y-3">
              <div className="flex justify-between items-center border-b border-slate-100 pb-2 mb-2">
                 <h3 className="font-bold text-slate-900 font-sans text-xs tracking-wider">
@@ -254,14 +262,32 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* Search Bar */}
+      {profiles.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search profiles by name or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200/80 rounded-md focus:outline-hidden focus:ring-1 focus:ring-slate-900 bg-white shadow-xs transition-all font-sans"
+          />
+        </div>
+      )}
+
+      <div className="bg-white rounded-md border border-slate-200/80 shadow-xs overflow-hidden">
         {profiles.length === 0 ? (
           <div className="p-8 text-center text-slate-500 bg-white">
             <p className="text-xs font-medium">No ledger profiles found. Add a person to get started.</p>
           </div>
+        ) : filteredProfiles.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 bg-white">
+            <p className="text-xs font-medium">No profiles match "{searchQuery}".</p>
+          </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {profiles.map(profile => (
+            {displayProfiles.map(profile => (
               <div 
                 key={profile.id} 
                 className="p-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors cursor-pointer"
@@ -295,6 +321,14 @@ export const LedgerList: React.FC<LedgerListProps> = ({ onSelectProfile, userId,
                 </div>
               </div>
             ))}
+            
+            {searchQuery.trim() === '' && filteredProfiles.length > 10 && (
+              <div className="p-3 text-center bg-slate-50/50">
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Showing 10 of {filteredProfiles.length} profiles. Use search to find others.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -36,6 +36,9 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
   // Bank deduction state
   const [payingBill, setPayingBill] = useState<CreditCardBill | null>(null);
   const [payingEmi, setPayingEmi] = useState<EmiItem | null>(null);
+  
+  // -- EMIs States --
+  const [expandedHistoryEmiId, setExpandedHistoryEmiId] = useState<string | null>(null);
   const [selectedBank, setSelectedBank] = useState<string>('');
 
   // Card form state
@@ -45,10 +48,18 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
   const [cardAmount, setCardAmount] = useState('');
   const [cardDueDate, setCardDueDate] = useState('');
   const [cardNotes, setCardNotes] = useState('');
+  const [cardDueEmi, setCardDueEmi] = useState('');
+  const [cardPenalty, setCardPenalty] = useState('');
+  const [cardAnnualCharges, setCardAnnualCharges] = useState('');
 
   // EMI form state
   const [emiItemName, setEmiItemName] = useState('');
+  const [emiLoanNumber, setEmiLoanNumber] = useState('');
+  const [emiLoanType, setEmiLoanType] = useState('Consumer Goods');
+  const [emiFrequency, setEmiFrequency] = useState('monthly');
   const [emiTotal, setEmiTotal] = useState('');
+  const [emiPenalty, setEmiPenalty] = useState('');
+  const [emiOtherCharges, setEmiOtherCharges] = useState('');
   const [emiMonthly, setEmiMonthly] = useState('');
   const [emiTotalMonths, setEmiTotalMonths] = useState('');
   const [emiPaidMonths, setEmiPaidMonths] = useState('0');
@@ -68,11 +79,13 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
 
   const resetCardForm = () => {
     setCardName(''); setCardBank(''); setCardBankAccountId(''); setCardAmount('');
+    setCardDueEmi(''); setCardPenalty(''); setCardAnnualCharges('');
     setCardDueDate(''); setCardNotes(''); setEditingCard(null); setShowAddCard(false);
   };
 
   const resetEmiForm = () => {
-    setEmiItemName(''); setEmiTotal(''); setEmiMonthly('');
+    setEmiItemName(''); setEmiLoanNumber(''); setEmiLoanType('Consumer Goods'); setEmiFrequency('monthly'); setEmiTotal(''); 
+    setEmiPenalty(''); setEmiOtherCharges(''); setEmiMonthly('');
     setEmiTotalMonths(''); setEmiPaidMonths('0');
     setEmiStartDate(new Date().toISOString().substring(0, 10));
     setEmiBank(''); setEmiBankAccountId(''); setEmiNotes(''); setEditingEmi(null); setShowAddEmi(false);
@@ -84,6 +97,9 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
     setCardBank(bill.bank);
     setCardBankAccountId(bill.bankAccountId || '');
     setCardAmount(String(bill.amount));
+    setCardDueEmi(bill.dueEmi ? String(bill.dueEmi) : '');
+    setCardPenalty(bill.penalty ? String(bill.penalty) : '');
+    setCardAnnualCharges(bill.annualCharges ? String(bill.annualCharges) : '');
     setCardDueDate(bill.dueDate);
     setCardNotes(bill.notes || '');
     setShowAddCard(true);
@@ -92,7 +108,12 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
   const fillEmiForm = (emi: EmiItem) => {
     setEditingEmi(emi);
     setEmiItemName(emi.itemName);
+    setEmiLoanNumber(emi.loanNumber || '');
+    setEmiLoanType(emi.loanType || 'Consumer Goods');
+    setEmiFrequency(emi.frequency || 'monthly');
     setEmiTotal(String(emi.totalAmount));
+    setEmiPenalty(emi.penalty ? String(emi.penalty) : '');
+    setEmiOtherCharges(emi.otherCharges ? String(emi.otherCharges) : '');
     setEmiMonthly(String(emi.emiAmount));
     setEmiTotalMonths(String(emi.totalMonths));
     setEmiPaidMonths(String(emi.paidMonths));
@@ -111,7 +132,10 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       cardName: cardName.trim(),
       bank: cardBank,
       bankAccountId: cardBankAccountId || undefined,
-      amount: parseFloat(cardAmount),
+      amount: parseFloat(cardAmount) || 0,
+      dueEmi: parseFloat(cardDueEmi) || 0,
+      penalty: parseFloat(cardPenalty) || 0,
+      annualCharges: parseFloat(cardAnnualCharges) || 0,
       dueDate: cardDueDate,
       isPaid: editingCard?.isPaid || false,
       notes: cardNotes.trim() || undefined,
@@ -161,7 +185,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       await onAddGlobalTransaction({
         type: 'expense',
         category: 'Credit Card Bill',
-        amount: bill.amount,
+        amount: bill.amount + (bill.dueEmi || 0) + (bill.penalty || 0) + (bill.annualCharges || 0),
         date: new Date().toISOString().split('T')[0],
         notes: `Paid CC Bill: ${bill.cardName}`,
         bankAccountId: bankId
@@ -201,14 +225,20 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
     const data: Omit<EmiItem, 'id'> = {
       userId: user.uid,
       itemName: emiItemName.trim(),
-      totalAmount: parseFloat(emiTotal),
-      emiAmount: parseFloat(emiMonthly),
+      loanNumber: emiLoanNumber.trim() || undefined,
+      loanType: emiLoanType as any,
+      frequency: emiFrequency as any,
+      totalAmount: parseFloat(emiTotal) || 0,
+      penalty: parseFloat(emiPenalty) || 0,
+      otherCharges: parseFloat(emiOtherCharges) || 0,
+      emiAmount: parseFloat(emiMonthly) || 0,
       totalMonths: parseInt(emiTotalMonths),
       paidMonths: parseInt(emiPaidMonths),
       startDate: emiStartDate,
       bank: emiBank.trim() || undefined,
       bankAccountId: emiBankAccountId || undefined,
       notes: emiNotes.trim() || undefined,
+      paymentHistory: editingEmi?.paymentHistory || [],
     };
 
     if (isGuest) {
@@ -248,9 +278,20 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       });
     }
 
-    const updates = { paidMonths: emi.paidMonths + 1 };
+    const paymentLog = {
+      id: 'pl_' + Math.random().toString(36).substring(2, 11),
+      date: new Date().toISOString(),
+      amount: emi.emiAmount,
+      bankAccountId: bankId || undefined,
+    };
+
+    const updates = { 
+      paidMonths: emi.paidMonths + 1,
+      paymentHistory: [...(emi.paymentHistory || []), paymentLog]
+    };
+
     if (isGuest) {
-      const updatedEmis = emis.map(e => e.id === emi.id ? { ...e, paidMonths: Math.min(e.totalMonths, e.paidMonths + 1) } : e);
+      const updatedEmis = emis.map(e => e.id === emi.id ? { ...e, ...updates, paidMonths: Math.min(e.totalMonths, e.paidMonths + 1) } : e);
       localStorage.setItem(`ccemis_${user.uid}`, JSON.stringify(updatedEmis));
       setEmis(updatedEmis);
     } else {
@@ -276,7 +317,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
   const overdueBills = bills.filter(b => !b.isPaid && b.dueDate < today);
   const dueSoonBills = bills.filter(b => !b.isPaid && b.dueDate >= today && b.dueDate <= new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
   const totalEmiMonthly = emis.filter(e => e.paidMonths < e.totalMonths).reduce((acc, e) => acc + e.emiAmount, 0);
-  const totalOutstanding = bills.filter(b => !b.isPaid).reduce((acc, b) => acc + b.amount, 0);
+  const totalOutstanding = bills.filter(b => !b.isPaid).reduce((acc, b) => acc + b.amount + (b.dueEmi || 0) + (b.penalty || 0) + (b.annualCharges || 0), 0);
 
   return (
     <div className="space-y-4 pb-10 font-sans relative">
@@ -293,21 +334,21 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-white rounded-3xl p-5 shadow-xl w-full max-w-sm"
+              className="bg-white rounded-md p-5 shadow-xl w-full max-w-sm"
             >
               <h3 className="font-bold text-slate-900 text-lg mb-2">
                 Pay {payingBill ? payingBill.cardName : payingEmi?.itemName}
               </h3>
               <p className="text-sm text-slate-600 mb-4">
-                Amount: <span className="font-bold font-mono">₹{payingBill ? payingBill.amount.toLocaleString('en-IN') : payingEmi?.emiAmount.toLocaleString('en-IN')}</span>
+                Amount: <span className="font-bold font-mono">₹{payingBill ? (payingBill.amount + (payingBill.dueEmi || 0) + (payingBill.penalty || 0) + (payingBill.annualCharges || 0)).toLocaleString('en-IN') : payingEmi?.emiAmount.toLocaleString('en-IN')}</span>
               </p>
               
               <div className="space-y-2 mb-5">
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider">Select Bank Account to Deduct From</label>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider">Select Bank Account to Deduct From</label>
                 <select
                   value={selectedBank}
                   onChange={(e) => setSelectedBank(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
+                  className="w-full border border-slate-200 rounded-md p-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
                 >
                   <option value="">-- No Bank (Cash/Other) --</option>
                   {bankAccounts?.map(b => (
@@ -321,7 +362,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
               <div className="flex gap-2">
                 <button
                   onClick={() => { setPayingBill(null); setPayingEmi(null); setSelectedBank(''); }}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-md text-sm transition-colors"
                 >
                   Cancel
                 </button>
@@ -330,7 +371,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                     if (payingBill) handleConfirmPayBill(payingBill, selectedBank);
                     else if (payingEmi) handleConfirmPayEmi(payingEmi, selectedBank);
                   }}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-sm transition-colors"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-md text-sm transition-colors"
                 >
                   Confirm Pay
                 </button>
@@ -339,6 +380,9 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modals are handled below. History modal removed. */}
+
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 mb-2">
@@ -349,46 +393,46 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
         <button
           type="button"
           onClick={() => activeTab === 'cards' ? setShowAddCard(true) : setShowAddEmi(true)}
-          className="flex shrink-0 items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap w-full sm:w-auto"
+          className="flex shrink-0 items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap w-full sm:w-auto"
         >
           <PlusCircle size={14} />
-          Add {activeTab === 'cards' ? 'Card Bill' : 'EMI'}
+          Add {activeTab === 'cards' ? 'Card Bill' : 'Loan/EMI'}
         </button>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-3 text-center">
+        <div className="bg-red-50 border border-red-100 rounded p-3 text-center">
           <p className="text-[10px] font-bold text-red-400 capitalize tracking-wide">Overdue Bills</p>
           <p className="text-2xl font-black text-red-600">{overdueBills.length}</p>
         </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-center">
+        <div className="bg-amber-50 border border-amber-100 rounded p-3 text-center">
           <p className="text-[10px] font-bold text-amber-500 capitalize tracking-wide">Due This Week</p>
           <p className="text-2xl font-black text-amber-600">{dueSoonBills.length}</p>
         </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
+        <div className="bg-slate-50 border border-slate-200 rounded p-3 text-center">
           <p className="text-[10px] font-bold text-slate-500 capitalize tracking-wide">Outstanding</p>
           <p className="text-xl font-black text-slate-800 font-mono">₹{totalOutstanding.toLocaleString('en-IN')}</p>
         </div>
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 text-center">
-          <p className="text-[10px] font-bold text-indigo-400 capitalize tracking-wide">Monthly EMIs</p>
+        <div className="bg-indigo-50 border border-indigo-100 rounded p-3 text-center">
+          <p className="text-[10px] font-bold text-indigo-400 capitalize tracking-wide">Ongoing EMIs</p>
           <p className="text-xl font-black text-indigo-700 font-mono">₹{totalEmiMonthly.toLocaleString('en-IN')}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl w-full max-w-xs">
+      <div className="flex gap-2 bg-slate-100 p-1 rounded w-full max-w-xs">
         <button
           onClick={() => setActiveTab('cards')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${activeTab === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-700 hover:text-slate-700'}`}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-700 hover:text-slate-700'}`}
         >
           Credit Card Bills
         </button>
         <button
           onClick={() => setActiveTab('emis')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${activeTab === 'emis' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-700 hover:text-slate-700'}`}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === 'emis' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-700 hover:text-slate-700'}`}
         >
-          Active EMIs
+          Loans & EMIs
         </button>
       </div>
 
@@ -399,47 +443,59 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white border border-indigo-200 rounded-3xl p-4 shadow-md"
+            className="bg-white border border-indigo-200 rounded-md p-4 shadow-md"
           >
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                 <CreditCard size={16} className="text-indigo-600" />
                 {editingCard ? 'Edit Card Bill' : 'Add New Card Bill'}
               </h3>
-              <button onClick={resetCardForm} className="text-slate-500 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X size={16} /></button>
+              <button onClick={resetCardForm} className="text-slate-500 hover:text-slate-600 p-1 rounded cursor-pointer"><X size={16} /></button>
             </div>
             <form onSubmit={handleSaveCard} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Card Name</label>
-                <input required value={cardName} onChange={e => setCardName(e.target.value)} placeholder="e.g. HDFC Millennia" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Card Name</label>
+                <input required value={cardName} onChange={e => setCardName(e.target.value)} placeholder="e.g. HDFC Millennia" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Bank</label>
-                <select value={cardBank} onChange={e => setCardBank(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Bank</label>
+                <select value={cardBank} onChange={e => setCardBank(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
                   {BANKS.map(b => <option key={b}>{b}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Bill Amount (₹)</label>
-                <input required type="number" step="0.01" value={cardAmount} onChange={e => setCardAmount(e.target.value)} placeholder="0.00" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Base Spends (₹)</label>
+                <input required type="number" step="0.01" value={cardAmount} onChange={e => setCardAmount(e.target.value)} placeholder="0.00" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Due Date</label>
-                <input required type="date" value={cardDueDate} onChange={e => setCardDueDate(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Due EMIs (₹) (Optional)</label>
+                <input type="number" step="0.01" value={cardDueEmi} onChange={e => setCardDueEmi(e.target.value)} placeholder="0.00" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
-                <input value={cardNotes} onChange={e => setCardNotes(e.target.value)} placeholder="Minimum payment, etc." className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Penalties/Late Fee (₹) (Optional)</label>
+                <input type="number" step="0.01" value={cardPenalty} onChange={e => setCardPenalty(e.target.value)} placeholder="0.00" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Linked Bank Account</label>
-                <select value={cardBankAccountId} onChange={e => setCardBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Annual Charges (₹) (Optional)</label>
+                <input type="number" step="0.01" value={cardAnnualCharges} onChange={e => setCardAnnualCharges(e.target.value)} placeholder="0.00" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Due Date</label>
+                <input required type="date" value={cardDueDate} onChange={e => setCardDueDate(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Notes (Optional)</label>
+                <input value={cardNotes} onChange={e => setCardNotes(e.target.value)} placeholder="Minimum payment, etc." className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Linked Bank Account</label>
+                <select value={cardBankAccountId} onChange={e => setCardBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
                   <option value="">-- No Linked Bank --</option>
                   {bankAccounts?.map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountName}</option>)}
                 </select>
               </div>
               <div className="flex items-end">
-                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-md text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
                   <Save size={14} /> {editingCard ? 'Update Bill' : 'Save Bill'}
                 </button>
               </div>
@@ -455,57 +511,89 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white border border-violet-200 rounded-3xl p-4 shadow-md"
+            className="bg-white border border-indigo-200 rounded-md p-4 shadow-md"
           >
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                <BarChart2 size={16} className="text-violet-600" />
+                <BarChart2 size={16} className="text-indigo-600" />
                 {editingEmi ? 'Edit EMI' : 'Add New EMI'}
               </h3>
-              <button onClick={resetEmiForm} className="text-slate-500 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X size={16} /></button>
+              <button onClick={resetEmiForm} className="text-slate-500 hover:text-slate-600 p-1 rounded cursor-pointer"><X size={16} /></button>
             </div>
             <form onSubmit={handleSaveEmi} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Item Name</label>
-                <input required value={emiItemName} onChange={e => setEmiItemName(e.target.value)} placeholder="e.g. iPhone 15, Laptop" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-violet-400" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Item / Loan Name</label>
+                <input required value={emiItemName} onChange={e => setEmiItemName(e.target.value)} placeholder="e.g. iPhone 15, HDFC Personal Loan" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Total Amount (₹)</label>
-                <input required type="number" step="0.01" value={emiTotal} onChange={e => setEmiTotal(e.target.value)} placeholder="75000" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Loan / Account No. (Optional)</label>
+                <input value={emiLoanNumber} onChange={e => setEmiLoanNumber(e.target.value)} placeholder="e.g. LON12345678" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Monthly EMI (₹)</label>
-                <input required type="number" step="0.01" value={emiMonthly} onChange={e => setEmiMonthly(e.target.value)} placeholder="6250" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Loan Type</label>
+                <select value={emiLoanType} onChange={e => setEmiLoanType(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                  <option value="Consumer Goods">Consumer Goods (Phone, Laptop, etc.)</option>
+                  <option value="Personal Loan">Personal Loan</option>
+                  <option value="Home Loan">Home Loan</option>
+                  <option value="Car Loan">Car / Vehicle Loan</option>
+                  <option value="Education Loan">Education Loan</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Total Months</label>
-                <input required type="number" min="1" value={emiTotalMonths} onChange={e => setEmiTotalMonths(e.target.value)} placeholder="12" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Total Loan Amount (₹)</label>
+                <input required type="number" step="0.01" value={emiTotal} onChange={e => setEmiTotal(e.target.value)} placeholder="75000" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Paid Months (so far)</label>
-                <input type="number" min="0" value={emiPaidMonths} onChange={e => setEmiPaidMonths(e.target.value)} placeholder="0" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Penalty / Late Fee (₹) (Optional)</label>
+                <input type="number" step="0.01" value={emiPenalty} onChange={e => setEmiPenalty(e.target.value)} placeholder="0" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Start Date</label>
-                <input required type="date" value={emiStartDate} onChange={e => setEmiStartDate(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Other Charges (₹) (Optional)</label>
+                <input type="number" step="0.01" value={emiOtherCharges} onChange={e => setEmiOtherCharges(e.target.value)} placeholder="0" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Bank / Lender (Optional)</label>
-                <input value={emiBank} onChange={e => setEmiBank(e.target.value)} placeholder="e.g. HDFC, Bajaj Finance" className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Payment Frequency</label>
+                <select value={emiFrequency} onChange={e => setEmiFrequency(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
-                <input value={emiNotes} onChange={e => setEmiNotes(e.target.value)} placeholder="0% interest, etc." className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Installment Amount (₹)</label>
+                <input required type="number" step="0.01" value={emiMonthly} onChange={e => setEmiMonthly(e.target.value)} placeholder="6250" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Linked Bank Account</label>
-                <select value={emiBankAccountId} onChange={e => setEmiBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-xl p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Total Installments (Kishtein)</label>
+                <input required type="number" min="1" value={emiTotalMonths} onChange={e => setEmiTotalMonths(e.target.value)} placeholder="12" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Paid Installments (so far)</label>
+                <input type="number" min="0" value={emiPaidMonths} onChange={e => setEmiPaidMonths(e.target.value)} placeholder="0" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none font-mono" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Start Date</label>
+                <input required type="date" value={emiStartDate} onChange={e => setEmiStartDate(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Bank / Lender (Optional)</label>
+                <input value={emiBank} onChange={e => setEmiBank(e.target.value)} placeholder="e.g. HDFC, Bajaj Finance" className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Notes (Optional)</label>
+                <input value={emiNotes} onChange={e => setEmiNotes(e.target.value)} placeholder="0% interest, etc." className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-700 capitalize tracking-wider mb-1">Linked Bank Account</label>
+                <select value={emiBankAccountId} onChange={e => setEmiBankAccountId(e.target.value)} className="w-full border border-slate-200 rounded-md p-2 text-sm bg-slate-50 focus:bg-white focus:outline-none">
                   <option value="">-- No Linked Bank --</option>
                   {bankAccounts?.map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountName}</option>)}
                 </select>
               </div>
               <div className="flex items-end">
-                <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 rounded-xl text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-md text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
                   <Save size={14} /> {editingEmi ? 'Update EMI' : 'Save EMI'}
                 </button>
               </div>
@@ -518,7 +606,7 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       {activeTab === 'cards' && (
         <div className="space-y-3">
           {bills.length === 0 ? (
-            <div className="bg-white border border-dashed border-slate-200 rounded-3xl py-16 text-center">
+            <div className="bg-white border border-dashed border-slate-200 rounded-md py-16 text-center">
               <CreditCard size={40} className="mx-auto mb-3 text-slate-300" />
               <p className="text-slate-500 font-medium text-sm">No credit card bills added yet.</p>
               <button onClick={() => setShowAddCard(true)} className="mt-3 text-indigo-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first bill</button>
@@ -533,10 +621,10 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                   key={bill.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white border rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 ${isOverdue ? 'border-red-200 bg-red-50/40' : isDueSoon ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'}`}
+                  className={`bg-white border rounded p-3 shadow-xs flex items-center justify-between gap-3 ${isOverdue ? 'border-red-200 bg-red-50/40' : isDueSoon ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'}`}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${bill.isPaid ? 'bg-emerald-100 text-emerald-600' : isOverdue ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <div className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${bill.isPaid ? 'bg-emerald-100 text-emerald-600' : isOverdue ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
                       {bill.isPaid ? <CheckCircle size={18} /> : isOverdue ? <AlertCircle size={18} /> : <CreditCard size={18} />}
                     </div>
                     <div className="min-w-0">
@@ -551,12 +639,17 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <p className={`font-mono font-black text-base ${bill.isPaid ? 'text-slate-500 line-through' : 'text-slate-900'}`}>₹{bill.amount.toLocaleString('en-IN')}</p>
-                      {bill.isPaid && bill.paidDate && <p className="text-[9px] text-emerald-600 font-bold">Paid {bill.paidDate}</p>}
+                    <div className="text-right flex flex-col justify-end">
+                      <p className={`font-mono font-black text-base ${bill.isPaid ? 'text-slate-500 line-through' : 'text-slate-900'}`}>₹{(bill.amount + (bill.dueEmi || 0) + (bill.penalty || 0) + (bill.annualCharges || 0)).toLocaleString('en-IN')}</p>
+                      {(bill.dueEmi || bill.penalty || bill.annualCharges) ? (
+                        <p className="text-[8px] text-slate-500 font-bold max-w-[120px] leading-tight">
+                          (Spends: {bill.amount.toLocaleString('en-IN')}{bill.dueEmi ? ` + EMI: ${bill.dueEmi}` : ''}{bill.penalty ? ` + Penalty: ${bill.penalty}` : ''}{bill.annualCharges ? ` + AMC: ${bill.annualCharges}` : ''})
+                        </p>
+                      ) : null}
+                      {bill.isPaid && bill.paidDate && <p className="text-[9px] text-emerald-600 font-bold mt-0.5">Paid {bill.paidDate}</p>}
                     </div>
                     {!locked && (
-                      <button onClick={() => handleMarkPaidClick(bill)} className={`px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                      <button onClick={() => handleMarkPaidClick(bill)} className={`px-2.5 py-1 rounded-md text-[10px] font-bold cursor-pointer transition-all ${bill.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                         {bill.isPaid ? 'Unpay' : 'Mark Paid'}
                       </button>
                     )}
@@ -566,8 +659,8 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
                       </div>
                     ) : (
                       <>
-                        <button onClick={() => fillCardForm(bill)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer"><Edit2 size={14} /></button>
-                        <button onClick={() => handleDeleteCard(bill.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
+                        <button onClick={() => fillCardForm(bill)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded cursor-pointer"><Edit2 size={14} /></button>
+                        <button onClick={() => handleDeleteCard(bill.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"><Trash2 size={14} /></button>
                       </>
                     )}
                   </div>
@@ -582,82 +675,153 @@ export function CreditCardsEMI({ user, ccBills = [], ccEmis = [], bankAccounts =
       {activeTab === 'emis' && (
         <div className="space-y-3">
           {emis.length === 0 ? (
-            <div className="bg-white border border-dashed border-slate-200 rounded-3xl py-16 text-center">
+            <div className="bg-white border border-dashed border-slate-200 rounded-md py-16 text-center">
               <TrendingDown size={40} className="mx-auto mb-3 text-slate-300" />
               <p className="text-slate-500 font-medium text-sm">No active EMIs tracked yet.</p>
-              <button onClick={() => setShowAddEmi(true)} className="mt-3 text-violet-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first EMI</button>
+              <button onClick={() => setShowAddEmi(true)} className="mt-3 text-indigo-600 font-bold text-xs hover:underline cursor-pointer">+ Add your first EMI</button>
             </div>
           ) : (
             emis.map(emi => {
               const remaining = emi.totalMonths - emi.paidMonths;
-              const progress = (emi.paidMonths / emi.totalMonths) * 100;
-              const amountPaid = emi.emiAmount * emi.paidMonths;
-              const amountLeft = emi.totalAmount - amountPaid;
-              const isComplete = emi.paidMonths >= emi.totalMonths;
+              
+              const amountPaid = emi.paymentHistory && emi.paymentHistory.length > 0
+                ? emi.paymentHistory.reduce((sum, p) => sum + p.amount, 0)
+                : (emi.emiAmount * emi.paidMonths);
+                
+              const totalDue = emi.totalAmount + (emi.penalty || 0) + (emi.otherCharges || 0);
+              const amountLeft = totalDue - amountPaid;
+              const isComplete = emi.paidMonths >= emi.totalMonths || amountLeft <= 0;
+              const progress = Math.min((amountPaid / totalDue) * 100, 100);
               const locked = isEntryLocked(emi.startDate);
               return (
                 <motion.div
                   key={emi.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white border rounded-2xl p-4 shadow-xs ${isComplete ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200'}`}
+                  className={`bg-white border rounded-lg p-2.5 shadow-xs ${isComplete ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200'}`}
                 >
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-bold text-slate-900 text-sm">{emi.itemName}</p>
-                        {isComplete && <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">COMPLETE ✓</span>}
-                      </div>
-                      {emi.bank && <p className="text-[10px] text-slate-700 mb-2">{emi.bank}</p>}
-
-                      <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-                        <div className="bg-slate-50 rounded-xl p-2">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase">Monthly</p>
-                          <p className="font-black text-slate-800 text-sm font-mono">₹{emi.emiAmount.toLocaleString()}</p>
+                  <div className="flex flex-col gap-2">
+                    {/* Top Row: Name and Status */}
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-bold text-slate-900 text-sm">{emi.itemName}</p>
+                          {emi.loanType && (
+                            <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 capitalize tracking-wide shrink-0">
+                              {emi.loanType}
+                            </span>
+                          )}
+                          {isComplete && <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">COMPLETE ✓</span>}
                         </div>
-                        <div className="bg-slate-50 rounded-xl p-2">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase">Paid</p>
-                          <p className="font-black text-emerald-600 text-sm font-mono">₹{amountPaid.toLocaleString()}</p>
-                        </div>
-                        <div className="bg-slate-50 rounded-xl p-2">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase">Remaining</p>
-                          <p className="font-black text-red-500 text-sm font-mono">₹{amountLeft.toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-bold text-slate-700">
-                          <span>{emi.paidMonths} months paid</span>
-                          <span>{remaining > 0 ? `${remaining} months left` : 'Completed!'}</span>
-                        </div>
-                        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(progress, 100)}%` }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className={`h-full rounded-full ${isComplete ? 'bg-emerald-500' : 'bg-violet-500'}`}
-                          />
-                        </div>
-                        <p className="text-[9px] text-slate-500 text-right font-mono">{progress.toFixed(1)}% complete</p>
+                        
+                        {(emi.bank || emi.loanNumber) && (
+                          <p className="text-[10px] text-slate-700 mb-2 font-medium flex flex-wrap gap-1">
+                            {emi.bank && <span>{emi.bank}</span>}
+                            {emi.bank && emi.loanNumber && <span>•</span>}
+                            {emi.loanNumber && <span className="font-mono text-slate-500">A/C: {emi.loanNumber}</span>}
+                          </p>
+                        )}
+                        
+                        {(emi.penalty || emi.otherCharges) ? (
+                          <p className="text-[9px] text-slate-500 font-bold mb-2">
+                            Base: ₹{emi.totalAmount.toLocaleString()}
+                            {emi.penalty ? ` + Penalty: ₹${emi.penalty}` : ''}
+                            {emi.otherCharges ? ` + Charges: ₹${emi.otherCharges}` : ''}
+                            {' = Total: ₹' + totalDue.toLocaleString()}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      {!isComplete && !locked && (
-                        <button onClick={() => handlePayEmiClick(emi)} className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors whitespace-nowrap">
-                          + Pay Month
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-slate-50 rounded-md p-2.5">
+                        <p className="text-[9px] font-bold text-slate-500 capitalize">{emi.frequency || 'Monthly'}</p>
+                        <p className="font-black text-slate-800 text-sm font-mono">₹{emi.emiAmount.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-md p-2.5">
+                        <p className="text-[9px] font-bold text-slate-500 capitalize">Paid</p>
+                        <p className="font-black text-emerald-600 text-sm font-mono">₹{amountPaid.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-md p-2.5">
+                        <p className="text-[9px] font-bold text-slate-500 capitalize">Remaining</p>
+                        <p className="font-black text-red-500 text-sm font-mono">₹{amountLeft.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-700 mb-1">
+                        <span className="flex items-center gap-1">
+                          {emi.paidMonths} / {emi.totalMonths} installments paid
+                        </span>
+                      </div>
+                      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(progress, 100)}%` }}
+                          transition={{ duration: 0.8, delay: 0.2 }}
+                          className={`h-full rounded-full ${isComplete ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Inline History & Actions */}
+                    <div className="border-t border-slate-100 pt-3 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <button 
+                          onClick={() => setExpandedHistoryEmiId(expandedHistoryEmiId === emi.id ? null : emi.id)} 
+                          className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] cursor-pointer flex items-center gap-1"
+                        >
+                          {expandedHistoryEmiId === emi.id ? 'Hide History' : 'View History'}
                         </button>
-                      )}
-                      {locked ? (
-                        <div className="p-1.5 text-slate-300 flex justify-center mt-2" title="Locked (older than 30 days)">
-                          <Lock size={14} />
+                        
+                        <div className="flex gap-2">
+                          {locked ? (
+                            <div className="p-1.5 text-slate-300 flex justify-center" title="Locked (older than 30 days)">
+                              <Lock size={14} />
+                            </div>
+                          ) : (
+                            <>
+                              <button onClick={() => fillEmiForm(emi)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded cursor-pointer"><Edit2 size={14} /></button>
+                              <button onClick={() => handleDeleteEmi(emi.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"><Trash2 size={14} /></button>
+                            </>
+                          )}
+                          
+                          {!locked && !isComplete && (
+                            <button onClick={() => handlePayEmiClick(emi)} className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[11px] font-bold cursor-pointer transition-colors whitespace-nowrap">
+                              Pay Installment
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <>
-                          <button onClick={() => fillEmiForm(emi)} className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer flex justify-center"><Edit2 size={14} /></button>
-                          <button onClick={() => handleDeleteEmi(emi.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer flex justify-center"><Trash2 size={14} /></button>
-                        </>
-                      )}
+                      </div>
+                      
+                      {/* Expanded History View */}
+                      <AnimatePresence>
+                        {expandedHistoryEmiId === emi.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden mt-1"
+                          >
+                            <div className="bg-slate-50 rounded-md p-3 border border-slate-100 space-y-2 max-h-40 overflow-y-auto">
+                              {(!emi.paymentHistory || emi.paymentHistory.length === 0) ? (
+                                <p className="text-center text-[10px] text-slate-500 py-2">No payments recorded yet.</p>
+                              ) : (
+                                [...emi.paymentHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
+                                  <div key={log.id} className="flex justify-between items-center border-b border-slate-200/60 pb-1.5 last:border-0 last:pb-0">
+                                    <div>
+                                      <p className="text-[10px] font-bold text-slate-700">{new Date(log.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                    <p className="font-mono font-bold text-[11px] text-emerald-600">₹{log.amount.toLocaleString('en-IN')}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </motion.div>

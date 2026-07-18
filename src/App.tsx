@@ -187,7 +187,7 @@ export default function App() {
 
   // Scroll to top on route change
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo(0, 0);
   }, [location.pathname]);
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().substring(0, 7)
@@ -827,13 +827,21 @@ export default function App() {
         let diff = 0;
         if (txData.type === 'income' || txData.type === 'refund') diff = txData.amount;
         else if (txData.type === 'expense' || txData.type === 'cash_withdrawal' || txData.type === 'transfer') diff = -txData.amount;
-        await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+        try {
+          await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+        } catch (err) {
+          console.warn("Failed to update bank balance", err);
+        }
       }
     }
     if (txData.toBankAccountId && txData.type === 'transfer') {
       const toBank = bankAccounts.find(b => b.id === txData.toBankAccountId);
       if (toBank) {
-        await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance + txData.amount });
+        try {
+          await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance + txData.amount });
+        } catch (err) {
+          console.warn("Failed to update destination bank balance", err);
+        }
       }
     }
 
@@ -894,7 +902,11 @@ export default function App() {
         if (diff !== 0) {
           const bank = bankAccounts.find(b => b.id === bankId);
           if (bank) {
-            await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+            try {
+              await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+            } catch (err) {
+              console.warn("Failed to update bank balance in edit", err);
+            }
           }
         }
       }
@@ -920,13 +932,21 @@ export default function App() {
           let diff = 0;
           if (tx.type === 'income') diff = -tx.amount;
           else if (tx.type === 'expense' || tx.type === 'cash_withdrawal' || tx.type === 'transfer') diff = tx.amount;
-          await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+          try {
+            await handleEditBankAccount(bank.id, { currentBalance: bank.currentBalance + diff });
+          } catch (err) {
+            console.warn("Failed to update bank balance", err);
+          }
         }
       }
       if (tx.toBankAccountId && tx.type === 'transfer') {
         const toBank = bankAccounts.find(b => b.id === tx.toBankAccountId);
         if (toBank) {
-          await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance - tx.amount });
+          try {
+            await handleEditBankAccount(toBank.id, { currentBalance: toBank.currentBalance - tx.amount });
+          } catch (err) {
+            console.warn("Failed to update destination bank balance", err);
+          }
         }
       }
     }
@@ -1662,7 +1682,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
         <div className="h-10 w-10 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin" />
-        <p className="mt-2 text-xs font-bold text-slate-700">Securing environment...</p>
+        <p className="mt-2 text-xs font-bold text-slate-700">Loading...</p>
       </div>
     );
   }
@@ -1796,7 +1816,7 @@ export default function App() {
       {/* Primary Display Content Container */}
       <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
         <div className="transition-all duration-300">
-          <Routes>
+          <Routes location={location} key={location.pathname}>
             <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : currentWorkspace === 'research' ? '/market-data' : '/portfolio'} replace />} />
             <Route path="/dashboard" element={<Dashboard
               transactions={transactions}

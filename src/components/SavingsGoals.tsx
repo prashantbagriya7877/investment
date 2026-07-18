@@ -161,7 +161,7 @@ export default function SavingsGoals({
       {/* Header element */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
         <div>
-          <h2 className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Accumulation targets</h2>
+
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight font-sans">Savings Campaigns</p>
             <InfoTooltip text="Establish goal metrics and track capital progression dynamically." />

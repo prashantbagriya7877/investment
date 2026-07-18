@@ -45,7 +45,7 @@
         "_methodName": "serverTimestamp"
       }
     },
-    "updated_at": "2026-07-17T05:20:04.703Z"
+    "updated_at": "2026-07-18T09:22:08.117Z"
   },
   "ledger_profiles:e1d2f503-3002-4479-92df-ed790eb97c37": {
     "collection": "ledger_profiles",
@@ -250,5 +250,71 @@
       "createdAt": "2026-07-13T06:12:46.112Z"
     },
     "updated_at": "2026-07-13T06:12:46.245Z"
+  },
+  "ccemis:BRDoxkAwiJK3vPQi4Szt": {
+    "collection": "ccemis",
+    "doc_id": "BRDoxkAwiJK3vPQi4Szt",
+    "data": {
+      "userId": "hWMNQeFSxEUTBpUB3I8UkT5qteg2",
+      "itemName": "Scooty",
+      "totalAmount": 72000,
+      "emiAmount": 4000,
+      "totalMonths": 23,
+      "paidMonths": 50000,
+      "startDate": "2024-01-07",
+      "bank": "Shiriram Finance",
+      "bankAccountId": "7ZUtZOfNNlbKW5P31ePy",
+      "notes": "11% Interest",
+      "id": "BRDoxkAwiJK3vPQi4Szt",
+      "createdAt": {
+        "_methodName": "serverTimestamp"
+      }
+    },
+    "updated_at": "2026-07-18T06:44:56.820Z"
+  },
+  "ccemis:hNn0BMFrNYP5A3wodPyp": {
+    "collection": "ccemis",
+    "doc_id": "hNn0BMFrNYP5A3wodPyp",
+    "data": {
+      "userId": "hWMNQeFSxEUTBpUB3I8UkT5qteg2",
+      "itemName": "Scooty",
+      "totalAmount": 72000,
+      "emiAmount": 4000,
+      "totalMonths": 23,
+      "paidMonths": 12,
+      "startDate": "2024-01-07",
+      "bank": "Shiriram Finance",
+      "bankAccountId": "7ZUtZOfNNlbKW5P31ePy",
+      "notes": "11% interest",
+      "id": "hNn0BMFrNYP5A3wodPyp",
+      "createdAt": {
+        "_methodName": "serverTimestamp"
+      }
+    },
+    "updated_at": "2026-07-18T06:52:43.617Z"
+  },
+  "ccemis:3Ntfsmf6QR9TDdRLHUxR": {
+    "collection": "ccemis",
+    "doc_id": "3Ntfsmf6QR9TDdRLHUxR",
+    "data": {
+      "userId": "hWMNQeFSxEUTBpUB3I8UkT5qteg2",
+      "itemName": "Scooty",
+      "loanType": "Car Loan",
+      "frequency": "monthly",
+      "totalAmount": 72000,
+      "emiAmount": 4000,
+      "totalMonths": 23,
+      "paidMonths": 50000,
+      "startDate": "2025-01-07",
+      "bank": "Shriram Finance",
+      "bankAccountId": "7ZUtZOfNNlbKW5P31ePy",
+      "notes": "11% interest",
+      "paymentHistory": [],
+      "id": "3Ntfsmf6QR9TDdRLHUxR",
+      "createdAt": {
+        "_methodName": "serverTimestamp"
+      }
+    },
+    "updated_at": "2026-07-18T07:06:59.588Z"
   }
 }

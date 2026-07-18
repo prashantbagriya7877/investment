@@ -30,6 +30,7 @@ export default function RecurringBills({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailText, setEmailText] = useState('');
   const [isParsingEmail, setIsParsingEmail] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Handle type switch to reset category
   const handleTypeChange = (newType: 'income' | 'expense') => {
@@ -151,12 +152,19 @@ export default function RecurringBills({
         <div>
           <p className="text-xl font-bold text-slate-900 tracking-tight font-sans mt-0.5">Auto-Bills & Salary</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full md:w-auto gap-2 mt-1 md:mt-0">
+          <button
+            onClick={() => setIsScannerOpen(!isScannerOpen)}
+            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-md font-bold text-xs transition-colors cursor-pointer"
+          >
+            <Sparkles size={14} className={isScannerOpen ? '' : 'animate-pulse'} />
+            {isScannerOpen ? 'Close Scanner' : 'Open Scanner'}
+          </button>
           <button
             onClick={() => {
               // Add record balance logic or navigate
             }}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
           >
             Record Balance
           </button>
@@ -167,7 +175,7 @@ export default function RecurringBills({
               setCategory(EXPENSE_CATEGORIES[0]);
               setIsFormOpen(true);
             }}
-            className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-1.5 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
           >
             <Plus size={14} /> Add Bill
           </button>
@@ -303,37 +311,53 @@ export default function RecurringBills({
       </AnimatePresence>
 
       {/* AI Subscription Scanner */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 shadow-xs text-xs space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Sparkles size={14} className="text-indigo-600 animate-pulse" />
-          <h4 className="font-bold text-slate-800 text-xs font-sans uppercase tracking-widest">AI Subscriptions Scanner</h4>
-        </div>
-        <p className="text-[10px] text-slate-500">
-          Paste promotional emails or invoices mentioning subscriptions (Netflix, AWS, Spotify). Our AI will automatically add them to your Auto-Bills.
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <textarea 
-            placeholder="Paste email snippet here..." 
-            value={emailText}
-            onChange={(e) => setEmailText(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 h-16 resize-none"
-          />
-          <div className="flex justify-end">
-            <button 
-              type="button" 
-              onClick={handleParseEmail}
-              disabled={isParsingEmail || !emailText.trim()}
-              className="bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              {isParsingEmail ? (
-                <> <Sparkles size={12} className="animate-spin" /> Analyzing... </>
-              ) : (
-                <> <Mail size={12} /> Extract Subscriptions </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+      <AnimatePresence>
+        {isScannerOpen && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 shadow-xs text-xs space-y-2 transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-indigo-600 animate-pulse" />
+                  <h4 className="font-bold text-slate-800 text-xs font-sans uppercase tracking-widest">AI Subscriptions Scanner</h4>
+                </div>
+              </div>
+              
+              <div className="space-y-2 pt-1 border-t border-slate-200/60 mt-2">
+                <p className="text-[10px] text-slate-500">
+                  Paste promotional emails or invoices mentioning subscriptions (Netflix, AWS, Spotify). Our AI will automatically add them to your Auto-Bills.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  <textarea 
+                    placeholder="Paste email snippet here..." 
+                    value={emailText}
+                    onChange={(e) => setEmailText(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 h-16 resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <button 
+                      type="button" 
+                      onClick={handleParseEmail}
+                      disabled={isParsingEmail || !emailText.trim()}
+                      className="bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      {isParsingEmail ? (
+                        <> <Sparkles size={12} className="animate-spin" /> Analyzing... </>
+                      ) : (
+                        <> <Mail size={12} /> Extract Subscriptions </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Due This Month Section */}
       <div className="bg-orange-50 rounded-xl border border-orange-200/80 shadow-xs overflow-hidden">

@@ -147,7 +147,7 @@ export default function BudgetLimits({
       {/* Navigator headers */}
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80 animate-fade-in">
         <div>
-          <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Monthly Budgets</h2>
+          <h2 className="text-[11px] font-bold text-slate-500 tracking-widest font-sans">Monthly Budgets</h2>
           <p className="text-xl font-bold text-slate-900 tracking-tight font-sans mt-0.5">Category Allocations</p>
           <p className="text-xs text-slate-500 mt-1 font-sans">Current parameter: <span className="font-semibold text-slate-950">{monthName}</span></p>
         </div>
@@ -264,7 +264,7 @@ export default function BudgetLimits({
       {/* Grid displays */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden" id="budgets-details-container">
         <div className="px-2 py-1.5 flex border-b border-slate-200/50 justify-between items-center bg-slate-50/40">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">Allocated spending caps ({mergedBudgets.length})</span>
+          <span className="text-[11px] font-bold text-slate-500 tracking-widest font-sans">Allocated spending caps ({mergedBudgets.length})</span>
         </div>
 
         {mergedBudgets.length === 0 ? (

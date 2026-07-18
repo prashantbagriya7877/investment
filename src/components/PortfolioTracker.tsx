@@ -567,7 +567,7 @@ export default function PortfolioTracker({
       {/* Portfolio Header Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
         <div className="bg-slate-900 text-white rounded-2xl p-2 shadow-sm border border-slate-800">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Portfolio Value</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold">Total Portfolio Value</p>
           <p className="text-2xl font-black mt-1 font-display">₹{aggregate.totalCurrent.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
           <div className="flex items-center gap-1.5 mt-1.5">
             <span className="text-xs text-slate-500 font-medium">Invested: ₹{aggregate.totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
@@ -575,7 +575,7 @@ export default function PortfolioTracker({
         </div>
 
         <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-150">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Absolute Profit & Loss</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold">Absolute Profit & Loss</p>
           <p className={`text-2xl font-black mt-1 font-display flex items-center gap-1 ${totalPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             ₹{totalPnL.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
@@ -589,7 +589,7 @@ export default function PortfolioTracker({
         </div>
 
         <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-150">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Portfolio XIRR</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold">Portfolio XIRR</p>
           <p className="text-2xl font-black mt-1 font-display text-slate-900">
             {portfolioXirr > 0 ? '+' : ''}{portfolioXirr.toFixed(2)}%
           </p>
@@ -659,7 +659,7 @@ export default function PortfolioTracker({
         {/* Total Net Worth Card */}
         <div className="bg-linear-to-br from-indigo-950 to-slate-900 rounded-2xl p-4 shadow-xl border border-indigo-900/30 text-white relative overflow-hidden">
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-indigo-200 font-bold">Total Portfolio Net Worth</p>
+            <p className="text-[10px] tracking-wider text-indigo-200 font-bold">Total Portfolio Net Worth</p>
             <p className="text-[10px] text-slate-350">Combined sum of active securities and liquid cash.</p>
           </div>
           <div className="mt-1">

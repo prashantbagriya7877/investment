@@ -133,32 +133,32 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
 
               <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Bank / Institution Name</label>
+                  <label className="block text-[10px] font-black text-slate-700 tracking-wider mb-1">Bank / Institution Name</label>
                   <input required value={editBankName} onChange={e => setEditBankName(e.target.value)} placeholder="e.g., HDFC Bank, SBI"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Principal Amount (₹)</label>
+                  <label className="block text-[10px] font-black text-slate-700 tracking-wider mb-1">Principal Amount (₹)</label>
                   <input required type="number" value={editPrincipal} onChange={e => setEditPrincipal(e.target.value)} placeholder="100000"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Interest Rate (% p.a.)</label>
+                  <label className="block text-[10px] font-black text-slate-700 tracking-wider mb-1">Interest Rate (% p.a.)</label>
                   <input required type="number" step="0.01" value={editInterestRate} onChange={e => setEditInterestRate(e.target.value)} placeholder="7.25"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none font-mono" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Tenure (Months)</label>
+                  <label className="block text-[10px] font-black text-slate-700 tracking-wider mb-1">Tenure (Months)</label>
                   <input required type="number" value={editTenure} onChange={e => setEditTenure(e.target.value)} placeholder="12"
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none font-mono" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">Start Date</label>
+                  <label className="block text-[10px] font-black text-slate-700 tracking-wider mb-1">Start Date</label>
                   <input required type="date" value={editStartDate} onChange={e => setEditStartDate(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl p-2 bg-slate-50 focus:bg-white focus:outline-none" />
                 </div>
                 <div className="flex flex-col justify-end bg-slate-50 p-2 rounded-xl border border-slate-100">
-                  <span className="text-[9px] text-slate-500 font-semibold uppercase">AUTO COMPUTED MATURITY</span>
+                  <span className="text-[9px] text-slate-500 font-semibold">AUTO COMPUTED MATURITY</span>
                   <span className="font-mono text-sm font-bold text-slate-700 mt-1">
                     {editTenure ? computeMaturityDate(editStartDate, parseInt(editTenure)) : '—'}
                   </span>
@@ -182,23 +182,23 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
       {/* Top metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
         <div className="bg-slate-900 text-white rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Bank Deposits</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold">Total Bank Deposits</p>
           <p className="text-2xl font-black mt-1 font-display">₹{totals.totalPrincipal.toLocaleString('en-IN')}</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Sum of all active bank deposits.</p>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold font-sans">Accumulated Interest</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold font-sans">Accumulated Interest</p>
           <p className="text-2xl font-black mt-1 font-display text-emerald-600">₹{totals.interestGain.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Assured non-market interest earned.</p>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Projected Maturity Balance</p>
+          <p className="text-[10px] tracking-wider text-slate-500 font-bold">Projected Maturity Balance</p>
           <p className="text-2xl font-black mt-1 font-display text-slate-900">₹{totals.totalMaturity.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</p>
           <p className="text-[10px] text-slate-500 mt-1.5">Total due payout at term end.</p>
         </div>
         <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm flex flex-col justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Upcoming FD Maturity</p>
+            <p className="text-[10px] tracking-wider text-slate-500 font-bold">Upcoming FD Maturity</p>
             {processedFds.filter(f => !f.isMatured).length === 0 ? (
               <p className="text-xs font-bold text-slate-700 mt-1">No upcoming maturities</p>
             ) : (
@@ -315,7 +315,7 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
 
                     <div className="text-right flex md:flex-col justify-between items-center md:items-end gap-1 border-t md:border-t-0 border-slate-100 pt-1 md:pt-0">
                       <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Maturity Expectation</p>
+                        <p className="text-[10px] text-slate-500 font-bold tracking-wider">Maturity Expectation</p>
                         <p className="font-black font-mono text-sm text-slate-800">₹{fd.maturityAmount.toLocaleString('en-IN')}</p>
                         <p className="text-[10px] text-emerald-600 font-bold">₹{fd.interestEarned.toLocaleString('en-IN')} interest profit</p>
                       </div>
@@ -383,7 +383,7 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
 
           {/* Quick Stats */}
           <div className="bg-linear-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-3 shadow-sm space-y-2">
-            <p className="text-[9px] uppercase tracking-widest text-indigo-300 font-black">Quick Stats</p>
+            <p className="text-[9px] tracking-widest text-indigo-300 font-black">Quick Stats</p>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-[9px] text-slate-500">Active Deposits</p>

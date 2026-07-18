@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
 import { Clock, CheckCircle, AlertTriangle, Calendar, Check, Trash2 } from 'lucide-react';
 import { ScheduledTask } from '../types';
 
@@ -123,9 +124,9 @@ export default function TaskCard({
             {task.title}
           </h3>
           {task.description && (
-            <p className={`text-xs mt-1 md:max-w-2xl leading-relaxed ${!isPending ? 'text-slate-500' : 'text-slate-700'}`}>
-              {task.description}
-            </p>
+            <div className={`text-xs mt-1 md:max-w-2xl leading-relaxed prose prose-sm max-w-none ${!isPending ? 'text-slate-500' : 'text-slate-700'}`}>
+              <ReactMarkdown>{task.description}</ReactMarkdown>
+            </div>
           )}
         </div>
 

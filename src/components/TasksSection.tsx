@@ -13,7 +13,10 @@ import {
   Trash2,
   AlertCircle,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Bold,
+  Italic,
+  List as ListIcon
 } from 'lucide-react';
 import { ScheduledTask } from '../types';
 import TaskCard from './TaskCard';
@@ -23,6 +26,7 @@ import { app, db, auth, getAccessToken } from '../firebase';
 import { doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { setDoc } from '../firebase-sync';
 import toast from 'react-hot-toast';
+import { proxyFetch } from '../utils/proxyFetch';
 
 interface TasksSectionProps {
   tasks: ScheduledTask[];
@@ -50,11 +54,13 @@ export default function TasksSection({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form States
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDateStr, setDueDateStr] = useState('');
   const [dueTimeStr, setDueTimeStr] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [formError, setFormError] = useState('');
 
   // Notification States
@@ -172,6 +178,37 @@ export default function TasksSection({
     window.addEventListener('google-token-changed', handleTokenChange);
     return () => window.removeEventListener('google-token-changed', handleTokenChange);
   }, []);
+
+  const handleOptimizeDescription = async () => {
+    if (!title.trim()) {
+      toast.error('Please enter a Task Name first so the AI knows what to optimize.');
+      return;
+    }
+    setIsOptimizing(true);
+    try {
+      const prompt = `Act as a productivity assistant. I have a task titled "${title}". 
+Current notes/description: "${description}". 
+Please write a short, professional, and optimized description (2-3 sentences max) outlining actionable steps or providing a neat template for this task. Do not include quotes.`;
+      
+      const response = await proxyFetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt })
+      });
+      
+      if (!response.ok) throw new Error('Failed to optimize description');
+      const data = await response.json();
+      if (data && data.reply) {
+        setDescription(data.reply.trim());
+        toast.success('Description optimized by AI!');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('AI Optimization failed.');
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
 
   const createGoogleTask = async (taskTitle: string, taskNotes: string, taskDueDate: Date, syncId: string): Promise<string | null> => {
     const token = getAccessToken();
@@ -411,6 +448,26 @@ export default function TasksSection({
     }
   };
 
+  const insertFormatting = (prefix: string, suffix: string = '') => {
+    const textarea = document.getElementById('task-desc-textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = description;
+    
+    const selectedText = text.substring(start, end);
+    const newText = text.substring(0, start) + prefix + selectedText + suffix + text.substring(end);
+    
+    setDescription(newText);
+    
+    // Set focus back and adjust selection
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 0);
+  };
+
   // Check if each task is overdue
   const checkIsOverdue = (task: ScheduledTask) => {
     if (task.status !== 'pending') return false;
@@ -483,122 +540,144 @@ export default function TasksSection({
           <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs sticky top-24">
             <div className="flex justify-between items-center mb-2 pb-1">
               <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1">
-                <Plus className="text-slate-700 w-4 h-4" /> Add Reminder
+                 Reminders
               </h3>
-              <InfoTooltip text="Tasks will shift Overdue and trigger browser alerts in real time once their target timeline is breached." />
+              <div className="flex items-center gap-2">
+                <InfoTooltip text="Tasks will shift Overdue and trigger browser alerts in real time once their target timeline is breached." />
+                <button
+                  onClick={() => setIsFormOpen(!isFormOpen)}
+                  className="flex items-center gap-1 bg-slate-950 hover:bg-slate-900 text-white px-2 py-1 rounded-md font-semibold text-[10px] transition-colors cursor-pointer"
+                >
+                  <Plus size={12} /> {isFormOpen ? 'Cancel' : 'Add Reminder'}
+                </button>
+              </div>
             </div>
 
-            {formError && (
-              <div className="mb-2 p-1 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-1 text-rose-700 text-xs font-medium">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{formError}</span>
-              </div>
-            )}
+            <AnimatePresence>
+              {isFormOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  {formError && (
+                    <div className="mb-2 p-1 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-1 text-rose-700 text-xs font-medium">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{formError}</span>
+                    </div>
+                  )}
 
-            <form onSubmit={handleSubmit} className="space-y-2">
-              {/* Task Title */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Task Name / Alert</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Electricity Bill payment, Credit payment"
-                  maxLength={128}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full text-xs px-1.5 py-1.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-950 font-medium"
-                  required
-                />
-              </div>
+                  <form onSubmit={handleSubmit} className="space-y-2 mt-2">
+                    {/* Task Title */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans">Task Name / Alert</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Electricity Bill payment, Credit payment"
+                        maxLength={128}
+                        value={title}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTitle(val ? val.charAt(0).toUpperCase() + val.slice(1) : '');
+                        }}
+                        autoCapitalize="sentences"
+                        className="w-full text-xs px-1.5 py-1.5 rounded-xl border border-slate-200 outline-none focus:border-slate-300 font-medium"
+                        required
+                      />
+                    </div>
 
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Description (Optional)</label>
-                <textarea
-                  placeholder="Provide payment URL or reference numbers here..."
-                  maxLength={1000}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="w-full text-xs px-1.5 py-1.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-950 font-medium resize-none"
-                />
-              </div>
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans">Description (Optional)</label>
+                        <button
+                          type="button"
+                          onClick={handleOptimizeDescription}
+                          disabled={isOptimizing || !title.trim()}
+                          className="flex items-center gap-1 text-[9px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isOptimizing ? (
+                            <><div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" /> Optimizing...</>
+                          ) : (
+                            <><Sparkles size={10} /> AI Optimize</>
+                          )}
+                        </button>
+                      </div>
+                      
+                      {/* Formatting Toolbar */}
+                      <div className="flex items-center gap-1 bg-slate-50 border border-b-0 border-slate-200 rounded-t-xl px-2 py-1">
+                        <button type="button" onClick={() => insertFormatting('**', '**')} className="p-1 hover:bg-slate-200 rounded text-slate-600" title="Bold">
+                          <Bold size={12} />
+                        </button>
+                        <button type="button" onClick={() => insertFormatting('*', '*')} className="p-1 hover:bg-slate-200 rounded text-slate-600" title="Italic">
+                          <Italic size={12} />
+                        </button>
+                        <button type="button" onClick={() => insertFormatting('- ')} className="p-1 hover:bg-slate-200 rounded text-slate-600" title="Bullet List">
+                          <ListIcon size={12} />
+                        </button>
+                      </div>
 
-              {/* Due Date & Time Picker Group */}
-              <div className="grid grid-cols-2 gap-1">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Due Date</label>
-                  <div className="relative">
-                    <Calendar className="absolute right-3 top-2.5 w-4 h-4 text-slate-500 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={dueDateStr}
-                      onChange={(e) => setDueDateStr(e.target.value)}
-                      className="w-full text-xs pl-1.5 pr-5 py-1.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-950 font-mono font-medium"
-                      required
-                    />
-                  </div>
-                </div>
+                      <textarea
+                        id="task-desc-textarea"
+                        placeholder="Provide payment URL or reference numbers here... (Markdown supported)"
+                        maxLength={1000}
+                        value={description}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDescription(val ? val.charAt(0).toUpperCase() + val.slice(1) : '');
+                        }}
+                        autoCapitalize="sentences"
+                        rows={3}
+                        className="w-full text-xs px-2 py-1.5 rounded-b-xl border border-slate-200 outline-none focus:border-slate-300 font-medium resize-y min-h-[60px]"
+                      />
+                    </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-sans">Due Time</label>
-                  <div className="relative">
-                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-slate-500 pointer-events-none" />
-                    <input
-                      type="time"
-                      value={dueTimeStr}
-                      onChange={(e) => setDueTimeStr(e.target.value)}
-                      className="w-full text-xs pl-1.5 pr-5 py-1.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-950 font-mono font-medium"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
+                    {/* Due Date & Time Picker Group */}
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans">Due Date</label>
+                        <input
+                          type="date"
+                          value={dueDateStr}
+                          onChange={(e) => setDueDateStr(e.target.value)}
+                          className="w-full text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none focus:border-slate-300 font-mono font-medium"
+                          required
+                        />
+                      </div>
 
-              {/* Google Calendar Auto Sync Checkbox Toggle */}
-              <div className="p-1.5 bg-slate-50 border border-slate-150 rounded-2xl space-y-1.5 my-1">
-                <label className="flex items-center gap-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={autoSyncToCalendar && isCalendarLinked}
-                    onChange={(e) => setAutoSyncToCalendar(e.target.checked)}
-                    disabled={!isCalendarLinked}
-                    className="rounded text-rose-600 focus:ring-rose-500 h-4 w-4 cursor-pointer border-slate-300 accent-rose-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                  />
-                  <span className="text-[11px] font-extrabold text-slate-700">Auto-Sync to Google Calendar</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={autoSyncToTasks && isTasksLinked}
-                    onChange={(e) => setAutoSyncToTasks(e.target.checked)}
-                    disabled={!isTasksLinked}
-                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer border-slate-300 accent-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                  />
-                  <span className="text-[11px] font-extrabold text-slate-700">Auto-Sync to Google Tasks</span>
-                </label>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Auto-Sync Sync</span>
-                  <InfoTooltip text="Link Google Calendar/Tasks in Settings for automatic publishing." />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-slate-950 hover:bg-slate-850 disabled:bg-slate-300 text-white font-bold py-1 px-3 rounded-xl transition-all cursor-pointer shadow-md text-xs tracking-wide uppercase mt-1 flex items-center justify-center gap-1"
-                id="submit-new-task-button"
-              >
-                {isSubmitting ? (
-                  <div className="h-3 w-3 border-2 border-slate-300 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" /> Establish Task Trigger
-                  </>
-                )}
-              </button>
-            </form>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 tracking-widest block font-sans">Due Time</label>
+                        <input
+                          type="time"
+                          value={dueTimeStr}
+                          onChange={(e) => setDueTimeStr(e.target.value)}
+                          className="w-full text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none focus:border-slate-300 font-mono font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
 
 
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-slate-950 hover:bg-slate-850 disabled:bg-slate-300 text-white font-bold py-1 px-3 rounded-xl transition-all cursor-pointer shadow-md text-xs tracking-wide flex items-center justify-center gap-1"
+                      id="submit-new-task-button"
+                    >
+                      {isSubmitting ? (
+                        <div className="h-3 w-3 border-2 border-slate-300 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" /> Establish Task Trigger
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

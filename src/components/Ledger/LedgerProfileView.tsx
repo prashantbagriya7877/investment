@@ -55,7 +55,8 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: LedgerTransaction[] = [];
       snapshot.forEach(doc => data.push(doc.data() as LedgerTransaction));
-      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Sort newest first based on exact time (createdAt) instead of just date
+      data.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
       setTransactions(data);
       localStorage.setItem(`ledger_tx_${profile.id}`, JSON.stringify(data));
       setLoading(false);
@@ -128,7 +129,10 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
     }
     
     setTransactions(prev => {
-      const updated = [newTx, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Prevent duplicates if onSnapshot already fired
+      if (prev.some(t => t.id === newTx.id)) return prev;
+      
+      const updated = [newTx, ...prev].sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
       localStorage.setItem(`ledger_tx_${profile.id}`, JSON.stringify(updated));
       return updated;
     });
@@ -186,7 +190,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
   return (
     <div className="space-y-3 pb-20">
       {/* Compact Header */}
-      <div className={`p-3 rounded-xl shadow-xs border flex items-center justify-between gap-2 ${profileBalance === 0 ? 'bg-slate-50 border-slate-200/80' : profileBalance > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+      <div className={`p-3 rounded-md shadow-xs border flex items-center justify-between gap-2 ${profileBalance === 0 ? 'bg-slate-50 border-slate-200/80' : profileBalance > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
         <div className="flex items-center gap-2">
           {onBack && (
             <button
@@ -213,7 +217,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
       </div>
 
       {/* Transaction List (Chat Style) */}
-      <div className="mt-4 bg-slate-50/50 p-4 rounded-xl border border-slate-200/50 flex flex-col gap-4 max-h-[500px] overflow-y-auto">
+      <div className="mt-4 bg-slate-50/50 p-4 rounded-md border border-slate-200/50 flex flex-col gap-4 max-h-[500px] overflow-y-auto">
         {loading ? (
           <div className="text-center text-slate-500 text-xs py-10">Loading...</div>
         ) : transactions.length === 0 ? (
@@ -229,7 +233,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
               return (
                 <div key={tx.id} className={`flex flex-col max-w-[85%] ${isGave ? 'self-end items-end' : 'self-start items-start'}`}>
                   
-                  <div className={`p-3 rounded-2xl shadow-xs border group relative min-w-[140px] ${isGave ? 'bg-white border-slate-200 rounded-tr-sm' : 'bg-emerald-50 border-emerald-100 rounded-tl-sm'}`}>
+                  <div className={`p-3 rounded shadow-xs border group relative min-w-[140px] ${isGave ? 'bg-white border-slate-200 rounded-tr-sm' : 'bg-emerald-50 border-emerald-100 rounded-tl-sm'}`}>
                     
                     <div className="flex items-center justify-between gap-4">
                       <span className={`text-lg font-bold font-mono ${isGave ? 'text-slate-900' : 'text-emerald-700'}`}>
@@ -278,7 +282,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
               <button 
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTxForm('gave'); }}
-                className="flex-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold py-2.5 px-3 rounded-lg shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+                className="flex-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold py-2.5 px-3 rounded shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
               >
                 <TrendingDown size={14} className="text-rose-600" /> 
                 <span className="text-xs font-sans">You Gave <span className="opacity-70 font-normal">(-)</span></span>
@@ -286,7 +290,7 @@ export const LedgerProfileView: React.FC<LedgerProfileViewProps> = ({
               <button 
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTxForm('got'); }}
-                className="flex-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold py-2.5 px-3 rounded-lg shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+                className="flex-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold py-2.5 px-3 rounded shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
               >
                 <TrendingUp size={14} className="text-emerald-600" /> 
                 <span className="text-xs font-sans">You Got <span className="opacity-70 font-normal">(+)</span></span>

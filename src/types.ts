@@ -202,6 +202,9 @@ export interface CreditCardBill {
   cardName: string;
   bank: string;
   amount: number;
+  dueEmi?: number;
+  penalty?: number;
+  annualCharges?: number;
   dueDate: string; // YYYY-MM-DD
   isPaid: boolean;
   paidDate?: string;
@@ -210,11 +213,24 @@ export interface CreditCardBill {
   createdAt?: any;
 }
 
+export interface EmiPaymentLog {
+  id: string;
+  date: string; // YYYY-MM-DDTHH:mm:ss.sssZ
+  amount: number;
+  bankAccountId?: string;
+  notes?: string;
+}
+
 export interface EmiItem {
   id: string;
   userId: string;
   itemName: string;
+  loanNumber?: string;
+  loanType?: 'Home Loan' | 'Car Loan' | 'Personal Loan' | 'Education Loan' | 'Consumer Goods' | 'Other';
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   totalAmount: number;
+  penalty?: number;
+  otherCharges?: number;
   emiAmount: number;
   totalMonths: number;
   paidMonths: number;
@@ -222,6 +238,7 @@ export interface EmiItem {
   bank?: string;
   notes?: string;
   bankAccountId?: string;
+  paymentHistory?: EmiPaymentLog[];
   createdAt?: any;
 }
 

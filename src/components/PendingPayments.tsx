@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, ArrowLeft, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { LedgerProfile } from '../types';
 import { LedgerList } from './Ledger/LedgerList';
 import { LedgerProfileView } from './Ledger/LedgerProfileView';
@@ -48,15 +49,12 @@ export default function PendingPayments({
           
           <div className="flex shrink-0">
             <div className="flex flex-nowrap items-center gap-2">
-              {onNavigateToTab && (
-                <button
-                  type="button"
-                  onClick={() => onNavigateToTab('recurring-bills')}
-                  className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap"
-                >
-                  <DollarSign size={14} /> Auto-Bills
-                </button>
-              )}
+              <Link
+                to="/recurring-bills"
+                className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer shadow-sm whitespace-nowrap"
+              >
+                <DollarSign size={14} /> Auto-Bills
+              </Link>
               {onAddGlobalTransaction && (
                 <button
                   type="button"
