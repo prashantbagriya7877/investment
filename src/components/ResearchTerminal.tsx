@@ -352,7 +352,7 @@ export default function ResearchTerminal() {
       ) : (
         <>
         {/* ✨ LIVE MARKET QUOTE STRIP ✨ */}
-        {activeTab !== 'dashboard' && marketQuote && (
+        {marketQuote && (
           <div className="mx-4 mt-4 bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-6 items-center">
             <div>
               <p className="text-[10px] font-bold text-slate-400 tracking-wider">LTP</p>
