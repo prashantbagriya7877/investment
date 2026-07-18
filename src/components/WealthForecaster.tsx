@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([LineChart, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer]);
 import { Sip, Fd, Holding, PhysicalAsset, BankAccount } from '../types';
 import { IndianRupee, TrendingUp, Info } from 'lucide-react';
 
@@ -116,7 +122,8 @@ export function WealthForecaster({ sips, fds, holdings, physicalAssets = [], ban
           <h3 className="font-bold text-slate-800">Growth Trajectory</h3>
         </div>
         <div className="h-64 w-full">
-          <ReactECharts 
+          <ReactEChartsCore 
+            echarts={echarts}
             option={{
               tooltip: { 
                 trigger: 'axis', 

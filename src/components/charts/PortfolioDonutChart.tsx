@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { PieChart } from 'echarts/charts';
+import { TooltipComponent, LegendComponent, GraphicComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([PieChart, TooltipComponent, LegendComponent, GraphicComponent, CanvasRenderer]);
 
 interface PortfolioDonutChartProps {
   holdings: { name: string; currentValue: number; type?: string }[];
@@ -96,7 +102,8 @@ const PortfolioDonutChart: React.FC<PortfolioDonutChartProps> = ({ holdings, the
   }
 
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       option={options}
       style={{ height: '280px', width: '100%' }}
     />

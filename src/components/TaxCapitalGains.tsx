@@ -4,7 +4,6 @@ import {
   Pocket, FileText, Landmark, Info, Plus, Trash2, Library 
 } from 'lucide-react';
 import { Holding } from '../types';
-import { jsPDF } from 'jspdf';
 
 interface TaxCapitalGainsProps {
   holdings: Holding[];
@@ -170,8 +169,8 @@ export default function TaxCapitalGains({ holdings, livePrices = {} }: TaxCapita
     localStorage.setItem('tax_80c_declarations', JSON.stringify(updated));
   };
 
-  // PDF statement generator using jsPDF
-  const exportPDFStatement = () => {
+  const exportPDFStatement = async () => {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     
     // Aesthetic Styling

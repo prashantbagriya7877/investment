@@ -40,32 +40,32 @@ import {
   Holding, Sip, Fd, WatchlistItem, UserSettings, RealizedTrade, RecurringBill, BankAccount, CreditCardBill, EmiItem
 } from './types';
 
-import Dashboard from './components/Dashboard';
-import TransactionTracker from './components/TransactionTracker';
-import PendingPayments from './components/PendingPayments';
-import SavingsGoals from './components/SavingsGoals';
-import BudgetLimits from './components/BudgetLimits';
-import TasksSection from './components/TasksSection';
-import RecurringBills from './components/RecurringBills';
-import PortfolioTracker from './components/PortfolioTracker';
-import SipTracker from './components/SipTracker';
-import FdRdTracker from './components/FdRdTracker';
-import MarketView from './components/MarketView';
-import TaxCapitalGains from './components/TaxCapitalGains';
-import { WealthForecaster } from './components/WealthForecaster';
-import GoogleSheetsSync from './components/GoogleSheetsSync';
-import ContactsManager from './components/ContactsManager';
-import SettingsManager from './components/SettingsManager';
-import WorkspaceSuite from './components/WorkspaceSuite';
-import BrokerManager from './components/BrokerManager';
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const TransactionTracker = React.lazy(() => import('./components/TransactionTracker'));
+const PendingPayments = React.lazy(() => import('./components/PendingPayments'));
+const SavingsGoals = React.lazy(() => import('./components/SavingsGoals'));
+const BudgetLimits = React.lazy(() => import('./components/BudgetLimits'));
+const TasksSection = React.lazy(() => import('./components/TasksSection'));
+const RecurringBills = React.lazy(() => import('./components/RecurringBills'));
+const PortfolioTracker = React.lazy(() => import('./components/PortfolioTracker'));
+const SipTracker = React.lazy(() => import('./components/SipTracker'));
+const FdRdTracker = React.lazy(() => import('./components/FdRdTracker'));
+const MarketView = React.lazy(() => import('./components/MarketView'));
+const TaxCapitalGains = React.lazy(() => import('./components/TaxCapitalGains'));
+const WealthForecaster = React.lazy(() => import('./components/WealthForecaster').then(m => ({ default: m.WealthForecaster })));
+const GoogleSheetsSync = React.lazy(() => import('./components/GoogleSheetsSync'));
+const ContactsManager = React.lazy(() => import('./components/ContactsManager'));
+const SettingsManager = React.lazy(() => import('./components/SettingsManager'));
+const WorkspaceSuite = React.lazy(() => import('./components/WorkspaceSuite'));
+const BrokerManager = React.lazy(() => import('./components/BrokerManager'));
 import { proxyFetch } from './utils/proxyFetch';
-import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { CreditCardsEMI } from './components/CreditCardsEMI';
-import BankProfiles from './components/BankProfiles';
-import PhysicalAssetsManager from './components/PhysicalAssetsManager';
-import StockTerminal from './components/StockTerminal';
-import ResearchTerminal from './components/ResearchTerminal';
-import LedgerPage from './components/Ledger/LedgerPage';
+const AnalyticsDashboard = React.lazy(() => import('./components/AnalyticsDashboard'));
+const CreditCardsEMI = React.lazy(() => import('./components/CreditCardsEMI').then(m => ({ default: m.CreditCardsEMI })));
+const BankProfiles = React.lazy(() => import('./components/BankProfiles'));
+const PhysicalAssetsManager = React.lazy(() => import('./components/PhysicalAssetsManager'));
+const StockTerminal = React.lazy(() => import('./components/StockTerminal'));
+const ResearchTerminal = React.lazy(() => import('./components/ResearchTerminal'));
+const LedgerPage = React.lazy(() => import('./components/Ledger/LedgerPage'));
 import { exportFullLedgerToCSV } from './utils/csvExport';
 import { useTaskReminder } from './utils/useTaskReminder';
 
@@ -1816,7 +1816,8 @@ export default function App() {
       {/* Primary Display Content Container */}
       <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
         <div className="transition-all duration-300">
-          <Routes location={location} key={location.pathname}>
+          <React.Suspense fallback={<div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+            <Routes location={location} key={location.pathname}>
             <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : currentWorkspace === 'research' ? '/market-data' : '/portfolio'} replace />} />
             <Route path="/dashboard" element={<Dashboard
               transactions={transactions}
@@ -2032,7 +2033,8 @@ export default function App() {
               user={user}
             />} />
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            </Routes>
+          </React.Suspense>
         </div>
 
       </main>

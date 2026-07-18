@@ -1,6 +1,12 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { PieChart, BarChart, LineChart } from 'echarts/charts';
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([PieChart, BarChart, LineChart, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer]);
 import { Transaction, BankAccount, Holding, Fd, Sip, PendingPayment, CreditCardBill, EmiItem } from '../types';
 import { BrokerFunds } from '../hooks/useBrokerSync';
 import { Activity, TrendingUp, PieChart as PieChartIcon, IndianRupee, ShieldAlert } from 'lucide-react';
@@ -244,7 +250,7 @@ export default function AnalyticsDashboard({
             <p className="text-xs text-slate-500 text-center py-20">No expense data available.</p>
           ) : (
             <div className="h-[300px] w-full">
-              <ReactECharts option={pieOptions} style={{ height: '100%', width: '100%' }} />
+              <ReactEChartsCore echarts={echarts} option={pieOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           )}
         </motion.div>
@@ -261,7 +267,7 @@ export default function AnalyticsDashboard({
             <p className="text-xs text-slate-500 text-center py-20">No monthly data available.</p>
           ) : (
             <div className="h-[300px] w-full">
-              <ReactECharts option={barOptions} style={{ height: '100%', width: '100%' }} />
+              <ReactEChartsCore echarts={echarts} option={barOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           )}
         </motion.div>
@@ -278,7 +284,7 @@ export default function AnalyticsDashboard({
             <p className="text-xs text-slate-500 text-center py-20">No monthly data available.</p>
           ) : (
             <div className="h-[250px] w-full">
-              <ReactECharts option={areaOptions} style={{ height: '100%', width: '100%' }} />
+              <ReactEChartsCore echarts={echarts} option={areaOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           )}
         </motion.div>

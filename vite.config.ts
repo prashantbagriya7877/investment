@@ -60,13 +60,13 @@ export default defineConfig(() => {
       },
     },
     build: {
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
             'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-            'vendor-charts': ['recharts', 'lightweight-charts'],
-            'vendor-utils': ['framer-motion', 'lucide-react', 'html2canvas', 'jspdf']
+            'vendor-ui': ['lucide-react', 'motion', 'react-hot-toast']
           }
         }
       }

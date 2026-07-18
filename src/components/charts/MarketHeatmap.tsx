@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { TreemapChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([TreemapChart, TitleComponent, TooltipComponent, CanvasRenderer]);
 
 interface HeatmapStock {
   name: string;
@@ -82,7 +88,8 @@ const MarketHeatmap: React.FC<MarketHeatmapProps> = ({ stocks, title = 'Market H
   }
 
   return (
-    <ReactECharts
+    <ReactEChartsCore
+      echarts={echarts}
       option={options}
       style={{ height: '320px', width: '100%' }}
     />

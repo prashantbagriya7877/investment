@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { BarChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent, DataZoomComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, CanvasRenderer]);
 
 interface OptionChainChartProps {
   data: any[]; // Array of option chain data objects from Upstox
@@ -83,7 +89,8 @@ const OptionChainChart: React.FC<OptionChainChartProps> = ({ data, theme = 'dark
 
   return (
     <div className="w-full h-96">
-      <ReactECharts 
+      <ReactEChartsCore 
+        echarts={echarts}
         option={options} 
         style={{ height: '100%', width: '100%' }} 
         theme={theme}

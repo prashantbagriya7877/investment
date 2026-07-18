@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
+import * as echarts from 'echarts/core';
+import { CandlestickChart as EchartsCandlestickChart } from 'echarts/charts';
+import { TitleComponent, TooltipComponent, GridComponent, DataZoomComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+
+echarts.use([EchartsCandlestickChart, TitleComponent, TooltipComponent, GridComponent, DataZoomComponent, CanvasRenderer]);
 
 interface CandlestickChartProps {
   data: any[]; // Array of [timestamp, open, high, low, close, volume, oi]
@@ -87,7 +93,8 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, instrumentNam
 
   return (
     <div className="w-full h-96">
-      <ReactECharts 
+      <ReactEChartsCore 
+        echarts={echarts}
         option={options} 
         style={{ height: '100%', width: '100%' }} 
         theme={theme}
