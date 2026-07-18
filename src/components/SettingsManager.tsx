@@ -4,7 +4,7 @@ import {
   HelpCircle, Trash2, Key, Info, ExternalLink, Link2, Copy, AlertTriangle, Play,
   Calendar, FolderOpen, Mail, Video, CheckSquare, MessageSquare, FileText, GraduationCap, Presentation, Image
 } from 'lucide-react';
-import { getAccessToken, setAccessToken } from '../firebase';
+import { getAccessToken, setAccessToken, signInWithGoogle } from '../firebase';
 import { UserSettings } from '../types';
 import InfoTooltip from './InfoTooltip';
 import GooglePicker from './GooglePicker';
@@ -245,7 +245,7 @@ export default function SettingsManager({
     const serviceName = getServiceLabel(targetService);
     addLog(`🔗 Connecting ${serviceName} using standard Firebase Auth...`);
     try {
-      const { signInWithGoogle } = await import('../firebase');
+
       await signInWithGoogle();
       
       setServiceLinkedState(targetService, true);
