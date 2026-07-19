@@ -8,6 +8,8 @@ coverage/
 !.env.example
 serviceAccountKey.json
 *.zip
+*.apk
+*.bak
 
 # Python virtual environment
 venv/
