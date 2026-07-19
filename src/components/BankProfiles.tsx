@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, X, Building2, Wallet, Landmark, TrendingUp, TrendingDown, ArrowRight, ArrowLeftRight, ChevronRight, ArrowDownRight, ArrowUpRight, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Building2, Wallet, Landmark, TrendingUp, TrendingDown, ArrowRight, ArrowLeftRight, ChevronRight, ArrowDownRight, ArrowUpRight, Save, Search, Calendar, Filter } from 'lucide-react';
 import { BankAccount, Transaction } from '../types';
 
 interface BankProfilesProps {
@@ -30,6 +30,11 @@ export default function BankProfiles({
   const [initialBalance, setInitialBalance] = useState('');
 
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const openAddForm = () => {
     setEditingBank(null);
@@ -105,10 +110,38 @@ export default function BankProfiles({
 
   const selectedBank = bankAccounts.find(b => b.id === selectedBankId);
   
-  const bankTransactions = React.useMemo(() => {
+  const filteredTransactions = React.useMemo(() => {
     if (!selectedBankId) return [];
-    return transactions.filter(t => t.bankAccountId === selectedBankId).sort((a, b) => b.date.localeCompare(a.date));
-  }, [transactions, selectedBankId]);
+    let list = transactions.filter(t => t.bankAccountId === selectedBankId).sort((a, b) => b.date.localeCompare(a.date));
+    
+    const isSearchingOrFiltering = searchQuery.trim() !== '' || filterType !== 'all' || startDate !== '' || endDate !== '';
+    
+    if (searchQuery.trim()) {
+      const lowerQ = searchQuery.toLowerCase();
+      list = list.filter(t => 
+        t.category.toLowerCase().includes(lowerQ) || 
+        (t.notes && t.notes.toLowerCase().includes(lowerQ))
+      );
+    }
+    
+    if (filterType !== 'all') {
+      list = list.filter(t => t.type === filterType);
+    }
+
+    if (startDate) {
+      list = list.filter(t => t.date >= startDate);
+    }
+    
+    if (endDate) {
+      list = list.filter(t => t.date <= endDate);
+    }
+    
+    if (!isSearchingOrFiltering) {
+      return list.slice(0, 10);
+    }
+    
+    return list;
+  }, [transactions, selectedBankId, searchQuery, filterType, startDate, endDate]);
 
   return (
     <div className="space-y-4">
@@ -210,38 +243,47 @@ export default function BankProfiles({
           ) : (
             bankAccounts.map(b => (
               <motion.div 
-                whileHover={{ scale: 1.01 }}
+                whileHover={{ y: -2, scale: 1.01 }}
                 key={b.id} 
                 onClick={() => setSelectedBankId(b.id)}
-                className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs cursor-pointer flex flex-col justify-between group"
+                className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
-                      <Landmark size={18} />
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                  <Landmark size={80} className="transform translate-x-4 -translate-y-4" />
+                </div>
+                
+                <div className="flex justify-between items-start relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-700 shadow-inner">
+                      <Landmark size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 leading-tight">{b.bankName}</h4>
-                      <p className="text-xs text-slate-700">{b.accountName} {b.accountNumber ? `(..${b.accountNumber})` : ''}</p>
+                      <h4 className="font-bold text-slate-800 text-lg leading-tight">{b.bankName}</h4>
+                      <p className="text-xs text-slate-500 font-medium">{b.accountName} {b.accountNumber ? `(..${b.accountNumber})` : ''}</p>
                       {b.upiIds && b.upiIds.length > 0 && (
-                        <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[150px]">UPI: {b.upiIds[0]}</p>
+                        <p className="text-[10px] text-slate-400 mt-1 truncate max-w-[150px]">UPI: {b.upiIds[0]}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => openEditForm(b, e)}
-                      className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                       title="Edit profile"
                     >
-                      <Edit2 size={13} />
+                      <Edit2 size={14} />
                     </button>
-                    <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-800 transition-colors" />
                   </div>
                 </div>
-                <div className="mt-4 border-t border-slate-100 pt-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Current Balance</p>
-                  <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{b.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                <div className="mt-5 pt-4 border-t border-slate-100/80 flex justify-between items-end relative z-10">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Current Balance</p>
+                    <p className="text-2xl font-black text-slate-900 font-mono tracking-tight mt-0.5">₹{b.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                    <ChevronRight size={16} className="text-slate-400 group-hover:text-indigo-600" />
+                  </div>
                 </div>
               </motion.div>
             ))
@@ -254,26 +296,31 @@ export default function BankProfiles({
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden"
         >
-          <div className="bg-slate-900 p-4 text-white flex justify-between items-center rounded-t-xl">
-            <div>
-              <button onClick={() => setSelectedBankId(null)} className="text-slate-500 hover:text-white text-xs font-bold mb-1 flex items-center gap-1 cursor-pointer">
-                ← Back to Profiles
+          <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-5 text-white flex justify-between items-center rounded-t-2xl relative overflow-hidden">
+            {/* Background design */}
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+            <div className="relative z-10">
+              <button onClick={() => setSelectedBankId(null)} className="text-slate-300 hover:text-white text-xs font-bold mb-2 flex items-center gap-1.5 cursor-pointer transition-colors">
+                <ArrowLeftRight size={12} className="rotate-90" /> Back to Profiles
               </button>
-              <h3 className="text-lg font-black flex items-center gap-2">
-                <Landmark size={18} className="text-slate-400" /> {selectedBank.bankName} - {selectedBank.accountName}
+              <h3 className="text-xl font-black flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-xs">
+                  <Landmark size={20} className="text-white" />
+                </div>
+                {selectedBank.bankName} - {selectedBank.accountName}
               </h3>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Live Balance</p>
-              <p className="text-xl font-mono font-bold">₹{selectedBank.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+            <div className="text-right relative z-10">
+              <p className="text-[10px] text-slate-300 capitalize font-medium tracking-widest mb-1">Live Balance</p>
+              <p className="text-2xl font-mono font-black drop-shadow-sm">₹{selectedBank.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
 
           <div className="p-0">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Passbook History</span>
+              <span className="text-xs font-bold text-slate-700 capitalize tracking-widest">passbook history</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={(e) => {
@@ -299,28 +346,88 @@ export default function BankProfiles({
               </div>
             </div>
 
-            {bankTransactions.length === 0 ? (
-              <p className="text-center text-slate-700 py-8 text-sm">No transactions logged for this bank yet.</p>
+            {/* Search and Filter Controls */}
+            <div className="p-4 bg-slate-50/50 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center">
+               <div className="flex gap-2 flex-1">
+                 <div className="relative flex-1">
+                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Search size={14} className="text-slate-400" />
+                   </div>
+                   <input 
+                     type="text"
+                     placeholder="Search notes/category..."
+                     value={searchQuery}
+                     onChange={e => setSearchQuery(e.target.value)}
+                     className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-xs transition-all outline-hidden"
+                   />
+                 </div>
+                 <div className="relative w-28 shrink-0">
+                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Filter size={14} className="text-slate-400" />
+                   </div>
+                   <select
+                     value={filterType}
+                     onChange={e => setFilterType(e.target.value)}
+                     className="w-full pl-8 pr-8 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-xs transition-all outline-hidden appearance-none"
+                   >
+                     <option value="all">All</option>
+                     <option value="income">Income</option>
+                     <option value="expense">Expense</option>
+                   </select>
+                   <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                     <ChevronRight size={12} className="text-slate-400 rotate-90" />
+                   </div>
+                 </div>
+               </div>
+               <div className="flex gap-2 shrink-0">
+                 <div className="relative">
+                   <input 
+                     type="date"
+                     value={startDate}
+                     onChange={e => setStartDate(e.target.value)}
+                     className="pl-3 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-xs transition-all outline-hidden text-slate-600"
+                     title="Start Date"
+                   />
+                 </div>
+                 <div className="relative">
+                   <input 
+                     type="date"
+                     value={endDate}
+                     onChange={e => setEndDate(e.target.value)}
+                     className="pl-3 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white shadow-xs transition-all outline-hidden text-slate-600"
+                     title="End Date"
+                   />
+                 </div>
+               </div>
+            </div>
+
+            {filteredTransactions.length === 0 ? (
+              <p className="text-center text-slate-700 py-8 text-sm">No transactions found.</p>
             ) : (
               <div className="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
-                {bankTransactions.map(t => (
-                  <div key={t.id} className="p-3 flex justify-between items-center hover:bg-slate-50">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                        {t.type === 'income' ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
+                {filteredTransactions.map(t => (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={t.id} 
+                    className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors group cursor-default"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-xs ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200/50' : 'bg-red-100 text-red-600 border border-red-200/50'}`}>
+                        {t.type === 'income' ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800">{t.category}</p>
-                        <p className="text-[10px] text-slate-700 truncate max-w-[150px] md:max-w-xs">{t.notes || t.type}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-[150px] md:max-w-sm mt-0.5">{t.notes || 'No description'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-mono font-bold text-sm ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                        {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString()}
+                      <p className={`font-mono font-bold text-base ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {t.type === 'income' ? '+' : '-'}₹{t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}
                       </p>
-                      <p className="text-[10px] text-slate-500">{t.date}</p>
+                      <p className="text-[10px] font-medium text-slate-400 mt-0.5">{t.date}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

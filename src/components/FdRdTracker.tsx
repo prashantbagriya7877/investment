@@ -216,13 +216,13 @@ export default function FdRdTracker({ fds, onAddFd, onDeleteFd, onEditFd }: FdRd
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 space-y-3">
           <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-2 py-2 border-b border-slate-150 flex justify-between items-center bg-slate-50/50">
-              <div className="flex items-center gap-1">
-                <Building2 className="text-slate-800" size={18} />
-                <h3 className="font-bold text-sm text-slate-800 font-display">Fixed & Recurring Deposits</h3>
+            <div className="px-2 py-2 border-b border-slate-150 flex flex-nowrap justify-between items-center gap-2 bg-slate-50/50">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Building2 className="text-slate-800 shrink-0" size={16} />
+                <h3 className="font-bold text-[13px] sm:text-sm text-slate-800 font-display truncate">Fixed & Recurring Deposits</h3>
               </div>
               <button onClick={() => setIsAdding(!isAdding)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 px-1 rounded-lg text-xs flex items-center gap-1 transition-all cursor-pointer">
+                className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 px-2 rounded-lg text-[10px] sm:text-xs flex items-center gap-1 transition-all cursor-pointer">
                 <Plus size={13} /> Log Deposit
               </button>
             </div>
