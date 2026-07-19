@@ -1875,6 +1875,28 @@ export default function App() {
                   onRefreshBrokerData={refreshBrokerData}
                 />} />
 
+                <Route path="/watchlist" element={<PortfolioTracker
+                  holdings={unifiedHoldings}
+                  realizedTrades={[...realizedTrades, ...(brokerRealizedTrades || [])]}
+                  watchlist={watchlist}
+                  onAddHolding={handleAddHolding}
+                  onDeleteHolding={handleDeleteHolding}
+                  onUpdateHolding={handleUpdateHolding}
+                  onAddRealizedTrade={handleAddRealizedTrade}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                  userSettings={userSettings}
+                  onUpdateSmartApiSettings={handleUpdateSmartApiSettings}
+                  livePrices={livePrices}
+                  refreshPrices={refreshPrices}
+                  loadingPrices={loadingPrices}
+                  brokerFunds={brokerFunds}
+                  brokerOrders={brokerOrders}
+                  isSyncingBrokerData={isSyncing}
+                  onRefreshBrokerData={refreshBrokerData}
+                  initialTab="watchlist"
+                />} />
+
                 <Route path="/market-data" element={<MarketView />} />
                 <Route path="/market" element={<ResearchTerminal livePrices={livePrices} />} />
                 <Route path="/terminal" element={<StockTerminal />} />

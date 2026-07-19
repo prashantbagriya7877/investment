@@ -121,7 +121,7 @@ const AdvancedChartWidget = ({
 
         {/* Floating Tools Overlay (Aligned with Native TV right-toolbar) */}
         {isPrimary && (
-          <div className={`absolute top-[3px] z-50 flex gap-0 transition-all duration-300 opacity-100 ${activeSidePanel ? 'right-[480px]' : 'right-[80px]'}`}>
+          <div className={`hidden sm:flex absolute top-[3px] z-50 gap-0 transition-all duration-300 opacity-100 ${activeSidePanel ? 'right-[480px]' : 'right-[80px]'}`}>
             {onLayoutChange && (
               <button onClick={() => { setShowLayoutMenu(!showLayoutMenu); setShowWatchlistMenu(false); }} className={`p-1.5 rounded hover:bg-slate-500/20 transition-colors flex items-center justify-center w-[36px] h-[36px] ${showLayoutMenu ? 'text-[#2962ff]' : theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} title="Chart Layout">
                  <LayoutGrid size={22} strokeWidth={1.5} />
@@ -132,7 +132,7 @@ const AdvancedChartWidget = ({
 
         {/* Floating Watchlist Add Button (+ icon) placed in the native right sidebar */}
         {isPrimary && onAddWatchlistSymbol && (
-          <div className="absolute top-[135px] right-[6px] z-50 flex flex-col gap-2 transition-all opacity-100">
+          <div className={`absolute top-[135px] right-0 sm:right-[6px] z-50 flex flex-col gap-1 sm:gap-2 transition-all opacity-100 scale-[0.85] sm:scale-100 origin-right ${theme === 'dark' ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-slate-200'} sm:bg-transparent sm:border-transparent border border-r-0 rounded-l-xl p-1 sm:p-0 shadow-md sm:shadow-none backdrop-blur-sm sm:backdrop-blur-none`}>
             <button onClick={() => { setShowWatchlistMenu(!showWatchlistMenu); setShowLayoutMenu(false); setActiveSidePanel(null); }} className={`rounded hover:bg-slate-500/20 transition-colors flex items-center justify-center w-[40px] h-[40px] ${theme === 'dark' ? 'text-white' : 'text-black'}`} title="Add to Watchlist">
                <Plus size={28} strokeWidth={1.5} />
             </button>

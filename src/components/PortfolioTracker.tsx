@@ -35,6 +35,7 @@ interface PortfolioTrackerProps {
   brokerOrders?: any[]; // Passed from useBrokerSync
   isSyncingBrokerData?: boolean;
   onRefreshBrokerData?: () => void;
+  initialTab?: 'analytics' | 'holdings' | 'watchlist';
 }
 
 const POPULAR_STOCKS = [
@@ -73,13 +74,14 @@ export default function PortfolioTracker({
   brokerFunds,
   brokerOrders = [], // Default to empty
   isSyncingBrokerData = false,
-  onRefreshBrokerData
+  onRefreshBrokerData,
+  initialTab
 }: PortfolioTrackerProps) {
 
 
 
   // Forms states
-  const [subTab, setSubTab] = useState<'analytics' | 'holdings' | 'watchlist'>('analytics');
+  const [subTab, setSubTab] = useState<'analytics' | 'holdings' | 'watchlist'>(initialTab || 'analytics');
   const [calcYears, setCalcYears] = useState(5);
   const [calcMonthlyContrib, setCalcMonthlyContrib] = useState(10000);
   const [isAdding, setIsAdding] = useState(false);

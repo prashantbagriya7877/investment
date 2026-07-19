@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ArrowLeftRight, TrendingUp, LayoutDashboard, Clock, 
   Bell, Repeat, CalendarRange, Landmark, Percent,
-  ChevronLeft, ChevronRight, Activity, LineChart, Users
+  ChevronLeft, ChevronRight, Activity, LineChart, Users, Eye
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -29,7 +29,8 @@ export default function BottomNavigation({
 
   const investmantTabs = [
     { id: 'portfolio', label: 'Portfolio', icon: TrendingUp },
-    { id: 'sips', label: 'SIP Plans', icon: CalendarRange },
+    { id: 'watchlist', label: 'Watchlist', icon: Eye },
+    { id: 'sips', label: 'SIP', icon: CalendarRange },
     { id: 'fds', label: 'Lockers', icon: Landmark },
     { id: 'tax', label: 'Tax', icon: Percent },
   ];
