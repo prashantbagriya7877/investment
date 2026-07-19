@@ -459,7 +459,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
 
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 space-y-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Client ID)</label>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">API Key (Client ID)</label>
                   <input
                     type="password"
                     value={upstoxApiKey}
@@ -469,7 +469,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Secret</label>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">API Secret</label>
                   <input
                     type="password"
                     value={upstoxApiSecret}
@@ -479,7 +479,7 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Redirect URI (Configure in Upstox Portal)</label>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">Redirect URI (Configure in Upstox Portal)</label>
                   <code className="block w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-600 font-mono select-all">
                     {redirectUri}
                   </code>

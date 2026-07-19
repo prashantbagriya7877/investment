@@ -54,6 +54,8 @@ const MarketView = React.lazy(() => import('./components/MarketView'));
 const TaxCapitalGains = React.lazy(() => import('./components/TaxCapitalGains'));
 const WealthForecaster = React.lazy(() => import('./components/WealthForecaster').then(m => ({ default: m.WealthForecaster })));
 const GoogleSheetsSync = React.lazy(() => import('./components/GoogleSheetsSync'));
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 const ContactsManager = React.lazy(() => import('./components/ContactsManager'));
 const SettingsManager = React.lazy(() => import('./components/SettingsManager'));
 const WorkspaceSuite = React.lazy(() => import('./components/WorkspaceSuite'));
@@ -1816,225 +1818,227 @@ export default function App() {
       {/* Primary Display Content Container */}
       <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
         <div className="transition-all duration-300">
-          <React.Suspense key={location.pathname} fallback={<div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
-            <Routes>
-            <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : currentWorkspace === 'research' ? '/market-data' : '/portfolio'} replace />} />
-            <Route path="/dashboard" element={<Dashboard
-              transactions={transactions}
-              pendingPayments={pendingPayments}
-              savingsGoals={savingsGoals}
-              budgetLimits={budgetLimits}
-              holdings={unifiedHoldings}
-              sips={sips}
-              fds={fds}
-              ccBills={ccBills}
-              ccEmis={ccEmis}
-              physicalAssets={physicalAssets}
-              selectedMonth={selectedMonth}
-              onMonthChange={setSelectedMonth}
-              onNavigateToTab={setActiveTab}
-              livePrices={livePrices}
-              userId={user?.uid}
-            />} />
+          <ErrorBoundary>
+            <React.Suspense key={location.pathname} fallback={<div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+              <Routes>
+                <Route path="/" element={<Navigate to={currentWorkspace === 'ledger' ? '/dashboard' : currentWorkspace === 'research' ? '/market-data' : '/portfolio'} replace />} />
+                <Route path="/dashboard" element={<Dashboard
+                  transactions={transactions}
+                  pendingPayments={pendingPayments}
+                  savingsGoals={savingsGoals}
+                  budgetLimits={budgetLimits}
+                  holdings={unifiedHoldings}
+                  sips={sips}
+                  fds={fds}
+                  ccBills={ccBills}
+                  ccEmis={ccEmis}
+                  physicalAssets={physicalAssets}
+                  selectedMonth={selectedMonth}
+                  onMonthChange={setSelectedMonth}
+                  onNavigateToTab={setActiveTab}
+                  livePrices={livePrices}
+                  userId={user?.uid}
+                />} />
 
-            <Route path="/analytics" element={<AnalyticsDashboard
-              transactions={transactions}
-              bankAccounts={bankAccounts}
-              holdings={unifiedHoldings}
-              fds={fds}
-              sips={sips}
-              pendingPayments={pendingPayments}
-              brokerFunds={brokerFunds}
-              ccBills={ccBills}
-              ccEmis={ccEmis}
-            />} />
+                <Route path="/analytics" element={<AnalyticsDashboard
+                  transactions={transactions}
+                  bankAccounts={bankAccounts}
+                  holdings={unifiedHoldings}
+                  fds={fds}
+                  sips={sips}
+                  pendingPayments={pendingPayments}
+                  brokerFunds={brokerFunds}
+                  ccBills={ccBills}
+                  ccEmis={ccEmis}
+                />} />
 
-            <Route path="/portfolio" element={<PortfolioTracker
-              holdings={unifiedHoldings}
-              realizedTrades={[...realizedTrades, ...(brokerRealizedTrades || [])]}
-              watchlist={watchlist}
-              onAddHolding={handleAddHolding}
-              onDeleteHolding={handleDeleteHolding}
-              onUpdateHolding={handleUpdateHolding}
-              onAddRealizedTrade={handleAddRealizedTrade}
-              onAddToWatchlist={handleAddToWatchlist}
-              onRemoveFromWatchlist={handleRemoveFromWatchlist}
-              userSettings={userSettings}
-              onUpdateSmartApiSettings={handleUpdateSmartApiSettings}
-              livePrices={livePrices}
-              refreshPrices={refreshPrices}
-              loadingPrices={loadingPrices}
-              brokerFunds={brokerFunds}
-              brokerOrders={brokerOrders}
-              isSyncingBrokerData={isSyncing}
-              onRefreshBrokerData={refreshBrokerData}
-            />} />
+                <Route path="/portfolio" element={<PortfolioTracker
+                  holdings={unifiedHoldings}
+                  realizedTrades={[...realizedTrades, ...(brokerRealizedTrades || [])]}
+                  watchlist={watchlist}
+                  onAddHolding={handleAddHolding}
+                  onDeleteHolding={handleDeleteHolding}
+                  onUpdateHolding={handleUpdateHolding}
+                  onAddRealizedTrade={handleAddRealizedTrade}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                  userSettings={userSettings}
+                  onUpdateSmartApiSettings={handleUpdateSmartApiSettings}
+                  livePrices={livePrices}
+                  refreshPrices={refreshPrices}
+                  loadingPrices={loadingPrices}
+                  brokerFunds={brokerFunds}
+                  brokerOrders={brokerOrders}
+                  isSyncingBrokerData={isSyncing}
+                  onRefreshBrokerData={refreshBrokerData}
+                />} />
 
-            <Route path="/market-data" element={<MarketView />} />
-            <Route path="/market" element={<ResearchTerminal />} />
-            <Route path="/terminal" element={<StockTerminal />} />
+                <Route path="/market-data" element={<MarketView />} />
+                <Route path="/market" element={<ResearchTerminal />} />
+                <Route path="/terminal" element={<StockTerminal />} />
 
-            <Route path="/sips" element={<SipTracker
-              sips={sips}
-              onAddSip={handleAddSip}
-              onDeleteSip={handleDeleteSip}
-              onEditSip={handleEditSip}
-            />} />
+                <Route path="/sips" element={<SipTracker
+                  sips={sips}
+                  onAddSip={handleAddSip}
+                  onDeleteSip={handleDeleteSip}
+                  onEditSip={handleEditSip}
+                />} />
 
-            <Route path="/fds" element={<FdRdTracker
-              fds={fds}
-              onAddFd={handleAddFd}
-              onDeleteFd={handleDeleteFd}
-              onEditFd={handleEditFd}
-            />} />
+                <Route path="/fds" element={<FdRdTracker
+                  fds={fds}
+                  onAddFd={handleAddFd}
+                  onDeleteFd={handleDeleteFd}
+                  onEditFd={handleEditFd}
+                />} />
 
-            <Route path="/tax" element={<TaxCapitalGains
-              holdings={unifiedHoldings}
-              livePrices={livePrices}
-            />} />
+                <Route path="/tax" element={<TaxCapitalGains
+                  holdings={unifiedHoldings}
+                  livePrices={livePrices}
+                />} />
 
-            <Route path="/forecaster" element={<WealthForecaster
-              fds={fds}
-              sips={sips}
-              holdings={unifiedHoldings}
-              livePrices={livePrices}
-              physicalAssets={physicalAssets}
-              bankAccounts={bankAccounts}
-            />} />
+                <Route path="/forecaster" element={<WealthForecaster
+                  fds={fds}
+                  sips={sips}
+                  holdings={unifiedHoldings}
+                  livePrices={livePrices}
+                  physicalAssets={physicalAssets}
+                  bankAccounts={bankAccounts}
+                />} />
 
-            <Route path="/transactions" element={<TransactionTracker
-              transactions={transactions}
-              onAddTransaction={handleAddTransaction}
-              onEditTransaction={handleEditTransaction}
-              onDeleteTransaction={handleDeleteTransaction}
-              pendingPayments={pendingPayments}
-              recurringBills={recurringBills}
-              bankAccounts={bankAccounts}
-              onAddBankAccount={handleAddBankAccount}
-              onEditBankAccount={handleEditBankAccount}
-              onDeleteBankAccount={handleDeleteBankAccount}
-              onAutoPayPending={async (id) => {
-                const p = pendingPayments.find(x => x.id === id);
-                if (p) await handleEditPayment(id, { completed: true });
-              }}
-              onAutoPayRecurring={async (id) => {
-                const b = recurringBills.find(x => x.id === id);
-                if (b) {
-                  const nextDate = new Date(b.nextDueDate);
-                  if (b.frequency === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
-                  else nextDate.setFullYear(nextDate.getFullYear() + 1);
-                  await handleEditRecurringBill(b.id, { nextDueDate: nextDate.toISOString().split('T')[0] });
-                }
-              }}
-            />} />
+                <Route path="/transactions" element={<TransactionTracker
+                  transactions={transactions}
+                  onAddTransaction={handleAddTransaction}
+                  onEditTransaction={handleEditTransaction}
+                  onDeleteTransaction={handleDeleteTransaction}
+                  pendingPayments={pendingPayments}
+                  recurringBills={recurringBills}
+                  bankAccounts={bankAccounts}
+                  onAddBankAccount={handleAddBankAccount}
+                  onEditBankAccount={handleEditBankAccount}
+                  onDeleteBankAccount={handleDeleteBankAccount}
+                  onAutoPayPending={async (id) => {
+                    const p = pendingPayments.find(x => x.id === id);
+                    if (p) await handleEditPayment(id, { completed: true });
+                  }}
+                  onAutoPayRecurring={async (id) => {
+                    const b = recurringBills.find(x => x.id === id);
+                    if (b) {
+                      const nextDate = new Date(b.nextDueDate);
+                      if (b.frequency === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+                      else nextDate.setFullYear(nextDate.getFullYear() + 1);
+                      await handleEditRecurringBill(b.id, { nextDueDate: nextDate.toISOString().split('T')[0] });
+                    }
+                  }}
+                />} />
 
-            <Route path="/pending" element={<PendingPayments
-              user={user}
-              pendingPayments={pendingPayments}
-              onAddPayment={handleAddPayment}
-              onEditPayment={handleEditPayment}
-              onDeletePayment={handleDeletePayment}
-              onNavigateToTab={setActiveTab}
-              bankAccounts={bankAccounts}
-              onAddGlobalTransaction={handleAddTransaction}
-              onDeleteGlobalTransaction={handleDeleteTransaction}
-            />} />
+                <Route path="/pending" element={<PendingPayments
+                  user={user}
+                  pendingPayments={pendingPayments}
+                  onAddPayment={handleAddPayment}
+                  onEditPayment={handleEditPayment}
+                  onDeletePayment={handleDeletePayment}
+                  onNavigateToTab={setActiveTab}
+                  bankAccounts={bankAccounts}
+                  onAddGlobalTransaction={handleAddTransaction}
+                  onDeleteGlobalTransaction={handleDeleteTransaction}
+                />} />
 
-            <Route path="/ledger" element={<LedgerPage user={user} />} />
+                <Route path="/ledger" element={<LedgerPage user={user} />} />
 
-            <Route path="/savings" element={<SavingsGoals
-              savingsGoals={savingsGoals}
-              onAddGoal={handleAddGoal}
-              onEditGoal={handleEditGoal}
-              onDeleteGoal={handleDeleteGoal}
-            />} />
+                <Route path="/savings" element={<SavingsGoals
+                  savingsGoals={savingsGoals}
+                  onAddGoal={handleAddGoal}
+                  onEditGoal={handleEditGoal}
+                  onDeleteGoal={handleDeleteGoal}
+                />} />
 
-            <Route path="/credit-cards" element={<CreditCardsEMI user={user} ccBills={ccBills} ccEmis={ccEmis} bankAccounts={bankAccounts} onAddGlobalTransaction={handleAddTransaction} />} />
+                <Route path="/credit-cards" element={<CreditCardsEMI user={user} ccBills={ccBills} ccEmis={ccEmis} bankAccounts={bankAccounts} onAddGlobalTransaction={handleAddTransaction} />} />
 
-            <Route path="/bank-profiles" element={<BankProfiles
-              bankAccounts={bankAccounts}
-              transactions={transactions}
-              onAddBankAccount={handleAddBankAccount}
-              onEditBankAccount={handleEditBankAccount}
-              onDeleteBankAccount={handleDeleteBankAccount}
-              onNavigateToTab={setActiveTab}
-            />} />
+                <Route path="/bank-profiles" element={<BankProfiles
+                  bankAccounts={bankAccounts}
+                  transactions={transactions}
+                  onAddBankAccount={handleAddBankAccount}
+                  onEditBankAccount={handleEditBankAccount}
+                  onDeleteBankAccount={handleDeleteBankAccount}
+                  onNavigateToTab={setActiveTab}
+                />} />
 
-            <Route path="/assets" element={<PhysicalAssetsManager
-              assets={physicalAssets}
-              onAdd={handleAddPhysicalAsset}
-              onEdit={handleEditPhysicalAsset}
-              onDelete={handleDeletePhysicalAsset}
-            />} />
+                <Route path="/assets" element={<PhysicalAssetsManager
+                  assets={physicalAssets}
+                  onAdd={handleAddPhysicalAsset}
+                  onEdit={handleEditPhysicalAsset}
+                  onDelete={handleDeletePhysicalAsset}
+                />} />
 
-            <Route path="/budgets" element={<BudgetLimits
-              budgetLimits={budgetLimits}
-              transactions={transactions}
-              onAddLimit={handleAddLimit}
-              onDeleteLimit={handleDeleteLimit}
-              selectedMonth={selectedMonth}
-              onMonthChange={setSelectedMonth}
-            />} />
+                <Route path="/budgets" element={<BudgetLimits
+                  budgetLimits={budgetLimits}
+                  transactions={transactions}
+                  onAddLimit={handleAddLimit}
+                  onDeleteLimit={handleDeleteLimit}
+                  selectedMonth={selectedMonth}
+                  onMonthChange={setSelectedMonth}
+                />} />
 
-            <Route path="/sheets" element={<GoogleSheetsSync
-              transactions={transactions}
-              holdings={unifiedHoldings}
-              sips={sips}
-              fds={fds}
-              userSettings={userSettings}
-              onUpdateUserSettings={handleUpdateSmartApiSettings}
-              onReloadData={() => {
-                console.log('Google Sheets Sync completed data refresh.');
-              }}
-              onNavigateToTab={setActiveTab}
-              onOverwriteTransactions={handleOverwriteTransactions}
-              onOverwriteHoldings={handleOverwriteHoldings}
-              onOverwriteSips={handleOverwriteSips}
-              onOverwriteFds={handleOverwriteFds}
-            />} />
+                <Route path="/sheets" element={<GoogleSheetsSync
+                  transactions={transactions}
+                  holdings={unifiedHoldings}
+                  sips={sips}
+                  fds={fds}
+                  userSettings={userSettings}
+                  onUpdateUserSettings={handleUpdateSmartApiSettings}
+                  onReloadData={() => {
+                    console.log('Google Sheets Sync completed data refresh.');
+                  }}
+                  onNavigateToTab={setActiveTab}
+                  onOverwriteTransactions={handleOverwriteTransactions}
+                  onOverwriteHoldings={handleOverwriteHoldings}
+                  onOverwriteSips={handleOverwriteSips}
+                  onOverwriteFds={handleOverwriteFds}
+                />} />
 
-            <Route path="/contacts" element={<ContactsManager
-              user={user}
-              pendingPayments={pendingPayments}
-              transactions={transactions}
-              onAddPayment={handleAddPayment}
-              onNavigateToTab={setActiveTab}
-            />} />
+                <Route path="/contacts" element={<ContactsManager
+                  user={user}
+                  pendingPayments={pendingPayments}
+                  transactions={transactions}
+                  onAddPayment={handleAddPayment}
+                  onNavigateToTab={setActiveTab}
+                />} />
 
-            <Route path="/settings" element={<SettingsManager
-              user={user}
-              userSettings={userSettings}
-              onUpdateUserSettings={handleUpdateSmartApiSettings}
-              onNavigateToTab={setActiveTab}
-            />} />
+                <Route path="/settings" element={<SettingsManager
+                  user={user}
+                  userSettings={userSettings}
+                  onUpdateUserSettings={handleUpdateSmartApiSettings}
+                  onNavigateToTab={setActiveTab}
+                />} />
 
-            <Route path="/tasks" element={<TasksSection
-              tasks={scheduledTasks}
-              onAddTask={handleAddTask}
-              onCompleteTask={handleCompleteTask}
-              onDeleteTask={handleDeleteTask}
-              onUpdateTask={handleUpdateTask}
-              userEmail={user?.email || ''}
-            />} />
+                <Route path="/tasks" element={<TasksSection
+                  tasks={scheduledTasks}
+                  onAddTask={handleAddTask}
+                  onCompleteTask={handleCompleteTask}
+                  onDeleteTask={handleDeleteTask}
+                  onUpdateTask={handleUpdateTask}
+                  userEmail={user?.email || ''}
+                />} />
 
-            <Route path="/recurring-bills" element={<RecurringBills
-              recurringBills={recurringBills}
-              onAddBill={handleAddRecurringBill}
-              onEditBill={handleEditRecurringBill}
-              onDeleteBill={handleDeleteRecurringBill}
-            />} />
+                <Route path="/recurring-bills" element={<RecurringBills
+                  recurringBills={recurringBills}
+                  onAddBill={handleAddRecurringBill}
+                  onEditBill={handleEditRecurringBill}
+                  onDeleteBill={handleDeleteRecurringBill}
+                />} />
 
-            <Route path="/workspace" element={<WorkspaceSuite
-              user={user}
-              onNavigateToTab={setActiveTab}
-            />} />
+                <Route path="/workspace" element={<WorkspaceSuite
+                  user={user}
+                  onNavigateToTab={setActiveTab}
+                />} />
 
-            <Route path="/brokers" element={<BrokerManager
-              user={user}
-            />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </React.Suspense>
+                <Route path="/brokers" element={<BrokerManager
+                  user={user}
+                />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </React.Suspense>
+          </ErrorBoundary>
         </div>
 
       </main>

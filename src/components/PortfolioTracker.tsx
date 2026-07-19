@@ -679,43 +679,43 @@ export default function PortfolioTracker({
         {/* Holdings List */}
         <div className="lg:col-span-2 space-y-3">
           <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-2 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/50 border-b border-slate-150 gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <FolderCheck className="text-slate-800" size={18} />
-                  <h2 className="font-bold text-sm text-slate-850 font-display">Investment Holdings</h2>
+            <div className="p-2 flex flex-wrap sm:flex-nowrap justify-between items-center bg-slate-50/50 border-b border-slate-150 gap-2">
+              <div className="flex flex-row items-center gap-2 overflow-x-auto scrollbar-none w-full sm:w-auto">
+                <div className="flex items-center gap-1 shrink-0">
+                  <FolderCheck className="text-slate-800" size={16} />
+                  <h2 className="font-bold text-[13px] sm:text-sm text-slate-850 font-display whitespace-nowrap">Investment Holdings</h2>
                 </div>
                 
                 {/* View Mode Tabs */}
-                <div className="flex bg-slate-200/50 p-0.5 rounded-lg border border-slate-200/85 text-[10px] font-bold">
+                <div className="flex bg-slate-200/50 p-0.5 rounded-lg border border-slate-200/85 text-[10px] font-bold shrink-0">
                   <button
                     type="button"
                     onClick={() => setPortfolioViewMode('holdings')}
-                    className={`px-1 py-1 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'holdings' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
+                    className={`px-1.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${portfolioViewMode === 'holdings' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
                   >
                     Active ({processedHoldings.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setPortfolioViewMode('ledger')}
-                    className={`px-1 py-1 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'ledger' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
+                    className={`px-1.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${portfolioViewMode === 'ledger' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
                   >
-                    Exited / Booked ({realizedTrades?.length || 0})
+                    Exited ({realizedTrades?.length || 0})
                   </button>
                   <button
                     type="button"
                     onClick={() => setPortfolioViewMode('orders')}
-                    className={`px-1 py-1 rounded-md transition-all cursor-pointer ${portfolioViewMode === 'orders' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
+                    className={`px-1.5 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap ${portfolioViewMode === 'orders' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-800'}`}
                   >
-                    Live Orders ({brokerOrders?.length || 0})
+                    Live ({brokerOrders?.length || 0})
                   </button>
                 </div>
               </div>
               <button
                 onClick={() => setIsAdding(!isAdding)}
-                className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 px-1 rounded-lg text-xs cursor-pointer transition-all"
+                className="shrink-0 flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 px-2 rounded-lg text-[10px] sm:text-xs cursor-pointer transition-all"
               >
-                <Plus size={14} /> Add Asset
+                <Plus size={13} /> Add Asset
               </button>
             </div>
 
