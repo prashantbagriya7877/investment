@@ -1,11 +1,5 @@
-import React, { useMemo } from 'react';
-import ReactEChartsCore from 'echarts-for-react/lib/core';
-import * as echarts from 'echarts/core';
-import { CandlestickChart as EchartsCandlestickChart } from 'echarts/charts';
-import { TitleComponent, TooltipComponent, GridComponent, DataZoomComponent } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
-
-echarts.use([EchartsCandlestickChart, TitleComponent, TooltipComponent, GridComponent, DataZoomComponent, CanvasRenderer]);
+import React, { useEffect, useRef } from 'react';
+import { createChart, ColorType, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
 
 interface CandlestickChartProps {
   data: any[]; // Array of [timestamp, open, high, low, close, volume, oi]
@@ -14,91 +8,147 @@ interface CandlestickChartProps {
 }
 
 const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, instrumentName = 'Instrument', theme = 'dark' }) => {
-  const options = useMemo(() => {
-    // Upstox historical data format: ["2024-01-01T09:15:00+05:30", 100, 105, 95, 102, 1000, 0]
-    const categoryData = [];
-    const values = [];
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
-    // Parse data from bottom up if Upstox sends newest first, or just iterate
-    // Usually APIs send oldest first or newest first. Assuming it's already sorted chronologically.
-    const sortedData = [...data].sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
 
-    for (let i = 0; i < sortedData.length; i++) {
-      const item = sortedData[i];
-      // Format time
-      const date = new Date(item[0]);
-      const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      
-      categoryData.push(timeStr);
-      // ECharts candlestick expects [open, close, lowest, highest]
-      // Upstox provides [timestamp, open, high, low, close, volume, oi]
-      values.push([item[1], item[4], item[3], item[2]]);
-    }
+    // Determine colors based on theme
+    const backgroundColor = theme === 'dark' ? '#1e1e1e' : '#ffffff';
+    const textColor = theme === 'dark' ? '#d1d5db' : '#374151';
+    const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
+    const upColor = '#26a69a';
+    const downColor = '#ef5350';
 
-    const upColor = '#00da3c';
-    const downColor = '#ec0000';
-
-    return {
-      backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
-      title: {
-        text: instrumentName,
-        left: 0,
-        textStyle: { color: theme === 'dark' ? '#fff' : '#000' }
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'cross' }
+    // Create Chart
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: backgroundColor },
+        textColor: textColor,
       },
       grid: {
-        left: '10%',
-        right: '10%',
-        bottom: '15%'
+        vertLines: { color: gridColor, style: 1 },
+        horzLines: { color: gridColor, style: 1 },
       },
-      xAxis: {
-        type: 'category',
-        data: categoryData,
-        boundaryGap: false,
-        axisLine: { onZero: false },
-        splitLine: { show: false },
-        min: 'dataMin',
-        max: 'dataMax'
+      width: chartContainerRef.current.clientWidth,
+      height: chartContainerRef.current.clientHeight,
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        borderVisible: false,
       },
-      yAxis: {
-        scale: true,
-        splitArea: { show: true }
+      rightPriceScale: {
+        borderVisible: false,
       },
-      dataZoom: [
-        { type: 'inside', start: 50, end: 100 },
-        { show: true, type: 'slider', top: '90%', start: 50, end: 100 }
-      ],
-      series: [
-        {
-          name: instrumentName,
-          type: 'candlestick',
-          data: values,
-          itemStyle: {
-            color: upColor,
-            color0: downColor,
-            borderColor: upColor,
-            borderColor0: downColor
-          }
-        }
-      ]
+      crosshair: {
+        mode: 1, // Normal crosshair
+      }
+    });
+
+    chartRef.current = chart;
+
+    // Add Candlestick Series
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: upColor,
+      downColor: downColor,
+      borderVisible: false,
+      wickUpColor: upColor,
+      wickDownColor: downColor,
+    });
+    seriesRef.current = candleSeries;
+
+    // Add Volume Series
+    const volumeSeries = chart.addHistogramSeries({
+      color: '#26a69a',
+      priceFormat: {
+        type: 'volume',
+      },
+      priceScaleId: '', // overlay
+    });
+    
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0.8, // Volume takes up the bottom 20% of the chart
+        bottom: 0,
+      },
+    });
+    volumeRef.current = volumeSeries;
+
+    // Handle Resize
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
+        });
+      }
     };
-  }, [data, instrumentName, theme]);
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+    };
+  }, [theme]); // Re-initialize chart when theme changes
+
+  useEffect(() => {
+    if (!seriesRef.current || !volumeRef.current || !data || data.length === 0) return;
+
+    // Format Data for Lightweight Charts
+    // Ensure chronological order
+    const sortedData = [...data].sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+
+    const candleData = [];
+    const volumeData = [];
+
+    const upColor = '#26a69a';
+    const downColor = '#ef5350';
+
+    for (const item of sortedData) {
+      // time must be a unix timestamp in seconds for intraday, or string 'YYYY-MM-DD' for daily
+      const timeMs = new Date(item[0]).getTime();
+      const time = (timeMs / 1000) as Time; 
+      
+      const open = item[1];
+      const high = item[2];
+      const low = item[3];
+      const close = item[4];
+      const volume = item[5] || 0;
+
+      candleData.push({ time, open, high, low, close });
+
+      const isUp = close >= open;
+      volumeData.push({
+        time,
+        value: volume,
+        color: isUp ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+      });
+    }
+
+    seriesRef.current.setData(candleData);
+    volumeRef.current.setData(volumeData);
+    chartRef.current?.timeScale().fitContent();
+
+  }, [data]);
 
   if (!data || data.length === 0) {
-    return <div className="p-4 text-center text-gray-500">No historical data available</div>;
+    return <div className="p-4 text-center text-slate-500 font-medium">No historical data available</div>;
   }
 
   return (
-    <div className="w-full h-96">
-      <ReactEChartsCore 
-        echarts={echarts}
-        option={options} 
-        style={{ height: '100%', width: '100%' }} 
-        theme={theme}
-      />
+    <div className="w-full h-96 relative">
+      {/* Title Overlay */}
+      <div className={`absolute top-3 left-4 z-10 font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+        {instrumentName}
+      </div>
+      <div ref={chartContainerRef} className="w-full h-full" />
     </div>
   );
 };
