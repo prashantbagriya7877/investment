@@ -1,17 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { LineChart, BarChart2, Activity, PieChart, TrendingUp, Search, RefreshCw, Zap, Globe, AlertTriangle, ExternalLink, CheckCircle, ArrowLeft } from 'lucide-react';
-import CandlestickChart from './charts/CandlestickChart';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LineChart, BarChart2, Activity, PieChart, TrendingUp, Search, RefreshCw, Zap, Globe, AlertTriangle, ExternalLink, CheckCircle, ArrowLeft, List, Clock, LayoutGrid, Home, CalendarDays, Building2, Newspaper } from 'lucide-react';
+import AdvancedChartWidget from './charts/AdvancedChartWidget';
 import OptionChainChart from './charts/OptionChainChart';
 import PortfolioDonutChart from './charts/PortfolioDonutChart';
 import MarketHeatmap from './charts/MarketHeatmap';
 import PLChart from './charts/PLChart';
 import UpstoxOrderTicket from './UpstoxOrderTicket';
+import FundamentalsWidget from './charts/FundamentalsWidget';
+import EconomicCalendarWidget from './charts/EconomicCalendarWidget';
+import NewsWidget from './charts/NewsWidget';
 import { upstoxApi } from '../services/upstoxApi';
 
-type TabId = 'dashboard' | 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl' | 'order';
+type TabId = 'dashboard' | 'candlestick' | 'options' | 'portfolio' | 'heatmap' | 'pnl' | 'order' | 'fundamentals' | 'calendar' | 'news';
 
 const TABS = [
   { id: 'candlestick' as TabId, label: 'Historical Chart', icon: LineChart, color: 'text-blue-500', desc: 'View detailed candlestick patterns and technical analysis.' },
+  { id: 'fundamentals' as TabId, label: 'Fundamental Details', icon: Building2, color: 'text-cyan-500', desc: 'View company profile, financials, and key metrics.' },
+  { id: 'calendar' as TabId, label: 'Economic Calendar', icon: CalendarDays, color: 'text-rose-500', desc: 'Track global economic events and indicators.' },
+  { id: 'news' as TabId, label: 'Market News', icon: Newspaper, color: 'text-purple-500', desc: 'Get the latest top stories and market news globally.' },
   { id: 'options' as TabId, label: 'Option Chain', icon: BarChart2, color: 'text-indigo-500', desc: 'Analyze strike prices, open interest, and LTP for options.' },
   { id: 'order' as TabId, label: 'Order Execution', icon: Zap, color: 'text-purple-500', desc: 'Place buy and sell orders directly to your Upstox account.' },
   { id: 'portfolio' as TabId, label: 'Portfolio Analytics', icon: PieChart, color: 'text-emerald-500', desc: 'Visualize your holdings distribution and exposure.' },
@@ -99,7 +106,16 @@ function generateMockPortfolio() {
   ];
 }
 
-export default function ResearchTerminal() {
+interface PriceAlert {
+  id: string;
+  symbol: string;
+  condition: 'greater_than' | 'less_than';
+  targetPrice: number;
+  active: boolean;
+}
+
+export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [optionChainData, setOptionChainData] = useState<any[]>([]);
@@ -114,6 +130,89 @@ export default function ResearchTerminal() {
   const [interval, setIntervalVal] = useState('day');
   const [expiryDate, setExpiryDate] = useState('2024-12-26');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // New States for Multi-Chart & Watchlist
+  const [chartLayout, setChartLayout] = useState<'1' | 'split-v' | 'split-h' | 'grid-4' | 'grid-8'>('1');
+  const [chartSymbols, setChartSymbols] = useState<string[]>(['OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD']);
+  const [activeChartIndex, setActiveChartIndex] = useState<number>(0);
+  const [activeSidebar, setActiveSidebar] = useState<'watchlist' | 'alerts' | 'layout' | null>('watchlist');
+  const [sidebarWidth, setSidebarWidth] = useState(256); // Default 64px * 4 = 256px
+  const isDraggingSidebar = useRef(false);
+
+  const [alerts, setAlerts] = useState<PriceAlert[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('tv_price_alerts') || '[]');
+    } catch { return []; }
+  });
+  
+  const [tvWatchlistSymbols, setTvWatchlistSymbols] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tv_native_watchlist');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return ['OANDA:XAUUSD'];
+  });
+
+  // Save watchlist to local storage
+  useEffect(() => {
+    localStorage.setItem('tv_native_watchlist', JSON.stringify(tvWatchlistSymbols));
+  }, [tvWatchlistSymbols]);
+
+  // Sidebar Resizing Logic
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSidebar.current) return;
+      // e.clientX is from the left. The sidebar is on the right.
+      // So width is window.innerWidth - e.clientX - 45px (for the thin right toolbar)
+      const newWidth = window.innerWidth - e.clientX - 45;
+      if (newWidth >= 200 && newWidth <= 800) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDraggingSidebar.current = false;
+      document.body.style.cursor = 'default';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  // Polling Alerts against Live Prices
+  useEffect(() => {
+    if (!livePrices || Object.keys(livePrices).length === 0) return;
+    
+    let alertsTriggered = false;
+    const updatedAlerts = alerts.map(alertItem => {
+      if (!alertItem.active) return alertItem;
+      
+      const currentPriceObj = livePrices[alertItem.symbol];
+      if (!currentPriceObj || !currentPriceObj.ltp) return alertItem;
+      
+      const currentPrice = currentPriceObj.ltp;
+      let triggered = false;
+      
+      if (alertItem.condition === 'greater_than' && currentPrice >= alertItem.targetPrice) triggered = true;
+      if (alertItem.condition === 'less_than' && currentPrice <= alertItem.targetPrice) triggered = true;
+      
+      if (triggered) {
+        alertsTriggered = true;
+        // Trigger browser notification or custom toast
+        alert(`PRICE ALERT: ${alertItem.symbol} has crossed your target of ₹${alertItem.targetPrice}! (Current: ₹${currentPrice})`);
+        return { ...alertItem, active: false };
+      }
+      return alertItem;
+    });
+    
+    if (alertsTriggered) {
+      setAlerts(updatedAlerts);
+    }
+  }, [livePrices, alerts]);
 
   // Check if real Upstox token is available
   const token = localStorage.getItem('upstox_access_token') || '';
@@ -294,7 +393,7 @@ export default function ResearchTerminal() {
   const stockLabel = POPULAR_STOCKS.find(s => s.key === instrumentKey)?.label || instrumentKey.split('|')[1];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50">
 
       {/* ─── BANNERS (Only visible on Dashboard) ───────────────────────────────── */}
       {activeTab === 'dashboard' && !isConnected && (
@@ -327,8 +426,15 @@ export default function ResearchTerminal() {
 
 
       {activeTab === 'dashboard' ? (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
+        <div className="max-w-7xl mx-auto px-4 py-8 relative">
+          <button 
+            onClick={() => navigate('/')}
+            className="absolute top-2 left-4 sm:top-8 sm:left-4 flex items-center gap-2 px-3 py-2 bg-white text-slate-600 rounded-xl shadow-sm border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            <Home size={16} />
+            <span className="text-sm font-bold hidden sm:inline">Main App</span>
+          </button>
+          <div className="text-center mb-8 mt-12 sm:mt-0">
             <h2 className="text-3xl font-black text-slate-900 mb-2">Research Dashboard</h2>
             <p className="text-slate-500 font-medium">Select a tool below to analyze the market and your portfolio.</p>
           </div>
@@ -375,9 +481,9 @@ export default function ResearchTerminal() {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 py-4 mt-2 mb-8">
+        <div className={activeTab === 'candlestick' ? 'fixed inset-0 z-[100] bg-white w-full h-[100dvh]' : 'max-w-8xl mx-auto px-2 sm:px-2 lg:px-2 mt-2 mb-8'}>
           {/* Quick Stock Chips + Interval Selector (Only when inside relevant tool) */}
-          {(activeTab === 'candlestick' || activeTab === 'options') && (
+          {(activeTab === 'options' || activeTab === 'fundamentals') && (
             <div className="flex gap-1.5 overflow-x-auto pb-3 mb-2 scrollbar-hide">
               {POPULAR_STOCKS.map(s => (
                 <button
@@ -392,27 +498,11 @@ export default function ResearchTerminal() {
                   {s.label}
                 </button>
               ))}
-              {activeTab === 'candlestick' && (
-                <div className="ml-auto flex gap-1 shrink-0 bg-white border border-slate-200 p-0.5 rounded-xl shadow-sm">
-                  {INTERVALS.map(iv => (
-                    <button
-                      key={iv}
-                      onClick={() => setIntervalVal(iv)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                        interval === iv ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                      }`}
-                    >
-                      {iv.replace('minute', 'm').replace('hour', 'h')}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           )}
-
-          {/* Chart Card */}
-        <div className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden ring-1 ring-slate-900/5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-4 bg-slate-50/50 border-b border-slate-100">
+        <div className={`bg-white rounded-3xl border border-slate-200/60 overflow-hidden ring-1 ring-slate-900/5 ${activeTab === 'candlestick' ? 'h-full flex flex-col !border-none !ring-0 !rounded-none !bg-transparent' : ''}`}>
+          {activeTab !== 'candlestick' && (
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-4 bg-slate-50/50 border-b border-slate-100">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setActiveTab('dashboard')}
@@ -427,7 +517,7 @@ export default function ResearchTerminal() {
               <div>
                 <h3 className="font-black text-slate-900 text-sm leading-tight flex items-center gap-2">
                   {activeTabDef.label}
-                  {(activeTab === 'candlestick' || activeTab === 'options') && (
+                  {(activeTab === 'options' || activeTab === 'fundamentals') && (
                     <span className="text-xs text-slate-500 font-mono font-medium">{stockLabel}</span>
                   )}
                 </h3>
@@ -435,7 +525,7 @@ export default function ResearchTerminal() {
             </div>
 
             <div className="flex items-center gap-3 w-full lg:w-auto">
-              {(activeTab === 'candlestick' || activeTab === 'options') && (
+              {(activeTab === 'options' || activeTab === 'fundamentals') && (
                 <form onSubmit={handleLoad} className="flex flex-1 items-center gap-2">
                   <div className="relative flex-1 lg:w-60">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -456,25 +546,70 @@ export default function ResearchTerminal() {
                 </form>
               )}
 
-              <div className="hidden sm:flex items-center gap-2 border-l border-slate-200 pl-3">
-                {isLoading ? (
-                  <span className="text-[10px] font-bold text-blue-500 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full">
-                    <RefreshCw size={10} className="animate-spin" /> Fetching...
-                  </span>
-                ) : (
-                  <span className={`text-[10px] font-bold flex items-center gap-1.5 px-2 py-1 rounded-full ${isMock ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                    {isMock ? 'DEMO' : 'LIVE'}
-                  </span>
-                )}
-              </div>
+                <div className="hidden sm:flex items-center gap-2 border-l border-slate-200 pl-3">
+                  {isLoading ? (
+                    <span className="text-[10px] font-bold text-blue-500 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full">
+                      <RefreshCw size={10} className="animate-spin" /> Fetching...
+                    </span>
+                  ) : (
+                    <span className={`text-[10px] font-bold flex items-center gap-1.5 px-2 py-1 rounded-full ${isMock ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                      {isMock ? 'DEMO' : 'LIVE'}
+                    </span>
+                  )}
+                </div>
             </div>
         </div>
+          )}
 
         {/* Tool Content */}
-        <div className="p-0 sm:p-2 bg-slate-50/30">
+        <div className={`flex-1 flex flex-col w-full ${activeTab === 'candlestick' ? 'h-full bg-slate-100' : 'bg-slate-50/30 p-0 sm:p-2'}`}>
           {activeTab === 'candlestick' && (
-            <CandlestickChart data={historicalData} instrumentName={stockLabel} theme="light" />
+            <div className="flex-1 flex w-full h-full relative">
+                <button 
+                  onClick={() => setActiveTab('dashboard')} 
+                  className="absolute bottom-4 left-2 z-[110] p-2 bg-white/80 hover:bg-white backdrop-blur-md rounded-lg shadow-md border border-slate-200 text-slate-700 transition-all flex items-center justify-center cursor-pointer"
+                  title="Back to Dashboard"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                {/* Chart Grid Area */}
+                <div className="flex-1 flex flex-col h-full bg-slate-100 overflow-hidden relative">
+                   {/* Dynamic Grid */}
+                   <div className={`w-full h-full ${
+                      chartLayout === '1' ? 'flex' :
+                      chartLayout === 'split-v' ? 'flex flex-row' :
+                      chartLayout === 'split-h' ? 'flex flex-col' :
+                      chartLayout === 'grid-8' ? 'grid grid-cols-4 grid-rows-2' :
+                      'grid grid-cols-2 grid-rows-2'
+                   }`}>
+                      {Array.from({ length: chartLayout === '1' ? 1 : chartLayout === 'grid-4' ? 4 : chartLayout === 'grid-8' ? 8 : 2 }).map((_, i) => (
+                         <div key={i} onClick={() => setActiveChartIndex(i)} className={`flex-1 relative border-0 transition-colors ${activeChartIndex === i ? 'z-0' : ''}`}>
+                             <AdvancedChartWidget 
+                               symbol={chartSymbols[i]} 
+                               theme="light" 
+                               widgetId={`chart_widget_${i}`} 
+                               chartLayout={chartLayout}
+                               onLayoutChange={(layout: any) => setChartLayout(layout)}
+                               isPrimary={i === 0}
+                               watchlistSymbols={tvWatchlistSymbols}
+                               onAddWatchlistSymbol={(sym: string) => {
+                                 if (!tvWatchlistSymbols.includes(sym)) setTvWatchlistSymbols([sym, ...tvWatchlistSymbols]);
+                               }}
+                               onRemoveWatchlistSymbol={(sym: string) => {
+                                 setTvWatchlistSymbols(tvWatchlistSymbols.filter(s => s !== sym));
+                               }}
+                               onSymbolChange={(sym: string) => {
+                                 const newCharts = [...chartSymbols];
+                                 newCharts[i] = sym;
+                                 setChartSymbols(newCharts);
+                               }}
+                             />
+                         </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
           )}
           {activeTab === 'options' && (
             <OptionChainChart data={optionChainData} theme="light" />
@@ -487,6 +622,21 @@ export default function ResearchTerminal() {
           )}
           {activeTab === 'pnl' && (
             <PLChart data={plData} theme="light" />
+          )}
+          {activeTab === 'fundamentals' && (
+             <div className="h-[600px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
+                <FundamentalsWidget symbol={instrumentKey} theme="light" />
+             </div>
+          )}
+          {activeTab === 'calendar' && (
+             <div className="h-[700px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
+                <EconomicCalendarWidget theme="light" />
+             </div>
+          )}
+          {activeTab === 'news' && (
+             <div className="h-[700px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
+                <NewsWidget theme="light" />
+             </div>
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, Time, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 
 interface CandlestickChartProps {
   data: any[]; // Array of [timestamp, open, high, low, close, volume, oi]
@@ -51,7 +51,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, instrumentNam
     chartRef.current = chart;
 
     // Add Candlestick Series
-    const candleSeries = chart.addCandlestickSeries({
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: upColor,
       downColor: downColor,
       borderVisible: false,
@@ -61,7 +61,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, instrumentNam
     seriesRef.current = candleSeries;
 
     // Add Volume Series
-    const volumeSeries = chart.addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
       color: '#26a69a',
       priceFormat: {
         type: 'volume',

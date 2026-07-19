@@ -1725,24 +1725,26 @@ export default function App() {
       <Toaster position="top-right" toastOptions={{ className: 'font-sans text-sm font-bold', style: { borderRadius: '12px', background: '#334155', color: '#fff' } }} />
 
       {/* Top Navigation */}
-      <Header
-        user={user}
-        currentWorkspace={currentWorkspace}
-        setCurrentWorkspace={setCurrentWorkspace}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        exportFullLedgerToCSV={() => exportFullLedgerToCSV(transactions, unifiedHoldings, sips, fds)}
-        pinSetupActive={pinSetupActive}
-        setPinSetupActive={setPinSetupActive}
-        userSettings={userSettings}
-        handleLogout={handleLogout}
-        onOpenNotifications={() => setIsNotificationOpen(true)}
-        onOpenNavDrawer={() => setIsNavDrawerOpen(true)}
-        unreadCount={
-          recurringBills.filter(b => b.nextDueDate <= new Date().toISOString().split('T')[0]).length +
-          pendingPayments.filter(p => !p.completed && p.dueDate <= new Date().toISOString().split('T')[0]).length
-        }
-      />
+      {activeTab !== 'market' && (
+        <Header
+          user={user}
+          currentWorkspace={currentWorkspace}
+          setCurrentWorkspace={setCurrentWorkspace}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          exportFullLedgerToCSV={() => exportFullLedgerToCSV(transactions, unifiedHoldings, sips, fds)}
+          pinSetupActive={pinSetupActive}
+          setPinSetupActive={setPinSetupActive}
+          userSettings={userSettings}
+          handleLogout={handleLogout}
+          onOpenNotifications={() => setIsNotificationOpen(true)}
+          onOpenNavDrawer={() => setIsNavDrawerOpen(true)}
+          unreadCount={
+            recurringBills.filter(b => b.nextDueDate <= new Date().toISOString().split('T')[0]).length +
+            pendingPayments.filter(p => !p.completed && p.dueDate <= new Date().toISOString().split('T')[0]).length
+          }
+        />
+      )}
 
       {/* PIN Lock Settings Form (Expandable Popover Dialog) */}
       <AnimatePresence>
@@ -1816,8 +1818,8 @@ export default function App() {
       />
 
       {/* Primary Display Content Container */}
-      <main className="max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3 w-full grow pb-24 lg:pb-4">
-        <div className="transition-all duration-300">
+      <main className={`w-full grow ${location.pathname === '/market' ? '' : 'max-w-8xl mx-auto px-2 sm:px-3 lg:px-4 mt-3'}`}>
+        <div className="transition-all duration-300 h-full">
           <ErrorBoundary>
             <React.Suspense key={location.pathname} fallback={<div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
               <Routes>
@@ -1874,7 +1876,7 @@ export default function App() {
                 />} />
 
                 <Route path="/market-data" element={<MarketView />} />
-                <Route path="/market" element={<ResearchTerminal />} />
+                <Route path="/market" element={<ResearchTerminal livePrices={livePrices} />} />
                 <Route path="/terminal" element={<StockTerminal />} />
 
                 <Route path="/sips" element={<SipTracker
