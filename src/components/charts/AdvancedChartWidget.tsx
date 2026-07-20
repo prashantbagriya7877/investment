@@ -38,7 +38,7 @@ const AdvancedChartWidget = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
-  const widgetId = `tradingview_adv_${isPrimary ? 'primary' : 'sec'}_${symbol.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const widgetId = externalWidgetId || `tradingview_adv_${isPrimary ? 'primary' : 'sec'}_default`;
 
   const getTVSymbol = (sym: string) => {
     let finalSym = sym?.trim() || '';

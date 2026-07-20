@@ -693,7 +693,7 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
                              <AdvancedChartWidget 
                                symbol={chartSymbols[i]} 
                                theme="light" 
-                               widgetId={`chart_widget_${i}`} 
+                               widgetId={`tv_chart_slot_${i}`} 
                                chartLayout={chartLayout}
                                onLayoutChange={(layout: any) => setChartLayout(layout)}
                                isPrimary={i === 0}
