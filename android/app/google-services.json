@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1004464827659-d1vl1lj1ojrhglhaoiuqm1boau0hgnig.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.investmant.app",
+            "certificate_hash": "fa2b4a5170cdde5c0905cb315956155ae89e7666"
+          }
+        },
+        {
           "client_id": "1004464827659-jgehat52fojuf25t2orebncmkhr0n2oo.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
