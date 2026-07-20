@@ -298,30 +298,30 @@ export default function BankProfiles({
           animate={{ opacity: 1, x: 0 }}
           className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden"
         >
-          <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-5 text-white flex justify-between items-center rounded-t-2xl relative overflow-hidden">
+          <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-5 text-white flex flex-col sm:flex-row justify-between sm:items-center items-start gap-3 sm:gap-4 rounded-t-2xl relative overflow-hidden">
             {/* Background design */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
-            <div className="relative z-10">
-              <button onClick={() => setSelectedBankId(null)} className="text-slate-300 hover:text-white text-xs font-bold mb-2 flex items-center gap-1.5 cursor-pointer transition-colors">
+            <div className="relative z-10 w-full sm:w-auto">
+              <button onClick={() => setSelectedBankId(null)} className="text-slate-300 hover:text-white text-[10px] sm:text-xs font-bold mb-2 flex items-center gap-1.5 cursor-pointer transition-colors">
                 <ArrowLeftRight size={12} className="rotate-90" /> Back to Profiles
               </button>
-              <h3 className="text-xl font-black flex items-center gap-2.5">
-                <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-xs">
+              <h3 className="text-lg sm:text-xl font-black flex items-center gap-2.5 flex-wrap">
+                <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-xs shrink-0">
                   <Landmark size={20} className="text-white" />
                 </div>
-                {selectedBank.bankName} - {selectedBank.accountName}
+                <span className="break-words max-w-full">{selectedBank.bankName} - {selectedBank.accountName}</span>
               </h3>
             </div>
-            <div className="text-right relative z-10">
-              <p className="text-[10px] text-slate-300 capitalize font-medium tracking-widest mb-1">Live Balance</p>
-              <p className="text-2xl font-mono font-black drop-shadow-sm">₹{selectedBank.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+            <div className="text-left sm:text-right relative z-10 w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t border-white/10 sm:border-0">
+              <p className="text-[10px] text-slate-300 capitalize font-medium tracking-widest mb-0.5 sm:mb-1">Live Balance</p>
+              <p className="text-xl sm:text-2xl font-mono font-black drop-shadow-sm">₹{selectedBank.currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
 
           <div className="p-0">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700 capitalize tracking-widest">passbook history</span>
-              <div className="flex items-center gap-2">
+            <div className="bg-slate-50 px-4 py-3 sm:py-2 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-2">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-700 capitalize tracking-widest">passbook history</span>
+              <div className="flex items-center gap-3 sm:gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

@@ -152,10 +152,10 @@ export default function RecurringBills({
         <div>
           <p className="text-xl font-bold text-slate-900 tracking-tight font-sans mt-0.5">Auto-Bills & Salary</p>
         </div>
-        <div className="flex w-full md:w-auto gap-2 mt-1 md:mt-0">
+        <div className="flex w-full md:w-auto gap-2 mt-1 md:mt-0 overflow-x-auto pb-1 flex-nowrap">
           <button
             onClick={() => setIsScannerOpen(!isScannerOpen)}
-            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-md font-bold text-xs transition-colors cursor-pointer"
+            className="shrink-0 flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-md font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <Sparkles size={14} className={isScannerOpen ? '' : 'animate-pulse'} />
             {isScannerOpen ? 'Close Scanner' : 'Open Scanner'}
@@ -164,7 +164,7 @@ export default function RecurringBills({
             onClick={() => {
               // Add record balance logic or navigate
             }}
-            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+            className="shrink-0 flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             Record Balance
           </button>
@@ -175,7 +175,7 @@ export default function RecurringBills({
               setCategory(EXPENSE_CATEGORIES[0]);
               setIsFormOpen(true);
             }}
-            className="flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer"
+            className="shrink-0 flex-1 md:flex-none flex justify-center items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus size={14} /> Add Bill
           </button>
@@ -363,7 +363,7 @@ export default function RecurringBills({
       <div className="bg-orange-50 rounded-xl border border-orange-200/80 shadow-xs overflow-hidden">
         <div className="px-2 py-1.5 flex items-center gap-1.5 bg-orange-100/50 border-b border-orange-200">
           <AlertCircle size={14} className="text-orange-600" />
-          <span className="text-[11px] font-bold text-orange-800 uppercase tracking-widest font-sans">Due This Month ({dueThisMonth.length})</span>
+          <span className="text-[11px] font-bold text-orange-800 capitalize tracking-widest font-sans">Due This Month ({dueThisMonth.length})</span>
         </div>
         
         {dueThisMonth.length === 0 ? (
@@ -408,7 +408,7 @@ export default function RecurringBills({
         <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden mt-3">
           <div className="px-2 py-1.5 flex items-center gap-1.5 bg-slate-50/50 border-b border-slate-200">
             <Repeat size={14} className="text-slate-700" />
-            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest font-sans">Future / Other Bills ({otherBills.length})</span>
+            <span className="text-[11px] font-bold text-slate-700 capitalize tracking-widest font-sans">Future / Other Bills ({otherBills.length})</span>
           </div>
           <div className="divide-y divide-slate-100">
             {otherBills.sort((a,b) => (a.nextDueDate || '').localeCompare(b.nextDueDate || '')).map((b) => (

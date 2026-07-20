@@ -125,8 +125,12 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
   const [marketQuote, setMarketQuote] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isMock, setIsMock] = useState(false);
-  const [instrumentKey, setInstrumentKey] = useState('NSE_EQ|INE090A01021'); // ICICI Bank
-  const [inputKey, setInputKey] = useState('ICICI Bank');
+  const [instrumentKey, setInstrumentKey] = useState(() => {
+    return localStorage.getItem('last_instrument_key') || 'NSE_EQ|INE090A01021';
+  });
+  const [inputKey, setInputKey] = useState(() => {
+    return localStorage.getItem('last_input_key') || 'ICICI Bank';
+  });
   const [interval, setIntervalVal] = useState('day');
   const [expiryDate, setExpiryDate] = useState('2026-07-23'); // Default to a valid Thursday expiry
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -135,16 +139,22 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
 
   // New States for Multi-Chart & Watchlist
   const [chartLayout, setChartLayout] = useState<'1' | 'split-v' | 'split-h' | 'grid-4' | 'grid-8'>('1');
-  const [chartSymbols, setChartSymbols] = useState<string[]>([
-    'NSE_EQ|INE002A01018', // Reliance
-    'NSE_EQ|INE040A01034', // HDFC Bank
-    'NSE_EQ|INE467B01029', // TCS
-    'NSE_EQ|INE009A01021', // Infosys
-    'NSE_EQ|INE090A01021', // ICICI Bank
-    'NSE_EQ|INE062A01020', // SBI
-    'NSE_EQ|INE075A01022', // Wipro
-    'NSE_EQ|INE112A01023'  // Bajaj Finance
-  ]);
+  const [chartSymbols, setChartSymbols] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tv_chart_symbols_v3');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      'TVC:GOLD', // Default to Gold
+      'NSE_EQ|INE040A01034', // HDFC Bank
+      'NSE_EQ|INE467B01029', // TCS
+      'NSE_EQ|INE009A01021', // Infosys
+      'NSE_EQ|INE090A01021', // ICICI Bank
+      'NSE_EQ|INE062A01020', // SBI
+      'NSE_EQ|INE075A01022', // Wipro
+      'NSE_EQ|INE112A01023'  // Bajaj Finance
+    ];
+  });
   const [activeChartIndex, setActiveChartIndex] = useState<number>(0);
   const [activeSidebar, setActiveSidebar] = useState<'watchlist' | 'alerts' | 'layout' | null>('watchlist');
   const [sidebarWidth, setSidebarWidth] = useState(256); // Default 64px * 4 = 256px
@@ -168,6 +178,19 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
   useEffect(() => {
     localStorage.setItem('tv_native_watchlist', JSON.stringify(tvWatchlistSymbols));
   }, [tvWatchlistSymbols]);
+
+  // Save chart symbols and instrument key to local storage
+  useEffect(() => {
+    localStorage.setItem('tv_chart_symbols_v3', JSON.stringify(chartSymbols));
+  }, [chartSymbols]);
+
+  useEffect(() => {
+    localStorage.setItem('last_instrument_key', instrumentKey);
+  }, [instrumentKey]);
+
+  useEffect(() => {
+    localStorage.setItem('last_input_key', inputKey);
+  }, [inputKey]);
 
   // Sidebar Resizing Logic
   useEffect(() => {

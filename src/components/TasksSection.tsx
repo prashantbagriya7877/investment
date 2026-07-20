@@ -499,31 +499,31 @@ Please write a short, professional, and optimized description (2-3 sentences max
   });
 
   return (
-    <div className="space-y-3 text-slate-800 font-sans" id="tasks-section-root">
+    <div className="space-y-2 text-slate-800 font-sans" id="tasks-section-root">
 
       {/* Upper Area Summary / Vitals bar */}
-      <div className="bg-white rounded-xl p-3 border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-1">
+      <div className="bg-white rounded-xl p-2 md:p-3 border border-slate-200/80 flex items-center justify-between gap-1 sm:gap-2 shadow-xs flex-nowrap overflow-hidden">
+        <div className="space-y-1 shrink-0">
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 flex items-center gap-1 whitespace-nowrap">
             <Sparkles className="text-yellow-500 w-4 h-4" /> Reminders & Tasks
           </h2>
         </div>
 
         {/* Display Push Authorization Status Badge */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {notificationStatus === 'granted' ? (
-            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-2 py-1 rounded-lg">
+            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap">
               <Bell className="w-3 h-3 text-emerald-600" /> Notifications Active
             </div>
           ) : notificationStatus === 'denied' ? (
-            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-2 py-1 rounded-lg">
+            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap">
               <BellOff className="w-3 h-3 text-amber-500" /> Notifications Blocked
             </div>
           ) : (
             <button
               onClick={handleEnableNotifications}
               disabled={isRegisteringToken}
-              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold text-xs py-1 px-2 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold text-[10px] sm:text-xs py-1 px-2 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap"
               id="fcm-activate-button"
             >
               <Bell className="w-3 h-3" /> Enable Alerts
@@ -538,7 +538,7 @@ Please write a short, professional, and optimized description (2-3 sentences max
         {/* Creating task form Card (Left Panel) */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs sticky top-24">
-            <div className="flex justify-between items-center mb-2 pb-1">
+            <div className="flex justify-between items-center pb-1">
               <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1">
                  Reminders
               </h3>
@@ -694,7 +694,7 @@ Please write a short, professional, and optimized description (2-3 sentences max
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-2 py-1 text-xs rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-slate-950 font-medium"
+                className="w-full pl-9 pr-2 py-1 text-xs rounded-xl border border-slate-200 bg-white outline-none focus:ring-1 focus:ring-slate-950 font-medium"
               />
             </div>
 
@@ -705,7 +705,7 @@ Please write a short, professional, and optimized description (2-3 sentences max
                   key={tab}
                   type="button"
                   onClick={() => setFilter(tab)}
-                  className={`px-1 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all cursor-pointer shrink-0 truncate ${
+                  className={`px-1 py-1 rounded-lg text-[10px] font-bold capitalize tracking-wide transition-all cursor-pointer shrink-0 truncate ${
                     filter === tab
                       ? 'bg-white text-slate-900 shadow-xs'
                       : 'text-slate-500 hover:text-slate-800'

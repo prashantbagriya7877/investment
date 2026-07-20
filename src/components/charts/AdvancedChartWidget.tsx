@@ -41,27 +41,31 @@ const AdvancedChartWidget = ({
   const widgetId = `tradingview_adv_${isPrimary ? 'primary' : 'sec'}_${symbol.replace(/[^a-zA-Z0-9]/g, '')}`;
 
   const getTVSymbol = (sym: string) => {
-    let finalSym = sym.trim();
+    let finalSym = sym?.trim() || '';
     if (!finalSym) return 'BSE:SENSEX';
-    if (finalSym === 'NSE:NIFTY' || finalSym.includes('Nifty') || finalSym.includes('NIFTY 50')) return 'BSE:SENSEX';
+    
+    // Nifty should map to NSE:NIFTY, not BSE:SENSEX
+    if (finalSym === 'NSE:NIFTY' || finalSym.toLowerCase().includes('nifty')) return 'NSE:NIFTY';
+    if (finalSym.toLowerCase().includes('sensex')) return 'BSE:SENSEX';
+    if (finalSym.toLowerCase().includes('banknifty')) return 'NSE:BANKNIFTY';
     
     if (finalSym.includes(':')) {
       return finalSym;
     }
     
     if (finalSym.includes('|')) {
-       if (finalSym.includes('002A01018')) return 'NSE:RELIANCE';
-       if (finalSym.includes('467B01029')) return 'NSE:TCS';
-       if (finalSym.includes('009A01021')) return 'NSE:INFY';
-       if (finalSym.includes('040A01034')) return 'NSE:HDFCBANK';
-       if (finalSym.includes('090A01021')) return 'NSE:ICICIBANK';
-       if (finalSym.includes('075A01022')) return 'NSE:WIPRO';
-       if (finalSym.includes('062A01020')) return 'NSE:SBIN';
-       if (finalSym.includes('112A01023')) return 'NSE:BAJFINANCE';
+       if (finalSym.includes('002A01018')) return 'BSE:RELIANCE';
+       if (finalSym.includes('467B01029')) return 'BSE:TCS';
+       if (finalSym.includes('009A01021')) return 'BSE:INFY';
+       if (finalSym.includes('040A01034')) return 'BSE:HDFCBANK';
+       if (finalSym.includes('090A01021')) return 'BSE:ICICIBANK';
+       if (finalSym.includes('075A01022')) return 'BSE:WIPRO';
+       if (finalSym.includes('062A01020')) return 'BSE:SBIN';
+       if (finalSym.includes('112A01023')) return 'BSE:BAJFINANCE';
        return 'BSE:SENSEX';
     }
 
-    return `NSE:${finalSym.toUpperCase().replace(/\s+/g, '')}`;
+    return `BSE:${finalSym.toUpperCase().replace(/\s+/g, '')}`;
   };
 
   const tvSymbol = getTVSymbol(symbol);
@@ -154,7 +158,7 @@ const AdvancedChartWidget = ({
 
         {/* Layout Grid Dropdown */}
         {showLayoutMenu && onLayoutChange && (
-          <div className={`absolute sm:top-[40px] top-[260px] z-50 bg-white shadow-xl border border-slate-200 rounded-lg p-2 grid grid-cols-3 gap-2 transition-all duration-300 right-[50px] sm:right-auto ${activeSidePanel ? 'sm:right-[480px]' : 'sm:right-[80px]'}`}>
+          <div className={`absolute sm:top-[40px] top-[260px] z-50 bg-white shadow-xl border border-slate-200 rounded-lg p-2 grid grid-cols-3 gap-2 transition-all duration-300 right-[50px] ${activeSidePanel ? 'sm:right-[480px]' : 'sm:right-[80px]'}`}>
              <button onClick={() => onLayoutChange('1')} className={`p-3 border rounded flex justify-center items-center ${chartLayout === '1' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`} title="1 Chart">
                <div className="w-6 h-6 border-2 border-slate-400 rounded-sm"></div>
              </button>
