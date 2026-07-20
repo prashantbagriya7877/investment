@@ -65,6 +65,10 @@ const AdvancedChartWidget = ({
        return 'BSE:SENSEX';
     }
 
+    if (!finalSym.includes(':') && (finalSym.toUpperCase().endsWith('USDT') || finalSym.toUpperCase().endsWith('BTC') || finalSym.toUpperCase().endsWith('ETH'))) {
+      return `BINANCE:${finalSym.toUpperCase()}`;
+    }
+
     return `BSE:${finalSym.toUpperCase().replace(/\s+/g, '')}`;
   };
 

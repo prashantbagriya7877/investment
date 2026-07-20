@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Holding, WatchlistItem } from '../types';
 import { fetchStockPrice, fetchMutualFundNav } from '../utils/financeHelpers';
+import { getBinanceTicker24hr } from '../services/binanceApi';
 
 export interface LivePriceData {
   currentPrice: number;
@@ -25,6 +26,11 @@ export function useLivePrices(holdings: Holding[], watchlist: WatchlistItem[]) {
     const mfSchemes = new Set<string>();
     holdings.forEach(h => { if (h.type === 'mf' && h.schemeCode) mfSchemes.add(h.schemeCode); });
     watchlist.forEach(w => { if (w.type === 'mf' && w.schemeCode) mfSchemes.add(w.schemeCode); });
+
+    // Unique Crypto
+    const cryptoAssets = new Set<string>();
+    holdings.forEach(h => { if (h.type === 'crypto' && h.name) cryptoAssets.add(h.name); });
+    watchlist.forEach(w => { if (w.type === 'crypto' && w.name) cryptoAssets.add(w.name); });
 
     try {
       const stockPromises = Array.from(stockSymbols).map(async sym => {
@@ -57,7 +63,31 @@ export function useLivePrices(holdings: Holding[], watchlist: WatchlistItem[]) {
         }
       });
 
-      await Promise.allSettled([...stockPromises, ...mfPromises]);
+      const cryptoPromises = Array.from(cryptoAssets).map(async asset => {
+        try {
+          if (asset === 'USDT' || asset === 'USDC' || asset === 'BUSD' || asset === 'FDUSD' || asset === 'INR') {
+            prices[`crypto_${asset}`] = {
+              currentPrice: 88, // rough INR peg
+              dayChange: 0,
+              name: asset
+            };
+            return;
+          }
+          
+          const info = await getBinanceTicker24hr(`${asset}USDT`);
+          if (info && info.lastPrice) {
+            prices[`crypto_${asset}`] = {
+              currentPrice: parseFloat(info.lastPrice) * 88, // Convert USDT price to approximate INR
+              dayChange: parseFloat(info.priceChangePercent),
+              name: asset
+            };
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch crypto price for ${asset}:`, e);
+        }
+      });
+
+      await Promise.allSettled([...stockPromises, ...mfPromises, ...cryptoPromises]);
       setLivePrices(prev => ({ ...prev, ...prices }));
     } catch (err) {
       console.error("Error updating portfolio prices:", err);

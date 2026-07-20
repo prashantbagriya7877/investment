@@ -8,6 +8,7 @@ import InfoTooltip from './InfoTooltip';
 import { proxyFetch } from '../utils/proxyFetch';
 import { Link } from 'react-router-dom';
 import { upstoxApi } from '../services/upstoxApi';
+import { getBinanceAccountBalances } from '../services/binanceApi';
 import toast from 'react-hot-toast';
 
 interface BrokerManagerProps {
@@ -64,7 +65,12 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   const [isSavingApi, setIsSavingApi] = useState(false);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'upstox' | 'dhan' | 'angel' | 'zerodha'>('upstox');
+  const [binanceApiKey, setBinanceApiKey] = useState(localStorage.getItem('binance_api_key') || '');
+  const [binanceApiSecret, setBinanceApiSecret] = useState(localStorage.getItem('binance_api_secret') || '');
+  const [binanceLoading, setBinanceLoading] = useState(false);
+  const [binanceFunds, setBinanceFunds] = useState<any[]>([]);
+
+  const [activeTab, setActiveTab] = useState<'upstox' | 'dhan' | 'angel' | 'zerodha' | 'binance'>('upstox');
 
   // URL for OAuth Redirect
   const redirectUri = window.location.origin + '/brokers';
@@ -252,6 +258,37 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
     }
   };
 
+  // -- BINANCE DATA FETCHING --
+  useEffect(() => {
+    if (binanceApiKey && binanceApiSecret) {
+      fetchBinanceData();
+    }
+  }, [binanceApiKey, binanceApiSecret]);
+
+  const fetchBinanceData = async () => {
+    setBinanceLoading(true);
+    try {
+      const balances = await getBinanceAccountBalances(binanceApiKey, binanceApiSecret);
+      setBinanceFunds(balances);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Error fetching Binance data');
+    } finally {
+      setBinanceLoading(false);
+    }
+  };
+
+  const handleSaveBinanceKeys = () => {
+    if (!binanceApiKey || !binanceApiSecret) {
+      toast.error('Please enter both Binance API Key and Secret');
+      return;
+    }
+    localStorage.setItem('binance_api_key', binanceApiKey.trim());
+    localStorage.setItem('binance_api_secret', binanceApiSecret.trim());
+    toast.success('Binance credentials saved!');
+    fetchBinanceData();
+  };
+
   // -- ZERODHA DATA FETCHING --
   useEffect(() => {
     if (kiteToken && kiteApiKey) {
@@ -433,6 +470,16 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
           >
             <div className="w-6 h-6 rounded bg-orange-600 text-white flex items-center justify-center font-black text-xs">A</div>
             Angel SmartAPI
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('binance')}
+            className={`flex items-center gap-2 p-3 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'binance' ? 'bg-yellow-50 text-yellow-700' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <div className="w-6 h-6 rounded bg-yellow-500 text-slate-900 flex items-center justify-center font-black text-xs">B</div>
+            Binance API
           </button>
         </div>
 
@@ -1188,6 +1235,88 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
               )}
             </div>
           )}
+          
+          {/* BINANCE */}
+          {activeTab === 'binance' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-black text-yellow-900 flex items-center gap-2">
+                    Binance Spot API
+                  </h3>
+                  <p className="text-xs text-slate-700">Requires Binance API Key and Secret (with Reading permissions).</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">API Key</label>
+                  <input
+                    type="password"
+                    value={binanceApiKey}
+                    onChange={(e) => setBinanceApiKey(e.target.value)}
+                    placeholder="Enter Binance API Key"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-yellow-400 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">API Secret</label>
+                  <input
+                    type="password"
+                    value={binanceApiSecret}
+                    onChange={(e) => setBinanceApiSecret(e.target.value)}
+                    placeholder="Enter Binance API Secret"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-yellow-400 font-mono"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={handleSaveBinanceKeys}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-extrabold text-sm py-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck size={18} /> Save & Connect Binance
+                  </button>
+                </div>
+              </div>
+
+              {(binanceFunds.length > 0) && (
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 space-y-3 mt-4">
+                  <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-500" /> Binance Spot Balances
+                  </h4>
+                  
+                  {binanceLoading ? (
+                    <div className="text-xs text-slate-700 font-medium animate-pulse">Fetching Account Data...</div>
+                  ) : (
+                    <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <div className="max-h-48 overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 sticky top-0 z-10">
+                            <tr>
+                              <th className="p-2 font-bold text-slate-700">Asset</th>
+                              <th className="p-2 font-bold text-slate-700 text-right">Free</th>
+                              <th className="p-2 font-bold text-slate-700 text-right">Locked</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {binanceFunds.map((h, i) => (
+                              <tr key={i} className="hover:bg-slate-50">
+                                <td className="p-2 font-bold text-slate-800">{h.asset}</td>
+                                <td className="p-2 text-right text-slate-600 font-medium">{parseFloat(h.free).toFixed(4)}</td>
+                                <td className="p-2 text-right text-slate-600 font-medium">{parseFloat(h.locked).toFixed(4)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>

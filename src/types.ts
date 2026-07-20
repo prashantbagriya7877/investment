@@ -102,18 +102,21 @@ export interface UserSettings {
   googleSpreadsheetName?: string;
   investmentCashBalance?: number;
   realizedPnL?: number;
+  binanceApiKey?: string;
+  binanceApiSecret?: string;
+  binanceIsActive?: boolean;
 }
 
 export interface Holding {
   id: string;
   userId: string;
-  type: 'stock' | 'mf';
+  type: 'stock' | 'mf' | 'crypto';
   symbol?: string; // stocks (e.g., RELIANCE)
   name?: string; // name
   buyPrice: number; // buy price (NAV or stock price)
   quantity: number; // quantity (shares or units)
   buyDate: string; // YYYY-MM-DD
-  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Options' | 'F&O' | 'Intraday';
+  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Options' | 'F&O' | 'Intraday' | 'Crypto';
   broker?: string; // Zerodha, Groww, Upstox, etc.
   schemeCode?: string; // MF Scheme Code (e.g., 102885)
   isAutoSynced?: boolean; // Flag to indicate if this holding is auto-synced from a broker
@@ -127,7 +130,7 @@ export interface Sip {
   amount: number;
   startDate: string; // YYYY-MM-DD
   sipDate: number; // 1-28
-  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash';
+  assetClass: 'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Crypto';
   broker?: string;
   createdAt?: any;
 }
@@ -149,7 +152,7 @@ export interface Fd {
 export interface WatchlistItem {
   id: string;
   userId: string;
-  type: 'stock' | 'mf';
+  type: 'stock' | 'mf' | 'crypto';
   symbol?: string; // stock symbol e.g. TCS
   name?: string; // stock or MF name
   schemeCode?: string; // MF scheme ID
@@ -185,7 +188,7 @@ export type IncomeCategory = typeof INCOME_CATEGORIES[number];
 export interface RealizedTrade {
   id: string;
   userId: string;
-  type: 'stock' | 'mf';
+  type: 'stock' | 'mf' | 'crypto';
   symbol?: string;
   name?: string;
   buyPrice: number;

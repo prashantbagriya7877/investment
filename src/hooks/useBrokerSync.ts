@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Holding } from '../types';
 import { proxyFetch } from '../utils/proxyFetch';
+import { getBinanceAccountBalances } from '../services/binanceApi';
 
 export interface BrokerFunds {
   upstox: { available: number; utilized: number };
   dhan: { available: number; utilized: number };
   angel: { available: number; utilized: number };
   zerodha: { available: number; utilized: number };
+  binance: { available: number; utilized: number };
   totalAvailable: number;
 }
 
@@ -20,6 +22,7 @@ export function useBrokerSync(userId: string | undefined) {
     dhan: { available: 0, utilized: 0 },
     angel: { available: 0, utilized: 0 },
     zerodha: { available: 0, utilized: 0 },
+    binance: { available: 0, utilized: 0 },
     totalAvailable: 0
   });
   const [isSyncing, setIsSyncing] = useState(false);
@@ -32,6 +35,8 @@ export function useBrokerSync(userId: string | undefined) {
     const dhanToken = localStorage.getItem('dhan_access_token');
     const angelToken = localStorage.getItem('angel_access_token');
     const kiteToken = localStorage.getItem('kite_access_token');
+    const binanceApiKey = localStorage.getItem('binance_api_key');
+    const binanceApiSecret = localStorage.getItem('binance_api_secret');
 
     let allHoldings: Holding[] = [];
     let allRealizedTrades: any[] = []; // collect fresh each refresh, never accumulate
@@ -41,6 +46,7 @@ export function useBrokerSync(userId: string | undefined) {
       dhan: { available: 0, utilized: 0 },
       angel: { available: 0, utilized: 0 },
       zerodha: { available: 0, utilized: 0 },
+      binance: { available: 0, utilized: 0 },
       totalAvailable: 0
     };
 
@@ -295,7 +301,34 @@ export function useBrokerSync(userId: string | undefined) {
       }
     }
 
-    fundsState.totalAvailable = fundsState.upstox.available + fundsState.dhan.available + fundsState.angel.available + fundsState.zerodha.available;
+    // 5. Fetch Binance
+    if (binanceApiKey && binanceApiSecret) {
+      try {
+        const balances = await getBinanceAccountBalances(binanceApiKey, binanceApiSecret);
+        balances.forEach((b: any) => {
+          const qty = parseFloat(b.free) + parseFloat(b.locked);
+          if (qty > 0) {
+            allHoldings.push({
+              id: `binance_${b.asset}`,
+              userId: userId || 'unknown',
+              type: 'crypto',
+              symbol: `BINANCE:${b.asset}USDT`, // approximate ticker for tradingview lookup if needed
+              name: b.asset,
+              buyPrice: 0, // We don't have average buy price from just balances
+              quantity: qty,
+              buyDate: new Date().toISOString().split('T')[0],
+              assetClass: 'Crypto',
+              broker: 'Binance',
+              isAutoSynced: true
+            });
+          }
+        });
+      } catch (err) {
+        console.error("Binance sync error:", err);
+      }
+    }
+
+    fundsState.totalAvailable = fundsState.upstox.available + fundsState.dhan.available + fundsState.angel.available + fundsState.zerodha.available + fundsState.binance.available;
 
     setBrokerHoldings(allHoldings);
     setBrokerRealizedTrades(allRealizedTrades); // Set once, fresh — avoids accumulation bug
