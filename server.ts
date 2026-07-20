@@ -10,6 +10,7 @@ import { setupUpstoxRoutes } from "./upstoxProxy";
 import { setupDhanRoutes } from "./dhanProxy";
 import { setupAngelRoutes } from "./angelProxy";
 import { setupKiteRoutes } from "./kiteProxy";
+import { setupBinanceRoutes } from "./binanceProxy";
 
 dotenv.config();
 
@@ -319,6 +320,7 @@ If the input is for Trading (e.g., deposits to a Brokerage/Prop Firm), tag it as
   setupDhanRoutes(app);
   setupAngelRoutes(app);
   setupKiteRoutes(app);
+  setupBinanceRoutes(app);
 
   // In-memory cache store
   interface CacheEntry<T> {

@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js';
+import { proxyFetch } from '../utils/proxyFetch';
 
 const SPOT_API_URL = 'https://api.binance.com';
 const FUTURES_API_URL = 'https://fapi.binance.com';
@@ -34,13 +35,18 @@ const makeSignedRequest = async (
   const queryString = queryParams.toString();
   const signature = signRequest(queryString, apiSecret);
   
-  const finalUrl = `${baseUrl}${endpoint}?${queryString}&signature=${signature}`;
+  const proxyUrl = `/api/binance${endpoint}?${queryString}&signature=${signature}`;
 
-  const response = await fetch(finalUrl, {
+  const headers: any = {
+    'X-MBX-APIKEY': apiKey,
+  };
+  if (isFutures) {
+    headers['X-Binance-Futures'] = 'true';
+  }
+
+  const response = await proxyFetch(proxyUrl, {
     method,
-    headers: {
-      'X-MBX-APIKEY': apiKey,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -57,7 +63,7 @@ const makeSignedRequest = async (
 
 export const getBinanceTicker24hr = async (symbol: string) => {
   try {
-    const response = await fetch(`${SPOT_API_URL}/api/v3/ticker/24hr?symbol=${symbol.toUpperCase()}`);
+    const response = await proxyFetch(`/api/binance/api/v3/ticker/24hr?symbol=${symbol.toUpperCase()}`);
     if (!response.ok) throw new Error('Failed to fetch ticker data');
     return await response.json();
   } catch (error) {
@@ -68,7 +74,7 @@ export const getBinanceTicker24hr = async (symbol: string) => {
 
 export const getBinanceOpenInterest = async (symbol: string) => {
   try {
-    const response = await fetch(`${FUTURES_API_URL}/fapi/v1/openInterest?symbol=${symbol.toUpperCase()}`);
+    const response = await proxyFetch(`/api/binance/fapi/v1/openInterest?symbol=${symbol.toUpperCase()}`, { headers: { 'X-Binance-Futures': 'true' } as any });
     if (!response.ok) throw new Error('Failed to fetch open interest');
     return await response.json();
   } catch (error) {
@@ -79,7 +85,7 @@ export const getBinanceOpenInterest = async (symbol: string) => {
 
 export const getBinanceFundingRate = async (symbol: string) => {
   try {
-    const response = await fetch(`${FUTURES_API_URL}/fapi/v1/premiumIndex?symbol=${symbol.toUpperCase()}`);
+    const response = await proxyFetch(`/api/binance/fapi/v1/premiumIndex?symbol=${symbol.toUpperCase()}`, { headers: { 'X-Binance-Futures': 'true' } as any });
     if (!response.ok) throw new Error('Failed to fetch funding rate');
     return await response.json();
   } catch (error) {

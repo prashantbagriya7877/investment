@@ -173,6 +173,15 @@ export async function proxyFetch(url: string | URL | Request, options: RequestIn
     }
   }
 
+  // BINANCE NATIVE MAPPING
+  else if (urlStr.startsWith('/api/binance/')) {
+    const path = urlStr.replace('/api/binance/', '');
+    // If there is an explicit futures flag, route to fapi, else api
+    const isFutures = (nativeOptions.headers as any)['X-Binance-Futures'] === 'true';
+    const baseUrl = isFutures ? 'https://fapi.binance.com' : 'https://api.binance.com';
+    nativeUrl = `${baseUrl}/${path}`;
+  }
+
   // If no native mapping matched but it's a backend proxy route, route it to Render
   if (nativeUrl === urlStr && urlStr.startsWith('/api/')) {
     const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
