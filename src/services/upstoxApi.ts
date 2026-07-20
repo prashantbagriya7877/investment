@@ -79,9 +79,6 @@ export const upstoxApi = {
   getOptionExpiry: (instrumentKey: string, token: string) =>
     get(`${BASE_URL}/option-expiry?instrument_key=${encodeURIComponent(instrumentKey)}`, token),
 
-  // ─── Fundamentals ──────────────────────────────────
-  getFundamentals: (symbol: string, token: string) =>
-    get(`${BASE_URL}/fundamentals?symbol=${encodeURIComponent(symbol)}`, token),
 
   // ─── Trade P&L ─────────────────────────────────────
   getTradePnl: (token: string, segment = 'EQ', financialYear = '2023-24', fromDate?: string, toDate?: string) => {
@@ -97,6 +94,17 @@ export const upstoxApi = {
   // ─── Market Information ────────────────────────────
   getMarketInfo: (token: string, infoType = 'gainers', dataType = 'cash_leaders') =>
     get(`${BASE_URL}/market-info?info_type=${infoType}&data_type=${dataType}`, token),
+
+  getNews: (token: string, category: 'instrument_keys' | 'positions' | 'holdings' = 'positions', instrumentKeys?: string[]) => {
+    let url = `${BASE_URL}/news?category=${category}`;
+    if (instrumentKeys && instrumentKeys.length > 0) {
+      url += `&instrument_keys=${encodeURIComponent(instrumentKeys.join(','))}`;
+    }
+    return get(url, token);
+  },
+
+  getFundamentals: (token: string, endpoint: string, instrumentKey: string) => 
+    get(`${BASE_URL}/fundamentals/${endpoint}?instrument_key=${encodeURIComponent(instrumentKey)}`, token),
 
   // ─── Charges & Margins ─────────────────────────────
   getBrokerage: (

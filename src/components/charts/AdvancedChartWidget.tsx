@@ -42,11 +42,10 @@ const AdvancedChartWidget = ({
 
   const getTVSymbol = (sym: string) => {
     let finalSym = sym.trim();
-    if (!finalSym) return 'NSE:NIFTY';
-    if (finalSym === 'NSE:NIFTY' || finalSym.includes('Nifty') || finalSym.includes('NIFTY 50')) return 'NSE:NIFTY';
+    if (!finalSym) return 'BSE:SENSEX';
+    if (finalSym === 'NSE:NIFTY' || finalSym.includes('Nifty') || finalSym.includes('NIFTY 50')) return 'BSE:SENSEX';
     
     if (finalSym.includes(':')) {
-      if (finalSym.startsWith('BSE:')) return 'NSE:' + finalSym.split(':')[1];
       return finalSym;
     }
     
@@ -59,10 +58,10 @@ const AdvancedChartWidget = ({
        if (finalSym.includes('075A01022')) return 'NSE:WIPRO';
        if (finalSym.includes('062A01020')) return 'NSE:SBIN';
        if (finalSym.includes('112A01023')) return 'NSE:BAJFINANCE';
-       return 'NSE:NIFTY';
+       return 'BSE:SENSEX';
     }
 
-    return `NSE:${finalSym.toUpperCase()}`;
+    return `NSE:${finalSym.toUpperCase().replace(/\s+/g, '')}`;
   };
 
   const tvSymbol = getTVSymbol(symbol);
@@ -145,12 +144,17 @@ const AdvancedChartWidget = ({
             <button onClick={() => { setActiveSidePanel(activeSidePanel === 'fundamentals' ? null : 'fundamentals'); setShowWatchlistMenu(false); setShowLayoutMenu(false); }} className={`rounded hover:bg-slate-500/20 transition-colors flex items-center justify-center w-[40px] h-[40px] ${activeSidePanel === 'fundamentals' ? 'bg-cyan-500/20 text-cyan-600' : theme === 'dark' ? 'text-white' : 'text-black'}`} title="Fundamental Details">
                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
             </button>
+            {onLayoutChange && (
+              <button onClick={() => { setShowLayoutMenu(!showLayoutMenu); setShowWatchlistMenu(false); setActiveSidePanel(null); }} className={`sm:hidden rounded hover:bg-slate-500/20 transition-colors flex items-center justify-center w-[40px] h-[40px] ${showLayoutMenu ? 'text-[#2962ff]' : theme === 'dark' ? 'text-white' : 'text-black'}`} title="Chart Layout">
+                 <LayoutGrid size={22} strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         )}
 
         {/* Layout Grid Dropdown */}
         {showLayoutMenu && onLayoutChange && (
-          <div className={`absolute top-[40px] z-50 bg-white shadow-xl border border-slate-200 rounded-lg p-2 grid grid-cols-3 gap-2 transition-all duration-300 ${activeSidePanel ? 'right-[480px]' : 'right-[80px]'}`}>
+          <div className={`absolute sm:top-[40px] top-[260px] z-50 bg-white shadow-xl border border-slate-200 rounded-lg p-2 grid grid-cols-3 gap-2 transition-all duration-300 right-[50px] sm:right-auto ${activeSidePanel ? 'sm:right-[480px]' : 'sm:right-[80px]'}`}>
              <button onClick={() => onLayoutChange('1')} className={`p-3 border rounded flex justify-center items-center ${chartLayout === '1' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`} title="1 Chart">
                <div className="w-6 h-6 border-2 border-slate-400 rounded-sm"></div>
              </button>
@@ -308,7 +312,7 @@ const AdvancedChartWidget = ({
             <div className="flex-1 overflow-hidden relative">
                {activeSidePanel === 'news' && <NewsWidget theme={theme} />}
                {activeSidePanel === 'calendar' && <EconomicCalendarWidget theme={theme} />}
-               {activeSidePanel === 'fundamentals' && <FundamentalsWidget symbol={tvSymbol} theme={theme} />}
+               {activeSidePanel === 'fundamentals' && <FundamentalsWidget instrumentKey={tvSymbol} />}
             </div>
           </div>
         )}

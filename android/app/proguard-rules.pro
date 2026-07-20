@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- Facebook SDK (optional dep of capacitor-firebase/authentication) ---
+-dontwarn com.facebook.**
+-keep class com.facebook.** { *; }
+
+# --- Capacitor Firebase Authentication optional providers ---
+-dontwarn io.capawesome.capacitorjs.plugins.firebase.authentication.handlers.FacebookAuthProviderHandler
+-keep class io.capawesome.capacitorjs.plugins.firebase.authentication.** { *; }
+
+# --- General missing class suppression for R8 ---
+-ignorewarnings

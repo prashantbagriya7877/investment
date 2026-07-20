@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Key, Link as LinkIcon, CheckCircle2, AlertCircle, 
@@ -69,13 +69,16 @@ export default function BrokerManager({ user }: BrokerManagerProps) {
   // URL for OAuth Redirect
   const redirectUri = window.location.origin + '/brokers';
 
+  const authProcessed = useRef(false);
+
   useEffect(() => {
     // Check if we just returned from Upstox OAuth
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const kiteTokenParam = urlParams.get('request_token');
     
-    if (code && upstoxApiKey && upstoxApiSecret && activeTab === 'upstox') {
+    if (code && upstoxApiKey && upstoxApiSecret && activeTab === 'upstox' && !authProcessed.current) {
+      authProcessed.current = true;
       handleUpstoxAuthCallback(code);
     }
     if (kiteTokenParam && kiteApiKey && kiteApiSecret) {

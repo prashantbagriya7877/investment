@@ -143,6 +143,63 @@ export function setupUpstoxRoutes(app: express.Application) {
     }
   });
 
+  // 4d. Fetch News
+  app.get("/api/upstox/news", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+
+      const category = req.query.category || 'positions';
+      const instrument_keys = req.query.instrument_keys;
+      
+      let url = `https://api.upstox.com/v2/news?category=${category}`;
+      if (instrument_keys) url += `&instrument_keys=${encodeURIComponent(instrument_keys as string)}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Api-Version': '2.0',
+          'Authorization': token,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  // 4e. Fetch Fundamentals
+  app.get("/api/upstox/fundamentals/:endpoint(*)", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+
+      const endpoint = req.params.endpoint;
+      const instrument_key = req.query.instrument_key as string;
+      let url = `https://api.upstox.com/v2/fundamentals/${endpoint}`;
+      if (instrument_key) {
+        // extract ISIN if format is NSE_EQ|INE...
+        const isin = instrument_key.includes('|') ? instrument_key.split('|')[1] : instrument_key;
+        url = `https://api.upstox.com/v2/fundamentals/${isin}/${endpoint}`;
+      }
+
+      console.log(`[Fundamentals Proxy] Fetching: ${url}`);
+      const response = await fetch(url, {
+        headers: {
+          'Api-Version': '2.0',
+          'Authorization': token,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      console.log(`[Fundamentals Proxy] Status: ${response.status}, Data:`, JSON.stringify(data));
+      res.status(response.status).json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+
   // --- UPSTOX BROKER API PROXIES (PHASE 2) ---
 
   // 5. Market Quotes (LTP, OHLC)
@@ -178,6 +235,30 @@ export function setupUpstoxRoutes(app: express.Application) {
       if (!instrument_key || !expiry_date) return res.status(400).json({ error: "Missing instrument_key or expiry_date" });
 
       const response = await fetch(`https://api.upstox.com/v2/option/chain?instrument_key=${encodeURIComponent(instrument_key)}&expiry_date=${encodeURIComponent(expiry_date)}`, {
+        headers: {
+          'Api-Version': '2.0',
+          'Authorization': token,
+          'Accept': 'application/json'
+        }
+      });
+      const data = await response.json();
+      console.log(`[Option Chain] Req: ${instrument_key} | ${expiry_date} | Res Status: ${response.status} | Data length: ${data?.data?.length || 0}`, data.errors ? JSON.stringify(data.errors) : '');
+      res.status(response.status).json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 6b. Option Expiries
+  app.get("/api/upstox/option-expiry", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      const instrument_key = req.query.instrument_key as string;
+      
+      if (!token) return res.status(401).json({ error: "Missing authorization token" });
+      if (!instrument_key) return res.status(400).json({ error: "Missing instrument_key" });
+
+      const response = await fetch(`https://api.upstox.com/v2/option/contract?instrument_key=${encodeURIComponent(instrument_key)}`, {
         headers: {
           'Api-Version': '2.0',
           'Authorization': token,

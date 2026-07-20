@@ -316,5 +316,21 @@
       }
     },
     "updated_at": "2026-07-18T07:06:59.588Z"
+  },
+  "fcmTokens:c8oYrN9bzgQiLelDiUsKRB:APA91bG72bMd93i_W3i18IPQ9XifmxTQc9vgaB-lvuRBVaBHzIPhkIoi1dtEEWXOXrxFkmTGXbEJ9eKWQkN0tKoLA-QrODSvTWw1XS-4Pif9Bbgf34xCHYc": {
+    "collection": "fcmTokens",
+    "doc_id": "c8oYrN9bzgQiLelDiUsKRB:APA91bG72bMd93i_W3i18IPQ9XifmxTQc9vgaB-lvuRBVaBHzIPhkIoi1dtEEWXOXrxFkmTGXbEJ9eKWQkN0tKoLA-QrODSvTWw1XS-4Pif9Bbgf34xCHYc",
+    "data": {
+      "token": "c8oYrN9bzgQiLelDiUsKRB:APA91bG72bMd93i_W3i18IPQ9XifmxTQc9vgaB-lvuRBVaBHzIPhkIoi1dtEEWXOXrxFkmTGXbEJ9eKWQkN0tKoLA-QrODSvTWw1XS-4Pif9Bbgf34xCHYc",
+      "userId": "hWMNQeFSxEUTBpUB3I8UkT5qteg2",
+      "deviceType": "Web Console",
+      "registeredAt": {
+        "_methodName": "serverTimestamp"
+      },
+      "lastActive": {
+        "_methodName": "serverTimestamp"
+      }
+    },
+    "updated_at": "2026-07-20T04:05:08.475Z"
   }
 }

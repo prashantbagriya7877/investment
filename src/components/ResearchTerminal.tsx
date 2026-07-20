@@ -125,15 +125,26 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
   const [marketQuote, setMarketQuote] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isMock, setIsMock] = useState(false);
-  const [instrumentKey, setInstrumentKey] = useState('NSE_EQ|INE002A01018');
-  const [inputKey, setInputKey] = useState('NSE_EQ|INE002A01018');
+  const [instrumentKey, setInstrumentKey] = useState('NSE_EQ|INE090A01021'); // ICICI Bank
+  const [inputKey, setInputKey] = useState('ICICI Bank');
   const [interval, setIntervalVal] = useState('day');
-  const [expiryDate, setExpiryDate] = useState('2024-12-26');
+  const [expiryDate, setExpiryDate] = useState('2026-07-23'); // Default to a valid Thursday expiry
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showNewsSidebar, setShowNewsSidebar] = useState(false);
 
   // New States for Multi-Chart & Watchlist
   const [chartLayout, setChartLayout] = useState<'1' | 'split-v' | 'split-h' | 'grid-4' | 'grid-8'>('1');
-  const [chartSymbols, setChartSymbols] = useState<string[]>(['OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD', 'OANDA:XAUUSD']);
+  const [chartSymbols, setChartSymbols] = useState<string[]>([
+    'NSE_EQ|INE002A01018', // Reliance
+    'NSE_EQ|INE040A01034', // HDFC Bank
+    'NSE_EQ|INE467B01029', // TCS
+    'NSE_EQ|INE009A01021', // Infosys
+    'NSE_EQ|INE090A01021', // ICICI Bank
+    'NSE_EQ|INE062A01020', // SBI
+    'NSE_EQ|INE075A01022', // Wipro
+    'NSE_EQ|INE112A01023'  // Bajaj Finance
+  ]);
   const [activeChartIndex, setActiveChartIndex] = useState<number>(0);
   const [activeSidebar, setActiveSidebar] = useState<'watchlist' | 'alerts' | 'layout' | null>('watchlist');
   const [sidebarWidth, setSidebarWidth] = useState(256); // Default 64px * 4 = 256px
@@ -249,14 +260,13 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
             const candles = res?.data?.candles;
             if (candles && candles.length > 0) {
               setHistoricalData(candles);
-              setIsMock(false);
             } else {
-              setHistoricalData(generateMockCandlesticks());
-              setIsMock(true);
+              setHistoricalData([]);
             }
+            setIsMock(false);
           } catch (err: any) {
-            setHistoricalData(generateMockCandlesticks());
-            setIsMock(true);
+            setHistoricalData([]);
+            setIsMock(false);
             setErrorMsg(`Historical Data Error: ${err.message}`);
           }
         }
@@ -272,14 +282,13 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
             const chainData = res?.data;
             if (chainData && chainData.length > 0) {
               setOptionChainData(chainData);
-              setIsMock(false);
             } else {
-              setOptionChainData(generateMockOptionChain());
-              setIsMock(true);
+              setOptionChainData([]);
             }
+            setIsMock(false);
           } catch (err: any) {
-            setOptionChainData(generateMockOptionChain());
-            setIsMock(true);
+            setOptionChainData([]);
+            setIsMock(false);
             setErrorMsg(`Option Chain Error: ${err.message}`);
           }
         }
@@ -300,14 +309,14 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
                 type: h.exchange === 'NSE' ? 'Large Cap' : h.exchange
               }));
               setPortfolioData(mapped);
-              setIsMock(false);
             } else {
-              setPortfolioData(generateMockPortfolio());
-              setIsMock(true);
+              setPortfolioData([]);
             }
+            setIsMock(false);
           } catch (err: any) {
-            setPortfolioData(generateMockPortfolio());
-            setIsMock(true);
+            setPortfolioData([]);
+            setIsMock(false);
+            setErrorMsg(`Portfolio Error: ${err.message}`);
             console.error('Portfolio Error:', err.message);
           }
         }
@@ -333,14 +342,14 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
                 };
               });
               setHeatmapData(combined);
-              setIsMock(false);
             } else {
-              setHeatmapData(generateMockHeatmapData());
-              setIsMock(true);
+              setHeatmapData([]);
             }
+            setIsMock(false);
           } catch (err: any) {
-            setHeatmapData(generateMockHeatmapData());
-            setIsMock(true);
+            setHeatmapData([]);
+            setIsMock(false);
+            setErrorMsg(`Market Heatmap Error: ${err.message}`);
             console.error('Market Heatmap Error:', err.message);
           }
         }
@@ -362,15 +371,15 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
                 monthly[month] = (monthly[month] || 0) + (t.realized_pnl || 0);
               });
               const plArr = Object.entries(monthly).map(([date, realized]) => ({ date, realized }));
-              setPlData(plArr.length > 0 ? plArr : generateMockPLData());
-              setIsMock(plArr.length === 0);
+              setPlData(plArr);
             } else {
-              setPlData(generateMockPLData());
-              setIsMock(true);
+              setPlData([]);
             }
+            setIsMock(false);
           } catch (err: any) {
-            setPlData(generateMockPLData());
-            setIsMock(true);
+            setPlData([]);
+            setIsMock(false);
+            setErrorMsg(`Trade P&L Error: ${err.message}`);
             console.error('Trade P&L Error:', err.message);
           }
         }
@@ -386,7 +395,20 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
 
   const handleLoad = (e: React.FormEvent) => {
     e.preventDefault();
-    setInstrumentKey(inputKey.trim());
+    const input = inputKey.trim();
+    // Try to resolve friendly names to Upstox keys
+    const match = POPULAR_STOCKS.find(s => 
+      s.label.toLowerCase() === input.toLowerCase() || 
+      s.key === input ||
+      s.label.toLowerCase().includes(input.toLowerCase())
+    );
+    
+    if (match) {
+      setInstrumentKey(match.key);
+      setInputKey(match.label); // Keep friendly name in the box
+    } else {
+      setInstrumentKey(input);
+    }
   };
 
   const activeTabDef = TABS.find(t => t.id === activeTab) || TABS[0];
@@ -401,14 +423,14 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
           <div className="flex items-center gap-2 text-amber-800">
             <AlertTriangle size={15} className="shrink-0 text-amber-500" />
             <span className="text-xs font-semibold">
-              Upstox se connected nahi hai — Demo data dikh raha hai.
+              Not connected to Upstox — Showing demo data.
             </span>
           </div>
           <a
             href="/brokers"
             className="shrink-0 flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors"
           >
-            <ExternalLink size={11} /> Upstox Connect Karo
+            <ExternalLink size={11} /> Connect Upstox
           </a>
         </div>
       )}
@@ -484,15 +506,21 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
         <div className={activeTab === 'candlestick' ? 'fixed inset-0 z-[100] bg-white w-full h-[100dvh]' : 'max-w-8xl mx-auto px-2 sm:px-2 lg:px-2 mt-2 mb-8'}>
           {/* Quick Stock Chips + Interval Selector (Only when inside relevant tool) */}
           {(activeTab === 'options' || activeTab === 'fundamentals') && (
-            <div className="flex gap-1.5 overflow-x-auto pb-3 mb-2 scrollbar-hide">
+            <div className="flex gap-1.5 overflow-x-auto pb-3 mb-2 scrollbar-hide px-4 lg:px-0">
               {POPULAR_STOCKS.map(s => (
                 <button
                   key={s.key}
-                  onClick={() => { setInputKey(s.key); setInstrumentKey(s.key); }}
+                  onClick={() => { 
+                    setInputKey(s.key); 
+                    setInstrumentKey(s.key); 
+                    const newCharts = [...chartSymbols];
+                    newCharts[activeChartIndex] = s.key;
+                    setChartSymbols(newCharts);
+                  }}
                   className={`shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border shadow-sm ${
                     instrumentKey === s.key
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:shadow-md'
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:shadow-md'
                   }`}
                 >
                   {s.label}
@@ -500,7 +528,7 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
               ))}
             </div>
           )}
-        <div className={`bg-white rounded-3xl border border-slate-200/60 overflow-hidden ring-1 ring-slate-900/5 ${activeTab === 'candlestick' ? 'h-full flex flex-col !border-none !ring-0 !rounded-none !bg-transparent' : ''}`}>
+        <div className={`bg-white rounded-none border border-slate-200/60 overflow-hidden ring-1 ring-slate-900/5 ${activeTab === 'candlestick' ? 'h-full flex flex-col !border-none !ring-0 !rounded-none !bg-transparent' : ''}`}>
           {activeTab !== 'candlestick' && (
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-4 bg-slate-50/50 border-b border-slate-100">
             <div className="flex items-center gap-3">
@@ -514,56 +542,110 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
               <div className={`p-2 rounded-xl bg-white border border-slate-100 ${activeTabDef.color}`}>
                 <activeTabDef.icon size={16} />
               </div>
-              <div>
+              <div className="flex items-center gap-3">
                 <h3 className="font-black text-slate-900 text-sm leading-tight flex items-center gap-2">
                   {activeTabDef.label}
                   {(activeTab === 'options' || activeTab === 'fundamentals') && (
                     <span className="text-xs text-slate-500 font-mono font-medium">{stockLabel}</span>
                   )}
                 </h3>
+                {isConnected && (
+                  <button 
+                    onClick={() => { localStorage.removeItem('upstox_access_token'); window.location.reload(); }} 
+                    className="ml-2 text-[10px] font-bold bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-200 hover:bg-red-100 transition-colors shadow-sm"
+                  >
+                    Disconnect Upstox
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="flex items-center gap-3 w-full lg:w-auto">
               {(activeTab === 'options' || activeTab === 'fundamentals') && (
-                <form onSubmit={handleLoad} className="flex flex-1 items-center gap-2">
-                  <div className="relative flex-1 lg:w-60">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <form onSubmit={(e) => {
+                  handleLoad(e);
+                  const input = inputKey.trim();
+                  const match = POPULAR_STOCKS.find(s => s.label.toLowerCase() === input.toLowerCase() || s.key === input || s.label.toLowerCase().includes(input.toLowerCase()));
+                  const finalKey = match ? match.key : input;
+                  const newCharts = [...chartSymbols];
+                  newCharts[activeChartIndex] = finalKey;
+                  setChartSymbols(newCharts);
+                }} className="flex items-center bg-white p-1 border border-slate-100 rounded-lg shadow-sm w-full lg:w-[500px]">
+                  <div className="relative flex-1 flex items-center min-w-[200px]">
+                    <Search size={14} className="absolute left-3 text-slate-400" />
                     <input
                       type="text"
                       value={inputKey}
-                      onChange={e => setInputKey(e.target.value)}
-                      placeholder="NSE_EQ|INE002A01018"
-                      className="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs w-full focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono shadow-sm"
+                      onChange={e => {
+                        setInputKey(e.target.value);
+                        setShowSearchDropdown(true);
+                      }}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+                      placeholder="Search NIFTY, Reliance..."
+                      className="pl-8 pr-2 py-1.5 bg-transparent text-xs w-full focus:outline-none font-sans text-slate-800 placeholder-slate-400 font-medium"
                     />
+                    
+                    {/* Custom Autocomplete Dropdown */}
+                    {showSearchDropdown && (
+                      <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                        {POPULAR_STOCKS.filter(s => s.label.toLowerCase().includes(inputKey.toLowerCase()) || s.key.toLowerCase().includes(inputKey.toLowerCase())).length > 0 ? (
+                          POPULAR_STOCKS.filter(s => s.label.toLowerCase().includes(inputKey.toLowerCase()) || s.key.toLowerCase().includes(inputKey.toLowerCase())).map(s => (
+                            <div 
+                              key={s.key}
+                              className="px-3 py-2 cursor-pointer hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between transition-colors"
+                              onMouseDown={() => {
+                                setInputKey(s.label);
+                                setInstrumentKey(s.key);
+                                const newCharts = [...chartSymbols];
+                                newCharts[activeChartIndex] = s.key;
+                                setChartSymbols(newCharts);
+                                setShowSearchDropdown(false);
+                              }}
+                            >
+                              <span className="text-xs font-bold text-slate-800">{s.label}</span>
+                              <span className="text-[10px] text-slate-400 font-mono px-1.5 py-0.5 bg-slate-100 rounded">{s.key.split('|')[0]}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 py-3 text-xs text-slate-500 text-center">No related results found</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <button type="submit" className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                    <Zap size={14} />
-                  </button>
-                  <button type="button" onClick={fetchData} className="p-1.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-                    <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-                  </button>
+
+                  {activeTab === 'options' && (
+                    <div className="border-l border-slate-200 pl-2 pr-1 hidden sm:block">
+                      <input 
+                        type="date"
+                        value={expiryDate}
+                        onChange={e => setExpiryDate(e.target.value)}
+                        className="px-1 py-1 bg-transparent text-[11px] focus:outline-none text-slate-600 font-semibold font-mono w-[110px] cursor-pointer"
+                        title="Expiry Date"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 pl-2 border-l border-slate-200 ml-1 pr-1 py-1">
+                    <button type="submit" className="px-4 py-1.5 bg-slate-900 text-white rounded-md hover:bg-black transition-all text-xs font-medium shadow-sm">
+                      Search
+                    </button>
+                    <button type="button" onClick={() => setShowNewsSidebar(!showNewsSidebar)} className={`p-1.5 rounded-md transition-all ${showNewsSidebar ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`} title="Toggle News Sidebar">
+                      <Newspaper size={14} />
+                    </button>
+                    <button type="button" onClick={fetchData} className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-all" title="Refresh">
+                      <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
                 </form>
               )}
-
-                <div className="hidden sm:flex items-center gap-2 border-l border-slate-200 pl-3">
-                  {isLoading ? (
-                    <span className="text-[10px] font-bold text-blue-500 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full">
-                      <RefreshCw size={10} className="animate-spin" /> Fetching...
-                    </span>
-                  ) : (
-                    <span className={`text-[10px] font-bold flex items-center gap-1.5 px-2 py-1 rounded-full ${isMock ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isMock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                      {isMock ? 'DEMO' : 'LIVE'}
-                    </span>
-                  )}
-                </div>
             </div>
-        </div>
-          )}
+          </div>
+        )}
 
-        {/* Tool Content */}
-        <div className={`flex-1 flex flex-col w-full ${activeTab === 'candlestick' ? 'h-full bg-slate-100' : 'bg-slate-50/30 p-0 sm:p-2'}`}>
+        {/* Tool Content Wrapper */}
+        <div className="flex-1 flex w-full overflow-hidden">
+          <div className={`flex-1 flex flex-col min-w-0 ${activeTab === 'candlestick' ? 'h-full bg-slate-100' : 'bg-slate-50/30 p-0 sm:p-2'}`}>
           {activeTab === 'candlestick' && (
             <div className="flex-1 flex w-full h-full relative">
                 <button 
@@ -612,7 +694,23 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
              </div>
           )}
           {activeTab === 'options' && (
-            <OptionChainChart data={optionChainData} theme="light" />
+            <div className="flex-1 flex flex-col h-full w-full relative">
+              {errorMsg ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white/50 m-4 rounded-xl border border-red-100">
+                  <AlertTriangle size={32} className="text-red-400 mb-3" />
+                  <p className="text-sm font-bold text-slate-800">{errorMsg}</p>
+                  <p className="text-xs text-slate-500 mt-2 max-w-md">Try checking if the selected Expiry Date is a valid F&O expiry (like Thursday), or try clicking 'Disconnect Upstox' to reconnect.</p>
+                </div>
+              ) : optionChainData.length === 0 && !isLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white/50 m-4 rounded-xl border border-slate-200">
+                  <div className="text-slate-400 mb-2"><BarChart2 size={32} /></div>
+                  <p className="text-sm font-bold text-slate-700">No Option Chain Data Found</p>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm">Please ensure the selected date ({expiryDate}) is a valid expiry day for this symbol. Options only expire on specific days (like Thursdays for Nifty).</p>
+                </div>
+              ) : (
+                <OptionChainChart data={optionChainData} theme="light" />
+              )}
+            </div>
           )}
           {activeTab === 'portfolio' && (
             <PortfolioDonutChart holdings={portfolioData} theme="light" />
@@ -623,22 +721,41 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
           {activeTab === 'pnl' && (
             <PLChart data={plData} theme="light" />
           )}
-          {activeTab === 'fundamentals' && (
-             <div className="h-[600px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
-                <FundamentalsWidget symbol={instrumentKey} theme="light" />
-             </div>
-          )}
+
           {activeTab === 'calendar' && (
-             <div className="h-[700px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
+             <div className="h-[700px] w-full relative">
                 <EconomicCalendarWidget theme="light" />
              </div>
           )}
           {activeTab === 'news' && (
-             <div className="h-[700px] w-full bg-white rounded-2xl overflow-hidden border border-slate-200 relative">
-                <NewsWidget theme="light" />
+             <div className="flex-1 w-full relative min-h-[calc(100vh-200px)]">
+                <NewsWidget theme="light" instrumentKey={instrumentKey} />
+             </div>
+          )}
+          {activeTab === 'fundamentals' && (
+             <div className="flex-1 w-full relative min-h-[calc(100vh-200px)]">
+                <FundamentalsWidget instrumentKey={instrumentKey} />
+             </div>
+          )}
+          {activeTab === 'order' && (
+             <div className="flex justify-center items-center w-full min-h-[500px] py-12">
+                <UpstoxOrderTicket initialSymbol={instrumentKey} />
              </div>
           )}
         </div>
+
+        {/* News Sidebar */}
+        {showNewsSidebar && (
+          <div className="w-[350px] border-l border-slate-200 bg-white shadow-xl z-20 flex flex-col h-full overflow-hidden shrink-0">
+            <div className="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Newspaper size={16} className="text-blue-600"/> Live News</h3>
+              <button onClick={() => setShowNewsSidebar(false)} className="text-slate-400 hover:text-slate-800 p-1 hover:bg-slate-200 rounded font-bold text-xs">X</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <NewsWidget theme="light" instrumentKey={instrumentKey} compact={true} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Heatmap Stats */}
@@ -656,8 +773,7 @@ export default function ResearchTerminal({ livePrices = {} }: { livePrices?: any
             ))}
           </div>
         )}
-
-
+        </div>
       </div>
       </>
     )}

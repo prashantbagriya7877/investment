@@ -8,8 +8,23 @@ interface UpstoxOrderTicketProps {
   onOrderPlaced?: () => void;
 }
 
+const POPULAR_STOCKS = [
+  { label: 'NIFTY 50', key: 'NSE_INDEX|Nifty 50' },
+  { label: 'Reliance', key: 'NSE_EQ|INE002A01018' },
+  { label: 'TCS', key: 'NSE_EQ|INE467B01029' },
+  { label: 'Infosys', key: 'NSE_EQ|INE009A01021' },
+  { label: 'HDFC Bank', key: 'NSE_EQ|INE040A01034' },
+  { label: 'ICICI Bank', key: 'NSE_EQ|INE090A01021' },
+  { label: 'Wipro', key: 'NSE_EQ|INE075A01022' },
+  { label: 'SBI', key: 'NSE_EQ|INE062A01020' },
+];
+
 const UpstoxOrderTicket: React.FC<UpstoxOrderTicketProps> = ({ initialSymbol = 'NSE_EQ|INE002A01018', onOrderPlaced }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
+  const [displaySymbol, setDisplaySymbol] = useState(() => {
+    const match = POPULAR_STOCKS.find(s => s.key === initialSymbol);
+    return match ? match.label : initialSymbol;
+  });
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState('');
   const [transactionType, setTransactionType] = useState<'BUY' | 'SELL'>('BUY');
@@ -103,11 +118,27 @@ const UpstoxOrderTicket: React.FC<UpstoxOrderTicketProps> = ({ initialSymbol = '
             </div>
             <input
               type="text"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              list="order-popular-stocks"
+              value={displaySymbol}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDisplaySymbol(val);
+                const match = POPULAR_STOCKS.find(s => s.label.toLowerCase() === val.toLowerCase() || s.key === val);
+                if (match) {
+                  setSymbol(match.key);
+                  setDisplaySymbol(match.label); // snap to friendly name
+                } else {
+                  setSymbol(val);
+                }
+              }}
               className="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-800 focus:border-indigo-500 focus:ring-0 transition-colors"
-              placeholder="e.g. NSE_EQ|INE002A01018"
+              placeholder="Search NIFTY, Reliance... or enter key"
             />
+            <datalist id="order-popular-stocks">
+              {POPULAR_STOCKS.map(s => (
+                <option key={s.key} value={s.label}>{s.key}</option>
+              ))}
+            </datalist>
           </div>
         </div>
 
