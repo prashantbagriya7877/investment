@@ -659,6 +659,37 @@ function setupKiteRoutes(app2) {
   });
 }
 
+// binanceProxy.ts
+function setupBinanceRoutes(app2) {
+  app2.all("/api/binance/*", async (req, res) => {
+    try {
+      const endpoint = req.originalUrl.replace("/api/binance", "");
+      const apiKey = req.headers["x-mbx-apikey"];
+      const isFutures = req.headers["x-binance-futures"] === "true";
+      const baseUrl = isFutures ? "https://fapi.binance.com" : "https://api.binance.com";
+      const targetUrl = `${baseUrl}${endpoint}`;
+      const headers = {};
+      if (apiKey) headers["X-MBX-APIKEY"] = apiKey;
+      if (req.headers["content-type"]) headers["Content-Type"] = req.headers["content-type"];
+      const response = await fetch(targetUrl, {
+        method: req.method,
+        headers,
+        body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : void 0
+      });
+      const data = await response.text();
+      try {
+        const jsonData = JSON.parse(data);
+        res.status(response.status).json(jsonData);
+      } catch (e) {
+        res.status(response.status).send(data);
+      }
+    } catch (err) {
+      console.error("[Binance Proxy] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
 // server.ts
 dotenv.config();
 function cleanPrivateKey(keyInput) {
@@ -894,6 +925,7 @@ If the input is for Trading (e.g., deposits to a Brokerage/Prop Firm), tag it as
   setupDhanRoutes(app);
   setupAngelRoutes(app);
   setupKiteRoutes(app);
+  setupBinanceRoutes(app);
   const stockCache = /* @__PURE__ */ new Map();
   const mfCache = /* @__PURE__ */ new Map();
   const searchCache = /* @__PURE__ */ new Map();

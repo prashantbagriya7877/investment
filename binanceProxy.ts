@@ -1,9 +1,10 @@
 import express from "express";
 
 export function setupBinanceRoutes(app: express.Application) {
-  app.all("/api/binance/*", async (req, res) => {
+  app.use("/api/binance", async (req, res) => {
     try {
-      const endpoint = req.originalUrl.replace('/api/binance', '');
+      // req.url contains everything after /api/binance
+      const endpoint = req.url;
       const apiKey = req.headers['x-mbx-apikey'] as string;
       const isFutures = req.headers['x-binance-futures'] === 'true';
 
