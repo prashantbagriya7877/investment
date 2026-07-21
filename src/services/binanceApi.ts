@@ -11,6 +11,25 @@ const signRequest = (queryString: string, apiSecret: string) => {
   return CryptoJS.HmacSHA256(queryString, apiSecret).toString(CryptoJS.enc.Hex);
 };
 
+let timeOffset = 0;
+let hasSyncedTime = false;
+
+const syncBinanceTime = async (isFutures = false) => {
+  try {
+    const endpoint = isFutures ? '/fapi/v1/time' : '/api/v3/time';
+    const response = await proxyFetch(`/api/binance${endpoint}`);
+    if (response.ok) {
+      const data = await response.json();
+      const serverTime = data.serverTime;
+      const localTime = Date.now();
+      timeOffset = serverTime - localTime;
+      hasSyncedTime = true;
+    }
+  } catch (e) {
+    console.warn('Failed to sync Binance time:', e);
+  }
+};
+
 const makeSignedRequest = async (
   endpoint: string,
   method: 'GET' | 'POST' | 'DELETE',
@@ -23,8 +42,12 @@ const makeSignedRequest = async (
     throw new Error('Binance API keys are required for this endpoint.');
   }
 
+  if (!hasSyncedTime) {
+    await syncBinanceTime(isFutures);
+  }
+
   const baseUrl = isFutures ? FUTURES_API_URL : SPOT_API_URL;
-  const timestamp = Date.now();
+  const timestamp = Date.now() + timeOffset;
   
   const queryParams = new URLSearchParams({
     ...params,

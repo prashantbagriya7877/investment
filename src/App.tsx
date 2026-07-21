@@ -87,6 +87,16 @@ import { useSmsTracker } from './hooks/useSmsTracker';
 import { useBrokerSync } from './hooks/useBrokerSync';
 import { useBankAccounts } from './hooks/useBankAccounts';
 import { usePhysicalAssets } from './hooks/usePhysicalAssets';
+import { Capacitor } from '@capacitor/core';
+
+// Website Pages
+import WebsiteLayout from './website/WebsiteLayout';
+import HomePage from './website/HomePage';
+import AboutUs from './website/AboutUs';
+import PrivacyPolicy from './website/PrivacyPolicy';
+import TermsConditions from './website/TermsConditions';
+import CookiesPolicy from './website/CookiesPolicy';
+import ContactUs from './website/ContactUs';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -1689,21 +1699,45 @@ export default function App() {
     );
   }
 
-  // Login View
+  // Login / Public Website View
   if (!user) {
+    const isNative = Capacitor.isNativePlatform();
+    
     return (
-      <LoginScreen
-        handleGuestSignIn={handleGuestSignIn}
-        handleGoogleSignIn={handleGoogleSignIn}
-        showCustomLoginConfig={showCustomLoginConfig}
-        setShowCustomLoginConfig={setShowCustomLoginConfig}
-        customLoginClientId={customLoginClientId}
-        setCustomLoginClientId={setCustomLoginClientId}
-        handleCustomOauthLogin={handleCustomOauthLogin}
-        loginManualToken={loginManualToken}
-        setLoginManualToken={setLoginManualToken}
-        handleApplyLoginManualToken={handleApplyLoginManualToken}
-      />
+      <React.Suspense fallback={
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+        </div>
+      }>
+        <Routes>
+          {!isNative && (
+            <Route element={<WebsiteLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsConditions />} />
+              <Route path="/cookies" element={<CookiesPolicy />} />
+              <Route path="/contact" element={<ContactUs />} />
+            </Route>
+          )}
+          <Route path="/login" element={
+            <LoginScreen
+              handleGuestSignIn={handleGuestSignIn}
+              handleGoogleSignIn={handleGoogleSignIn}
+              showCustomLoginConfig={showCustomLoginConfig}
+              setShowCustomLoginConfig={setShowCustomLoginConfig}
+              customLoginClientId={customLoginClientId}
+              setCustomLoginClientId={setCustomLoginClientId}
+              handleCustomOauthLogin={handleCustomOauthLogin}
+              loginManualToken={loginManualToken}
+              setLoginManualToken={setLoginManualToken}
+              handleApplyLoginManualToken={handleApplyLoginManualToken}
+            />
+          } />
+          <Route path="*" element={<Navigate to={isNative ? "/login" : "/"} replace />} />
+        </Routes>
+        <Toaster position="bottom-center" />
+      </React.Suspense>
     );
   }
 

@@ -661,9 +661,9 @@ function setupKiteRoutes(app2) {
 
 // binanceProxy.ts
 function setupBinanceRoutes(app2) {
-  app2.all("/api/binance/*", async (req, res) => {
+  app2.use("/api/binance", async (req, res) => {
     try {
-      const endpoint = req.originalUrl.replace("/api/binance", "");
+      const endpoint = req.url;
       const apiKey = req.headers["x-mbx-apikey"];
       const isFutures = req.headers["x-binance-futures"] === "true";
       const baseUrl = isFutures ? "https://fapi.binance.com" : "https://api.binance.com";

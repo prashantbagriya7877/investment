@@ -24,7 +24,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
   const [amount, setAmount] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().substring(0, 10));
   const [sipDate, setSipDate] = useState<number>(5);
-  const [assetClass, setAssetClass] = useState<'Equity' | 'Debt' | 'Gold' | 'Cash'>('Equity');
+  const [assetClass, setAssetClass] = useState<'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Crypto'>('Equity');
   const [broker, setBroker] = useState('Zerodha');
 
   // Edit form state
@@ -32,7 +32,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
   const [editAmount, setEditAmount] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
   const [editSipDate, setEditSipDate] = useState<number>(5);
-  const [editAssetClass, setEditAssetClass] = useState<'Equity' | 'Debt' | 'Gold' | 'Cash'>('Equity');
+  const [editAssetClass, setEditAssetClass] = useState<'Equity' | 'Debt' | 'Gold' | 'Cash' | 'Crypto'>('Equity');
   const [editBroker, setEditBroker] = useState('');
 
   // Multi-toast alert simulations
@@ -227,6 +227,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
                     <option value="Debt">Debt</option>
                     <option value="Gold">Gold</option>
                     <option value="Cash">Cash</option>
+                    <option value="Crypto">Crypto</option>
                   </select>
                 </div>
                 <div>
@@ -332,6 +333,7 @@ export default function SipTracker({ sips, onAddSip, onDeleteSip, onEditSip }: S
                         <option value="Debt">Debt (Bond Fund, PPF)</option>
                         <option value="Gold">Gold Account (GBS)</option>
                         <option value="Cash">Cash (Liquid SIP)</option>
+                        <option value="Crypto">Crypto (Recurring Buy)</option>
                       </select>
                     </div>
                     <div>
