@@ -17,7 +17,9 @@ let hasSyncedTime = false;
 const syncBinanceTime = async (isFutures = false) => {
   try {
     const endpoint = isFutures ? '/fapi/v1/time' : '/api/v3/time';
-    const response = await proxyFetch(`/api/binance${endpoint}`);
+    const response = await proxyFetch(`/api/binance${endpoint}`, {
+      headers: isFutures ? { 'X-Binance-Futures': 'true' } as any : undefined
+    });
     if (response.ok) {
       const data = await response.json();
       const serverTime = data.serverTime;

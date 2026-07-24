@@ -15,10 +15,11 @@ export function setupBinanceRoutes(app: express.Application) {
       if (apiKey) headers['X-MBX-APIKEY'] = apiKey;
       if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'] as string;
 
+      const hasBody = req.body && Object.keys(req.body).length > 0;
       const response = await fetch(targetUrl, {
         method: req.method,
         headers,
-        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined
+        body: req.method !== 'GET' && req.method !== 'HEAD' && hasBody ? JSON.stringify(req.body) : undefined
       });
 
       // Pass through the exact status and JSON response from Binance

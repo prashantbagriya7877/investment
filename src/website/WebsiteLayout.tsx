@@ -28,7 +28,7 @@ const WebsiteLayout = () => {
             <nav className="hidden md:flex items-center gap-10">
               <Link to="/about" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">About Us</Link>
               <Link to="/contact" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Contact</Link>
-              
+
               <div className="flex items-center gap-4 border-l border-slate-200 pl-8">
                 <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors">
                   Sign In
@@ -58,7 +58,7 @@ const WebsiteLayout = () => {
       <footer className="bg-slate-50 border-t border-slate-200 pt-20 pb-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-            
+
             <div className="md:col-span-5 space-y-6">
               <Link to="/" className="flex items-center gap-3">
                 <div className="bg-indigo-600 p-2 rounded-xl">
@@ -88,7 +88,7 @@ const WebsiteLayout = () => {
               </ul>
             </div>
           </div>
-          
+
           <div className="pt-8 border-t border-slate-200/60 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-400 text-sm font-medium">
               &copy; {new Date().getFullYear()} InvestMant. All rights reserved.
